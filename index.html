@@ -9,38 +9,39 @@
   <style>
     :root{
       --bg0:#0b0f1a; --bg1:#070a12;
-      --glass: rgba(255,255,255,.12);
-      --glass2: rgba(255,255,255,.07);
-      --stroke: rgba(255,255,255,.18);
-      --text: rgba(255,255,255,.92);
-      --muted: rgba(255,255,255,.62);
-      --shadow: 0 20px 60px rgba(0,0,0,.45);
-      --r: 24px;
-      --focus: rgba(52,199,89,.22);
+      --card: rgba(255,255,255,.10);
+      --card2: rgba(255,255,255,.06);
+      --stroke: rgba(255,255,255,.14);
+      --text: rgba(255,255,255,.94);
+      --muted: rgba(255,255,255,.66);
+      --shadow: 0 18px 48px rgba(0,0,0,.45);
+      --r: 22px;
+      --accent: rgba(60,130,255,.85); /* style Google-ish */
+      --focus: rgba(60,130,255,.22);
     }
-
     [data-theme="light"]{
       --bg0:#f5f6fa; --bg1:#eceff5;
-      --glass: rgba(255,255,255,.78);
-      --glass2: rgba(255,255,255,.50);
-      --stroke: rgba(10,15,26,.12);
-      --text: rgba(10,15,26,.92);
-      --muted: rgba(10,15,26,.60);
-      --shadow: 0 18px 50px rgba(10,15,26,.16);
-      --focus: rgba(52,199,89,.18);
+      --card: rgba(255,255,255,.86);
+      --card2: rgba(255,255,255,.58);
+      --stroke: rgba(16,24,40,.10);
+      --text: rgba(16,24,40,.92);
+      --muted: rgba(16,24,40,.60);
+      --shadow: 0 18px 42px rgba(16,24,40,.12);
+      --accent: rgba(25,103,210,.92);
+      --focus: rgba(25,103,210,.18);
     }
 
     *{ box-sizing:border-box; }
     html, body{ height:100%; margin:0; }
     body{
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      font-size: 17px;                 /* TEXTE PLUS GRAND */
+      line-height: 1.35;
       color: var(--text);
       background:
-        radial-gradient(900px 600px at 20% 10%, rgba(255,255,255,.10), transparent 60%),
-        radial-gradient(900px 700px at 80% 20%, rgba(255,255,255,.08), transparent 60%),
-        radial-gradient(900px 800px at 50% 110%, rgba(52,199,89,.14), transparent 60%),
+        radial-gradient(1000px 700px at 20% 10%, rgba(60,130,255,.20), transparent 55%),
+        radial-gradient(900px 700px at 80% 20%, rgba(255,255,255,.10), transparent 60%),
         linear-gradient(180deg, var(--bg0), var(--bg1));
-      padding:0;
       overflow:hidden;
     }
 
@@ -48,240 +49,244 @@
       height: 100dvh;
       height: 100vh;
       padding:
-        calc(env(safe-area-inset-top) + 16px)
+        calc(env(safe-area-inset-top) + 14px)
         calc(env(safe-area-inset-right) + 14px)
-        calc(env(safe-area-inset-bottom) + 18px)
+        calc(env(safe-area-inset-bottom) + 14px)
         calc(env(safe-area-inset-left) + 14px);
       display:flex;
       flex-direction:column;
       gap:12px;
     }
 
+    /* Top bar (Google-ish) */
     .topbar{
       display:flex;
-      align-items:flex-start;
+      align-items:center;
       gap:10px;
       flex:0 0 auto;
     }
     .brand{ flex:1; min-width:0; }
-    .title{ margin:0; font-size:20px; font-weight:900; letter-spacing:.2px; }
-    .subtitle{ margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.35; }
+    .title{ margin:0; font-size:22px; font-weight:900; letter-spacing:.2px; }
+    .subtitle{ margin:4px 0 0; color: var(--muted); font-size:14px; }
 
-    .chip{
-      border:1px solid rgba(255,255,255,.14);
+    .iconBtn{
+      border:1px solid var(--stroke);
       background: rgba(255,255,255,.08);
       color: var(--text);
-      border-radius:999px;
-      padding: 9px 11px;
-      font-weight:900;
+      border-radius: 16px;
+      padding: 10px 12px;
+      font-weight: 900;
       cursor:pointer;
       user-select:none;
-      flex:0 0 auto;
     }
-    [data-theme="light"] .chip{ background: rgba(255,255,255,.60); }
+    [data-theme="light"] .iconBtn{ background: rgba(255,255,255,.70); }
 
+    /* Main card (full height) */
     .main{ flex:1 1 auto; min-height:0; display:flex; }
     .card{
       width:100%;
       border-radius: var(--r);
-      background: linear-gradient(180deg, var(--glass), var(--glass2));
-      border: 1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, var(--card), var(--card2));
+      border:1px solid var(--stroke);
       box-shadow: var(--shadow);
-      backdrop-filter: blur(18px) saturate(160%);
-      -webkit-backdrop-filter: blur(18px) saturate(160%);
-      position:relative;
+      backdrop-filter: blur(16px) saturate(150%);
+      -webkit-backdrop-filter: blur(16px) saturate(150%);
       overflow:hidden;
       display:flex;
-    }
-    .card::before{
-      content:"";
-      position:absolute; inset:-120px -120px auto auto;
-      width:260px;height:260px;
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.28), transparent 55%);
-      transform: rotate(18deg);
-      opacity:.22;
-      pointer-events:none;
+      position:relative;
     }
     .section{
-      padding:14px;
-      position:relative;
-      z-index:1;
       width:100%;
       overflow:auto;
       -webkit-overflow-scrolling: touch;
+      padding: 14px;
     }
 
-    .label{ font-size:12px; color:var(--muted); margin:2px 0 6px; }
-    .row{ display:flex; gap:10px; align-items:center; }
-    .row.between{ justify-content:space-between; }
-    .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .sep{ height:1px; background: rgba(255,255,255,.12); margin:12px 0; }
-
-    input, textarea{
-      width:100%;
-      padding:12px;
-      border-radius:16px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(10,14,28,.30);
-      color: var(--text);
-      outline:none;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
-      min-width:0;
-    }
-    [data-theme="light"] input, [data-theme="light"] textarea{ background: rgba(255,255,255,.62); }
-    input::placeholder, textarea::placeholder{ color: rgba(255,255,255,.45); }
-    [data-theme="light"] input::placeholder, [data-theme="light"] textarea::placeholder{ color: rgba(10,15,26,.40); }
-    input:focus, textarea:focus{
-      border-color: rgba(255,255,255,.28);
-      box-shadow: 0 0 0 3px var(--focus), inset 0 1px 0 rgba(255,255,255,.08);
-    }
-
-    button{
-      padding:12px;
-      border-radius:16px;
-      border:1px solid rgba(255,255,255,.16);
-      background: rgba(255,255,255,.10);
-      color: var(--text);
-      font-weight:900;
-      letter-spacing:.2px;
-      cursor:pointer;
-      box-shadow: 0 10px 26px rgba(0,0,0,.24);
-    }
-    [data-theme="light"] button{ background: rgba(255,255,255,.62); }
-
-    .primary{
-      background: rgba(255,255,255,.12);
-      border-color: rgba(255,255,255,.20);
-    }
-    [data-theme="light"] .primary{
-      background: rgba(10,15,26,.06);
-      border-color: rgba(10,15,26,.10);
-    }
-    .full{ width:100%; }
-
-    .pills{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-    .pill{
-      padding:8px 10px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.08);
-      color: var(--muted);
-      font-size:12px;
-    }
-    [data-theme="light"] .pill{ background: rgba(255,255,255,.55); }
-    .pill b{ color: var(--text); }
-
-    .foot{ margin-top:10px; font-size:12px; color: var(--muted); line-height:1.35; }
-
-    /* Views */
     .view{ display:none; height:100%; }
     .view.active{ display:block; }
 
-    /* Suggestions dropdown (address autocomplete) */
+    .label{ font-size:13px; font-weight:800; color: var(--muted); margin: 4px 0 8px; }
+    .sep{ height:1px; background: rgba(255,255,255,.10); margin: 14px 0; }
+    [data-theme="light"] .sep{ background: rgba(16,24,40,.08); }
+
+    /* Inputs */
+    input, textarea{
+      width:100%;
+      padding: 14px 14px;             /* plus grand */
+      border-radius: 18px;
+      border:1px solid var(--stroke);
+      background: rgba(10,14,28,.26);
+      color: var(--text);
+      outline:none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+      font-size: 17px;
+    }
+    [data-theme="light"] input, [data-theme="light"] textarea{
+      background: rgba(255,255,255,.75);
+    }
+    input::placeholder, textarea::placeholder{ color: rgba(255,255,255,.45); }
+    [data-theme="light"] input::placeholder, [data-theme="light"] textarea::placeholder{ color: rgba(16,24,40,.40); }
+    input:focus, textarea:focus{
+      box-shadow: 0 0 0 3px var(--focus), inset 0 1px 0 rgba(255,255,255,.08);
+    }
+
+    /* Primary Google-ish button */
+    .btn{
+      padding: 14px 14px;             /* plus grand */
+      border-radius: 18px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.10);
+      color: var(--text);
+      font-weight: 900;
+      cursor:pointer;
+      font-size: 16.5px;
+    }
+    [data-theme="light"] .btn{ background: rgba(255,255,255,.78); }
+    .btnPrimary{
+      background: color-mix(in srgb, var(--accent) 26%, rgba(255,255,255,.10));
+      border-color: color-mix(in srgb, var(--accent) 35%, rgba(255,255,255,.12));
+    }
+    [data-theme="light"] .btnPrimary{
+      background: color-mix(in srgb, var(--accent) 14%, rgba(255,255,255,.78));
+      border-color: color-mix(in srgb, var(--accent) 18%, rgba(16,24,40,.10));
+    }
+    .btnRow{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .full{ width:100%; }
+
+    /* Search bar (Google-style pill) */
+    .searchPill{
+      border-radius: 999px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.08);
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 12px;
+    }
+    [data-theme="light"] .searchPill{ background: rgba(255,255,255,.80); }
+    .searchPill .magnify{ font-weight:1000; opacity:.9; }
+    .searchPill input{
+      border:0;
+      background: transparent;
+      padding: 8px 6px;
+      border-radius: 12px;
+      box-shadow:none;
+      font-size: 17px;
+    }
+    .searchPill input:focus{ box-shadow:none; }
+
+    /* Suggestions */
     .suggestWrap{ position:relative; }
     .suggest{
-      position:absolute; left:0; right:0; top: calc(100% + 8px);
-      border-radius:16px;
+      position:absolute; left:0; right:0; top: calc(100% + 10px);
+      border-radius: 18px;
       overflow:hidden;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(10,14,28,.62);
-      backdrop-filter: blur(18px) saturate(140%);
-      -webkit-backdrop-filter: blur(18px) saturate(140%);
-      box-shadow: 0 20px 50px rgba(0,0,0,.45);
+      border:1px solid var(--stroke);
+      background: rgba(10,14,28,.68);
+      backdrop-filter: blur(16px) saturate(140%);
+      -webkit-backdrop-filter: blur(16px) saturate(140%);
+      box-shadow: 0 18px 48px rgba(0,0,0,.45);
       display:none;
-      z-index:20;
-      max-height:240px;
+      z-index: 30;
+      max-height: 280px;
       overflow:auto;
     }
-    [data-theme="light"] .suggest{ background: rgba(255,255,255,.82); }
+    [data-theme="light"] .suggest{ background: rgba(255,255,255,.92); }
     .suggest button{
       width:100%;
       text-align:left;
-      padding:10px 12px;
+      padding: 12px 14px;
       border:0;
-      border-radius:0;
-      box-shadow:none;
       background: transparent;
-      font-weight:900;
-    }
-    .suggest button:hover{ background: rgba(255,255,255,.10); }
-    .small{ display:block; margin-top:2px; font-size:12px; font-weight:600; color: var(--muted); }
-
-    /* Segmented controls */
-    .seg{
-      display:flex;
-      gap:8px;
-      padding:8px;
-      border-radius:18px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.08);
-    }
-    [data-theme="light"] .seg{ background: rgba(255,255,255,.62); }
-
-    .segBtn{
-      flex:1;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.14);
-      background: transparent;
-      box-shadow:none;
-      font-weight:900;
+      color: var(--text);
+      font-weight: 900;
+      font-size: 16px;
       cursor:pointer;
     }
-    .segBtn[aria-pressed="true"]{
-      background: rgba(255,255,255,.18);
-      border-color: rgba(255,255,255,.22);
-    }
-    [data-theme="light"] .segBtn[aria-pressed="true"]{
-      background: rgba(10,15,26,.08);
-      border-color: rgba(10,15,26,.10);
-    }
+    .suggest button:hover{ background: rgba(255,255,255,.10); }
+    .small{ display:block; margin-top:4px; font-size:13px; font-weight:650; color: var(--muted); }
 
-    /* Places list */
+    /* Place cards */
     .placeList{ display:flex; flex-direction:column; gap:10px; margin-top:8px; }
-    .placeBtn{
-      width:100%;
-      text-align:left;
-      padding:12px;
-      border-radius:18px;
-      border:1px solid rgba(255,255,255,.14);
+    .placeCard{
+      border-radius: 20px;
+      border:1px solid var(--stroke);
       background: rgba(255,255,255,.08);
-      box-shadow: none;
+      padding: 14px;
+      cursor:pointer;
+      user-select:none;
     }
-    [data-theme="light"] .placeBtn{ background: rgba(255,255,255,.62); }
-    .placeTop{ display:flex; align-items:center; gap:10px; }
+    [data-theme="light"] .placeCard{ background: rgba(255,255,255,.82); }
+    .placeTop{ display:flex; align-items:center; gap:12px; }
     .badge{
-      width:36px; height:36px; border-radius:14px;
+      width:42px; height:42px; border-radius: 16px;
       display:flex; align-items:center; justify-content:center;
-      border:1px solid rgba(255,255,255,.14);
+      border:1px solid var(--stroke);
       background: rgba(255,255,255,.10);
+      font-size: 20px;
       flex:0 0 auto;
-      font-size:18px;
     }
-    [data-theme="light"] .badge{ background: rgba(10,15,26,.06); }
-    .placeName{ font-weight:1000; letter-spacing:.2px; }
-    .placeMeta{ margin-top:6px; font-size:12px; color: var(--muted); line-height:1.35; }
+    [data-theme="light"] .badge{ background: rgba(16,24,40,.05); }
+    .placeName{ font-size:18px; font-weight:1000; letter-spacing:.2px; }
+    .placeMeta{ margin-top:6px; color: var(--muted); font-size:14px; }
 
-    /* Detail page */
-    .detailTitle{ font-size:18px; font-weight:1000; margin:0; letter-spacing:.2px; }
-    .detailText{ margin-top:10px; color: var(--muted); line-height:1.45; font-size:13px; white-space:pre-wrap; }
-    .detailBox{
-      margin-top:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.07);
-      border-radius: 18px;
-      padding:12px;
+    /* Bottom nav (simple) */
+    .bottomNav{
+      flex:0 0 auto;
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:10px;
     }
-    [data-theme="light"] .detailBox{ background: rgba(255,255,255,.62); }
+    .navTab{
+      border-radius: 18px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.08);
+      padding: 12px 10px;
+      font-weight: 950;
+      cursor:pointer;
+      text-align:center;
+      color: var(--muted);
+      user-select:none;
+    }
+    [data-theme="light"] .navTab{ background: rgba(255,255,255,.78); }
+    .navTab.active{
+      color: var(--text);
+      border-color: color-mix(in srgb, var(--accent) 30%, var(--stroke));
+      background: color-mix(in srgb, var(--accent) 12%, rgba(255,255,255,.10));
+    }
+    [data-theme="light"] .navTab.active{
+      background: color-mix(in srgb, var(--accent) 10%, rgba(255,255,255,.78));
+    }
+
+    /* Detail / chips */
+    .chips{ display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+    .chip{
+      padding: 10px 12px;
+      border-radius: 999px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.08);
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 850;
+    }
+    [data-theme="light"] .chip{ background: rgba(255,255,255,.80); }
+    .chip b{ color: var(--text); }
+
+    .detailTitle{ margin:0; font-size:20px; font-weight:1000; }
+    .detailText{ margin-top:10px; font-size:16px; color: var(--muted); white-space:pre-wrap; line-height:1.45; }
 
     /* Compass */
-    .navHeader{ display:flex; gap:10px; align-items:flex-start; margin-bottom:10px; }
-    .navHeader .chip{ padding: 9px 12px; }
+    .navHeader{
+      display:flex; align-items:center; gap:10px;
+      margin-bottom: 10px;
+    }
     .navHeader .brand{ flex:1; min-width:0; }
+    .navHeader .title{ font-size:18px; }
+    .navHeader .subtitle{ font-size:14px; }
 
-    .compassWrap{ display:flex; justify-content:center; padding:6px 0 0; }
+    .compassWrap{ display:flex; justify-content:center; padding: 8px 0 0; }
     .ringWrap{
-      width: min(72vw, 320px);
+      width: min(78vw, 340px);
       aspect-ratio: 1 / 1;
       position: relative;
       transform: scale(1);
@@ -291,23 +296,72 @@
       position:absolute; inset:0; margin:auto;
       width:100%; height:100%;
     }
-    .arrowSvg{
-      transform-origin: 50% 50%;
-      filter: drop-shadow(0 16px 30px rgba(0,0,0,.35));
-    }
+    .arrowSvg{ transform-origin: 50% 50%; filter: drop-shadow(0 16px 30px rgba(0,0,0,.35)); }
 
-    .metrics{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
+    .metrics{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
     .metric{
-      border-radius:18px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.07);
-      padding:12px;
+      border-radius: 20px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.08);
+      padding: 14px;
     }
-    [data-theme="light"] .metric{ background: rgba(255,255,255,.62); }
-    .k{ font-size:12px; color: var(--muted); }
-    .v{ margin-top:6px; font-size:16px; font-weight:1000; letter-spacing:.2px; }
+    [data-theme="light"] .metric{ background: rgba(255,255,255,.82); }
+    .k{ font-size:13px; color: var(--muted); font-weight:850; }
+    .v{ margin-top:6px; font-size:18px; font-weight:1000; }
 
-    .toolbar{ margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .toolbar{ margin-top: 12px; display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+
+    .foot{ margin-top: 12px; color: var(--muted); font-size:14px; line-height:1.35; }
+
+    /* Segmented (units) */
+    .seg{
+      display:flex; gap:8px; padding:8px;
+      border-radius: 18px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.08);
+    }
+    [data-theme="light"] .seg{ background: rgba(255,255,255,.80); }
+    .segBtn{
+      flex:1; border-radius: 14px;
+      border:1px solid var(--stroke);
+      background: transparent;
+      padding: 12px 10px;
+      font-weight: 950;
+      cursor:pointer;
+    }
+    .segBtn[aria-pressed="true"]{
+      background: color-mix(in srgb, var(--accent) 14%, rgba(255,255,255,.08));
+      border-color: color-mix(in srgb, var(--accent) 24%, var(--stroke));
+    }
+    [data-theme="light"] .segBtn[aria-pressed="true"]{
+      background: color-mix(in srgb, var(--accent) 10%, rgba(255,255,255,.80));
+    }
+
+    /* Manage places list */
+    .manageRow{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:10px;
+      align-items:center;
+      padding: 12px;
+      border-radius: 18px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+    }
+    [data-theme="light"] .manageRow{ background: rgba(255,255,255,.78); }
+    .manageName{ font-size:17px; font-weight:1000; }
+    .manageSub{ margin-top:4px; color: var(--muted); font-size:14px; }
+    .miniBtn{
+      padding: 10px 12px;
+      border-radius: 16px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.08);
+      cursor:pointer;
+      font-weight: 950;
+    }
+    [data-theme="light"] .miniBtn{ background: rgba(255,255,255,.86); }
+
+    .danger{ border-color: rgba(255,90,90,.35); }
   </style>
 </head>
 
@@ -316,48 +370,43 @@
     <div class="topbar">
       <div class="brand">
         <h1 class="title">City Compass</h1>
-        <p class="subtitle">Toulouse → choisis un lieu ou une adresse, puis suis la flèche (sans carte).</p>
+        <p class="subtitle">Découvre Toulouse : sélection → fiche → flèche (sans carte).</p>
       </div>
-      <button class="chip" id="themeBtn" type="button" title="Jour/Nuit">☾</button>
+      <button class="iconBtn" id="themeBtn" type="button" title="Jour/Nuit">☾</button>
     </div>
 
     <div class="main">
       <div class="card">
         <div class="section">
 
-          <!-- VIEW: HOME (places + address) -->
-          <div class="view active" id="viewHome">
-            <div class="label">Découvrir Toulouse</div>
+          <!-- VIEW: DISCOVER -->
+          <div class="view active" id="viewDiscover">
+            <div class="label">Lieux magnifiques (modifiable)</div>
             <div class="placeList" id="placeList"></div>
 
             <div class="sep"></div>
 
-            <div class="label">Ou naviguer vers une adresse</div>
+            <div class="label">Rechercher une adresse / lien Google Maps</div>
             <div class="suggestWrap">
-              <input id="addr" autocomplete="off" placeholder="Ex: Place du Capitole, Toulouse" />
+              <div class="searchPill">
+                <div class="magnify">🔎</div>
+                <input id="addr" autocomplete="off" placeholder="Ex: Place du Capitole, Toulouse" />
+              </div>
               <div id="suggest" class="suggest"></div>
             </div>
 
-            <div class="grid2" style="margin-top:10px;">
-              <button id="setAddr" class="primary" type="button">Voir la fiche</button>
-              <button id="clearAddr" type="button">Effacer</button>
+            <div class="btnRow" style="margin-top:10px;">
+              <button class="btn btnPrimary" id="setAddr" type="button">Ouvrir la fiche</button>
+              <button class="btn" id="clearAddr" type="button">Effacer</button>
             </div>
 
             <div class="sep"></div>
 
-            <div class="row between">
-              <div class="label" style="margin:0;">Coordonnées GPS</div>
-              <button class="chip" id="toggleCoords" type="button">Afficher</button>
-            </div>
-            <div id="coordsBox" style="display:none; margin-top:10px;">
-              <div class="row">
-                <input id="lat" inputmode="decimal" placeholder="Latitude (ex: 43.6045)" />
-                <input id="lon" inputmode="decimal" placeholder="Longitude (ex: 1.4440)" />
-              </div>
-              <button id="setCoords" class="primary full" type="button" style="margin-top:10px;">
-                Voir la fiche (coords)
-              </button>
-            </div>
+            <div class="label">Ou coller un lien Google Maps (facultatif)</div>
+            <input id="gmapsLink" placeholder="Colle un lien Google Maps (optionnel)" />
+            <button class="btn btnPrimary full" id="useGmapsLink" type="button" style="margin-top:10px;">
+              Utiliser ce lien
+            </button>
 
             <div class="sep"></div>
 
@@ -367,55 +416,54 @@
               <button id="unitKM" class="segBtn" type="button" aria-pressed="true">km</button>
             </div>
 
-            <div class="pills">
-              <div class="pill" id="stDest"><b>Destination</b> —</div>
-              <div class="pill" id="stHttps"><b>HTTPS</b> —</div>
+            <div class="chips">
+              <div class="chip" id="stDest"><b>Destination</b> —</div>
+              <div class="chip" id="stHttps"><b>HTTPS</b> —</div>
             </div>
 
-            <div class="foot" id="homeHint">
-              Vibration + écran actif : activés par défaut. iPhone : la boussole peut être limitée → marche quelques mètres.
+            <div class="foot" id="discoverHint">
+              Tu peux modifier la liste des lieux dans l’onglet “Gérer”. Vibration + écran actif : activés par défaut.
             </div>
           </div>
 
           <!-- VIEW: PLACE DETAIL -->
           <div class="view" id="viewPlace">
             <div class="navHeader">
-              <button class="chip" id="placeBack" type="button">←</button>
+              <button class="iconBtn" id="placeBack" type="button">←</button>
               <div class="brand">
-                <div class="title" style="font-size:18px;">Lieu</div>
+                <div class="title" style="font-size:18px; margin:0;">Fiche</div>
                 <div class="subtitle" id="placeSubtitle" style="margin-top:4px;">—</div>
               </div>
-              <button class="chip" id="placeGoNav" type="button">▶</button>
+              <button class="iconBtn" id="openInGmaps" type="button" title="Google Maps">🗺️</button>
             </div>
 
             <h2 class="detailTitle" id="placeTitle">—</h2>
             <div class="detailText" id="placeDesc">—</div>
 
-            <div class="detailBox">
-              <div class="label">Destination</div>
-              <div class="pills" style="margin-top:6px;">
-                <div class="pill" id="placeCoords"><b>GPS</b> —</div>
-                <div class="pill" id="placeType"><b>Type</b> —</div>
-              </div>
-              <button id="startFromPlace" class="primary full" type="button" style="margin-top:12px;">
-                Lancer la navigation
-              </button>
+            <div class="chips">
+              <div class="chip" id="placeCoords"><b>GPS</b> —</div>
+              <div class="chip" id="placeType"><b>Type</b> —</div>
+            </div>
+
+            <div class="btnRow" style="margin-top:12px;">
+              <button class="btn btnPrimary" id="startFromPlace" type="button">Lancer la navigation</button>
+              <button class="btn" id="editThisPlace" type="button">Modifier</button>
             </div>
 
             <div class="foot" id="placeHint">
-              Astuce : tourne le téléphone en “∞” (8) si le cap paraît bizarre.
+              iPhone : si la boussole est instable, marche quelques mètres (cap de marche).
             </div>
           </div>
 
-          <!-- VIEW: COMPASS -->
+          <!-- VIEW: NAV -->
           <div class="view" id="viewNav">
             <div class="navHeader">
-              <button class="chip" id="back" type="button">←</button>
+              <button class="iconBtn" id="back" type="button">←</button>
               <div class="brand">
-                <div class="title" style="font-size:18px;">Navigation</div>
+                <div class="title" style="font-size:18px; margin:0;">Navigation</div>
                 <div class="subtitle" id="destLabel" style="margin-top:4px;">Destination: —</div>
               </div>
-              <button class="chip" id="stop" type="button">⏹</button>
+              <button class="iconBtn" id="stop" type="button">⏹</button>
             </div>
 
             <div class="compassWrap">
@@ -458,23 +506,69 @@
               </div>
             </div>
 
-            <div class="pills">
-              <div class="pill" id="gps"><b>GPS</b> —</div>
-              <div class="pill" id="mode"><b>Mode</b> —</div>
-              <div class="pill" id="cap"><b>Cap</b> —</div>
+            <div class="chips">
+              <div class="chip" id="gps"><b>GPS</b> —</div>
+              <div class="chip" id="mode"><b>Mode</b> —</div>
+              <div class="chip" id="cap"><b>Cap</b> —</div>
             </div>
 
             <div class="toolbar">
-              <button id="recenter" type="button">Recentrer</button>
-              <button id="copy" type="button">Copier coords</button>
+              <button class="btn" id="recenter" type="button">Recentrer</button>
+              <button class="btn" id="copy" type="button">Copier coords</button>
             </div>
 
             <div class="foot" id="navHint">Suis la flèche. L’anneau se resserre en approchant.</div>
             <div class="foot" id="debug"></div>
           </div>
 
+          <!-- VIEW: MANAGE PLACES -->
+          <div class="view" id="viewManage">
+            <div class="label">Gérer les lieux (modifiable à tout moment)</div>
+            <div class="foot" style="margin-top:0;">
+              Ajoute un lieu en collant un lien Google Maps (si possible avec coordonnées) ou en mettant un nom/adresse.
+              Les lieux sont enregistrés sur ton téléphone (localStorage).
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="label">Ajouter / modifier</div>
+            <input id="mName" placeholder="Nom du lieu (ex: Couvent des Jacobins)" />
+            <input id="mType" placeholder="Type (ex: Patrimoine, Balade…)" style="margin-top:10px;" />
+            <textarea id="mDesc" rows="4" placeholder="Description (2–4 phrases) — optionnel" style="margin-top:10px;"></textarea>
+            <input id="mGmaps" placeholder="Lien Google Maps (optionnel) — colle ici" style="margin-top:10px;" />
+            <div class="btnRow" style="margin-top:10px;">
+              <input id="mLat" inputmode="decimal" placeholder="Latitude (optionnel)" />
+              <input id="mLon" inputmode="decimal" placeholder="Longitude (optionnel)" />
+            </div>
+
+            <div class="btnRow" style="margin-top:10px;">
+              <button class="btn btnPrimary" id="savePlace" type="button">Enregistrer</button>
+              <button class="btn" id="resetForm" type="button">Nouveau</button>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="label">Mes lieux</div>
+            <div id="manageList" class="placeList"></div>
+
+            <div class="btnRow" style="margin-top:12px;">
+              <button class="btn danger" id="resetDefaults" type="button">Réinitialiser</button>
+              <button class="btn" id="exportJson" type="button">Exporter JSON</button>
+            </div>
+
+            <textarea id="exportBox" rows="6" style="margin-top:10px; display:none;" readonly></textarea>
+
+            <div class="foot" id="manageHint"></div>
+          </div>
+
         </div>
       </div>
+    </div>
+
+    <div class="bottomNav">
+      <button class="navTab active" id="tabDiscover" type="button">Découvrir</button>
+      <button class="navTab" id="tabNav" type="button">Boussole</button>
+      <button class="navTab" id="tabManage" type="button">Gérer</button>
     </div>
   </div>
 
@@ -483,12 +577,9 @@
   const $ = (id) => document.getElementById(id);
 
   /* =========================
-     1) LIEUX TOULOUSE (EDITABLE)
-     - Modifie ici quand tu veux
-     - Ajoute/enlève des objets
-     - lat/lon : coordonnées
+     DEFAULT PLACES (Toulouse)
   ========================== */
-  const PLACES = [
+  const DEFAULT_PLACES = [
     {
       id: "capitole",
       emoji: "🏛️",
@@ -496,56 +587,69 @@
       type: "Incontournable",
       lat: 43.604519,
       lon: 1.444026,
-      desc:
-        "Le cœur de Toulouse.\n" +
-        "À voir : la façade du Capitole, les arcades, l’ambiance en fin de journée.\n" +
-        "Conseil : viens au coucher du soleil pour les photos."
+      desc: "Le cœur de Toulouse : arcades, ambiance, photos au coucher du soleil.",
+      gmaps: "https://www.google.com/maps/search/?api=1&query=Place%20du%20Capitole%20Toulouse"
     },
     {
-      id: "japanese-garden",
-      emoji: "🌿",
-      name: "Jardin Japonais (Compans-Caffarelli)",
-      type: "Nature",
-      lat: 43.611715,
-      lon: 1.434880,
-      desc:
-        "Un jardin paisible avec pont, bassins et végétation soignée.\n" +
-        "Parfait pour une pause calme au milieu de la ville."
+      id: "jacobins",
+      emoji: "⛪",
+      name: "Couvent des Jacobins",
+      type: "Patrimoine",
+      lat: 43.604941,
+      lon: 1.440824,
+      desc: "Architecture gothique remarquable. Le “palmier” de pierre est à voir absolument.",
+      gmaps: "https://www.google.com/maps/search/?api=1&query=Couvent%20des%20Jacobins%20Toulouse"
     },
     {
-      id: "garonne",
-      emoji: "🌉",
-      name: "Quais de la Garonne (Pont Neuf)",
-      type: "Balade",
-      lat: 43.599514,
-      lon: 1.437357,
-      desc:
-        "Balade au bord de la Garonne avec de super points de vue.\n" +
-        "Idéal en fin de journée. Pont Neuf + berges = classique."
-    },
-    {
-      id: "carmes",
-      emoji: "🍷",
-      name: "Quartier des Carmes",
-      type: "Quartier",
-      lat: 43.596820,
-      lon: 1.446650,
-      desc:
-        "Rues vivantes, terrasses, petites places.\n" +
-        "Parfait pour flâner, manger, découvrir l’ambiance toulousaine."
-    },
-    {
-      id: "basilique",
+      id: "saint-sernin",
       emoji: "⛪",
       name: "Basilique Saint-Sernin",
       type: "Patrimoine",
       lat: 43.608336,
       lon: 1.441657,
-      desc:
-        "Un monument majeur du patrimoine roman.\n" +
-        "À faire : un tour autour + un passage à l’intérieur si ouvert."
+      desc: "Monument majeur du roman. Super balade autour, et visite si ouvert.",
+      gmaps: "https://www.google.com/maps/search/?api=1&query=Basilique%20Saint-Sernin%20Toulouse"
+    },
+    {
+      id: "jardin-japonais",
+      emoji: "🌿",
+      name: "Jardin Japonais (Compans)",
+      type: "Nature",
+      lat: 43.611715,
+      lon: 1.434880,
+      desc: "Pause calme : pont, bassins, ambiance zen au milieu de la ville.",
+      gmaps: "https://www.google.com/maps/search/?api=1&query=Jardin%20Japonais%20Compans%20Caffarelli%20Toulouse"
+    },
+    {
+      id: "pont-neuf",
+      emoji: "🌉",
+      name: "Pont Neuf & Quais de la Garonne",
+      type: "Balade",
+      lat: 43.599514,
+      lon: 1.437357,
+      desc: "Super spot au bord de l’eau, parfait en fin de journée.",
+      gmaps: "https://www.google.com/maps/search/?api=1&query=Pont%20Neuf%20Toulouse"
     }
   ];
+
+  const STORAGE_KEY = "cc_places_v2";
+
+  function loadPlaces(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return structuredClone(DEFAULT_PLACES);
+      const arr = JSON.parse(raw);
+      if(!Array.isArray(arr) || !arr.length) return structuredClone(DEFAULT_PLACES);
+      return arr;
+    }catch{
+      return structuredClone(DEFAULT_PLACES);
+    }
+  }
+  function savePlaces(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(places));
+  }
+
+  let places = loadPlaces();
 
   /* =========================
      DOM
@@ -553,33 +657,37 @@
   const app = $("app");
   const themeBtn = $("themeBtn");
 
-  const viewHome = $("viewHome");
+  const viewDiscover = $("viewDiscover");
   const viewPlace = $("viewPlace");
   const viewNav = $("viewNav");
+  const viewManage = $("viewManage");
+
+  const tabDiscover = $("tabDiscover");
+  const tabNav = $("tabNav");
+  const tabManage = $("tabManage");
 
   const placeListEl = $("placeList");
+  const manageListEl = $("manageList");
 
   const addrEl = $("addr");
   const suggestEl = $("suggest");
-  const latEl = $("lat");
-  const lonEl = $("lon");
+  const gmapsLinkEl = $("gmapsLink");
 
   const stDest = $("stDest");
   const stHttps = $("stHttps");
-  const homeHint = $("homeHint");
 
   const unitMBtn = $("unitM");
   const unitKBtn = $("unitKM");
 
   const placeBack = $("placeBack");
-  const placeGoNav = $("placeGoNav");
   const placeTitle = $("placeTitle");
   const placeSubtitle = $("placeSubtitle");
   const placeDesc = $("placeDesc");
   const placeCoords = $("placeCoords");
   const placeType = $("placeType");
   const startFromPlace = $("startFromPlace");
-  const placeHint = $("placeHint");
+  const editThisPlace = $("editThisPlace");
+  const openInGmapsBtn = $("openInGmaps");
 
   const destLabel = $("destLabel");
   const ringWrap = $("ringWrap");
@@ -593,8 +701,22 @@
   const navHint = $("navHint");
   const debugEl = $("debug");
 
+  // Manage form
+  const mName = $("mName");
+  const mType = $("mType");
+  const mDesc = $("mDesc");
+  const mGmaps = $("mGmaps");
+  const mLat = $("mLat");
+  const mLon = $("mLon");
+  const savePlaceBtn = $("savePlace");
+  const resetFormBtn = $("resetForm");
+  const resetDefaultsBtn = $("resetDefaults");
+  const exportJsonBtn = $("exportJson");
+  const exportBox = $("exportBox");
+  const manageHint = $("manageHint");
+
   /* =========================
-     Always ON (comme demandé)
+     Always ON
   ========================== */
   const vibrateEnabled = true;
   const wakeEnabled = true;
@@ -602,8 +724,8 @@
   /* =========================
      State
   ========================== */
-  let selectedPlace = null; // {name, desc, lat, lon, type, ...}
-  let dest = null;          // {lat, lon, label}
+  let selected = null; // place object
+  let dest = null;     // {lat, lon, label}
   let user = null;
   let compassHeading = null;
   let gpsHeading = null;
@@ -616,28 +738,39 @@
   const MIN_MOVE_M = 3;
   const MIN_DT_MS = 1200;
 
-  // Proximity ring
   const CIRC = 226.2;
   const CAP_M = 1000;
 
-  // Units
   let unitsMode = "km"; // "km" or "m"
 
-  // Wake lock
   let wakeLock = null;
 
   /* =========================
-     Helpers
+     Utils
   ========================== */
   const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
   const toRad = (d) => d*Math.PI/180;
   const toDeg = (r) => r*180/Math.PI;
 
+  function uid(){
+    return Math.random().toString(16).slice(2) + Date.now().toString(16);
+  }
+
+  function escapeHtml(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
   function bearing(lat1, lon1, lat2, lon2){
     const φ1=toRad(lat1), φ2=toRad(lat2);
     const Δλ=toRad(lon2-lon1);
     const y=Math.sin(Δλ)*Math.cos(φ2);
-    const x=Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+    const x=Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(φ2)*0 + // harmless noop
+            (Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ));
     return (toDeg(Math.atan2(y,x))+360)%360;
   }
 
@@ -657,13 +790,25 @@
   }
 
   /* =========================
-     Views
+     Views + Tabs
   ========================== */
   function show(which){
-    viewHome.classList.toggle("active", which === "home");
+    viewDiscover.classList.toggle("active", which === "discover");
     viewPlace.classList.toggle("active", which === "place");
     viewNav.classList.toggle("active", which === "nav");
+    viewManage.classList.toggle("active", which === "manage");
+
+    tabDiscover.classList.toggle("active", which === "discover" || which === "place");
+    tabNav.classList.toggle("active", which === "nav");
+    tabManage.classList.toggle("active", which === "manage");
   }
+
+  tabDiscover.onclick = () => show(selected ? "place" : "discover");
+  tabNav.onclick = () => {
+    if(dest) show("nav");
+    else show("discover");
+  };
+  tabManage.onclick = () => show("manage");
 
   /* =========================
      Theme
@@ -674,9 +819,8 @@
     localStorage.setItem("cc_theme", theme);
   }
   const savedTheme = localStorage.getItem("cc_theme");
-  if(savedTheme === "light" || savedTheme === "dark"){
-    setTheme(savedTheme);
-  } else {
+  if(savedTheme === "light" || savedTheme === "dark") setTheme(savedTheme);
+  else {
     const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
     setTheme(prefersLight ? "light" : "dark");
   }
@@ -698,64 +842,98 @@
   }
   unitMBtn.onclick = () => setUnits("m");
   unitKBtn.onclick = () => setUnits("km");
-
   const savedUnits = localStorage.getItem("cc_units");
-  if(savedUnits === "m" || savedUnits === "km") setUnits(savedUnits);
-  else setUnits("km");
+  setUnits(savedUnits === "m" || savedUnits === "km" ? savedUnits : "km");
 
   /* =========================
-     HTTPS status
+     Status
   ========================== */
   stHttps.innerHTML = `<b>HTTPS</b> ${location.protocol === "https:" ? "OK" : "requis"}`;
+  function refreshDest(){
+    stDest.innerHTML = `<b>Destination</b> ${dest ? "OK" : "—"}`;
+  }
+  refreshDest();
 
   /* =========================
-     Render Places list
+     Render lists
   ========================== */
-  function renderPlaces(){
+  function renderDiscover(){
     placeListEl.innerHTML = "";
-    PLACES.forEach(p => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "placeBtn";
-      btn.innerHTML = `
+    places.forEach(p => {
+      const div = document.createElement("div");
+      div.className = "placeCard";
+      div.innerHTML = `
         <div class="placeTop">
-          <div class="badge">${p.emoji || "📍"}</div>
+          <div class="badge">${escapeHtml(p.emoji || "📍")}</div>
           <div style="min-width:0;">
             <div class="placeName">${escapeHtml(p.name)}</div>
             <div class="placeMeta">${escapeHtml(p.type || "Lieu")} • Toulouse</div>
           </div>
         </div>
       `;
-      btn.onclick = () => openPlace(p);
-      placeListEl.appendChild(btn);
+      div.onclick = () => openPlace(p);
+      placeListEl.appendChild(div);
     });
   }
 
-  function escapeHtml(s){
-    return String(s ?? "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
+  function renderManage(){
+    manageListEl.innerHTML = "";
+    places.forEach(p => {
+      const row = document.createElement("div");
+      row.className = "manageRow";
+      row.innerHTML = `
+        <div style="min-width:0;">
+          <div class="manageName">${escapeHtml(p.name)}</div>
+          <div class="manageSub">${escapeHtml(p.type || "Lieu")} • ${Number.isFinite(p.lat) ? p.lat.toFixed(5) : "—"}, ${Number.isFinite(p.lon) ? p.lon.toFixed(5) : "—"}</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="miniBtn" type="button" data-act="edit">✎</button>
+          <button class="miniBtn danger" type="button" data-act="del">🗑</button>
+        </div>
+      `;
+      row.querySelector('[data-act="edit"]').onclick = () => loadIntoForm(p);
+      row.querySelector('[data-act="del"]').onclick = () => deletePlace(p.id);
+      manageListEl.appendChild(row);
+    });
   }
 
+  /* =========================
+     Place detail
+  ========================== */
   function openPlace(p){
-    selectedPlace = p;
+    selected = p;
     dest = { lat: p.lat, lon: p.lon, label: p.name };
     refreshDest();
 
-    placeTitle.textContent = p.name;
-    placeSubtitle.textContent = p.type ? `Toulouse • ${p.type}` : "Toulouse";
+    placeTitle.textContent = p.name || "—";
+    placeSubtitle.textContent = `${p.type || "Lieu"} • Toulouse`;
     placeDesc.textContent = p.desc || "—";
-    placeCoords.innerHTML = `<b>GPS</b> ${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`;
+    placeCoords.innerHTML = `<b>GPS</b> ${Number.isFinite(p.lat) ? p.lat.toFixed(5) : "—"}, ${Number.isFinite(p.lon) ? p.lon.toFixed(5) : "—"}`;
     placeType.innerHTML = `<b>Type</b> ${escapeHtml(p.type || "Lieu")}`;
 
     show("place");
   }
 
+  placeBack.onclick = () => show("discover");
+
+  openInGmapsBtn.onclick = () => {
+    if(!selected) return;
+    const url = selected.gmaps?.trim()
+      ? selected.gmaps.trim()
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selected.name || "Toulouse")}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  startFromPlace.onclick = () => startNav();
+
+  editThisPlace.onclick = () => {
+    if(!selected) return;
+    loadIntoForm(selected);
+    show("manage");
+  };
+
   /* =========================
-     Address autocomplete (Nominatim)
+     Nominatim search
   ========================== */
   let suggTimer = null;
 
@@ -781,19 +959,21 @@
       const rest = parts.slice(2,6).join(", ").trim();
       btn.innerHTML = `${escapeHtml(main)}<span class="small">${escapeHtml(rest||"")}</span>`;
       btn.onclick = () => {
-        dest = { lat: parseFloat(it.lat), lon: parseFloat(it.lon), label: it.display_name };
-        selectedPlace = {
-          id: "custom-address",
+        hideSuggest();
+        const p = {
+          id: uid(),
           emoji: "📍",
           name: it.display_name,
           type: "Adresse",
           lat: parseFloat(it.lat),
           lon: parseFloat(it.lon),
-          desc: "Destination définie depuis une adresse.\nTu peux lancer la navigation."
+          desc: "Destination définie depuis une adresse.\nTu peux lancer la navigation.",
+          gmaps: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(it.display_name)}`
         };
-        addrEl.value = it.display_name;
-        hideSuggest();
-        openPlace(selectedPlace);
+        selected = p;
+        dest = { lat: p.lat, lon: p.lon, label: p.name };
+        refreshDest();
+        openPlace(p);
       };
       suggestEl.appendChild(btn);
     });
@@ -814,79 +994,243 @@
     if(!suggestEl.contains(e.target) && e.target !== addrEl) hideSuggest();
   });
 
-  /* =========================
-     Home actions
-  ========================== */
-  function refreshDest(){
-    stDest.innerHTML = `<b>Destination</b> ${dest ? "OK" : "—"}`;
-  }
-  refreshDest();
-
   $("setAddr").onclick = async () => {
     const q = addrEl.value.trim();
-    if(!q){
-      homeHint.textContent = "Entre une adresse ou choisis un lieu.";
-      return;
-    }
-    homeHint.textContent = "Recherche de l’adresse…";
+    if(!q) return;
     try{
       const res = await nominatimSearch(q);
-      if(!res?.length){
-        homeHint.textContent = "Adresse introuvable.";
-        return;
-      }
+      if(!res?.length) return;
       const it = res[0];
-      selectedPlace = {
-        id: "custom-address",
+      const p = {
+        id: uid(),
         emoji: "📍",
         name: it.display_name,
         type: "Adresse",
         lat: parseFloat(it.lat),
         lon: parseFloat(it.lon),
-        desc: "Destination définie depuis une adresse.\nTu peux lancer la navigation."
+        desc: "Destination définie depuis une adresse.\nTu peux lancer la navigation.",
+        gmaps: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(it.display_name)}`
       };
-      openPlace(selectedPlace);
-    }catch{
-      homeHint.textContent = "Erreur de recherche.";
-    }
+      openPlace(p);
+    }catch{}
   };
 
-  $("clearAddr").onclick = () => { addrEl.value = ""; hideSuggest(); homeHint.textContent = ""; };
+  $("clearAddr").onclick = () => { addrEl.value = ""; hideSuggest(); };
 
-  $("toggleCoords").onclick = () => {
-    const box = $("coordsBox");
-    const shown = box.style.display !== "none";
-    box.style.display = shown ? "none" : "block";
-    $("toggleCoords").textContent = shown ? "Afficher" : "Masquer";
-  };
+  /* =========================
+     Google Maps link parsing
+     - Essaye d’extraire lat/lon
+     - Sinon garde le lien + tente un geocoding via Nominatim si nom présent
+  ========================== */
+  function parseGmapsLink(link){
+    if(!link) return null;
+    const s = link.trim();
 
-  $("setCoords").onclick = () => {
-    const lat = parseFloat((latEl.value||"").replace(",", "."));
-    const lon = parseFloat((lonEl.value||"").replace(",", "."));
-    if(!Number.isFinite(lat) || !Number.isFinite(lon)){
-      homeHint.textContent = "Coordonnées invalides.";
+    // 1) Patterns: @lat,lon
+    let m = s.match(/@(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)/);
+    if(m) return { lat: parseFloat(m[1]), lon: parseFloat(m[3]) };
+
+    // 2) q=lat,lon
+    m = s.match(/[?&]q=(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)/);
+    if(m) return { lat: parseFloat(m[1]), lon: parseFloat(m[3]) };
+
+    // 3) query=lat,lon (api=1)
+    m = s.match(/[?&]query=(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)/);
+    if(m) return { lat: parseFloat(m[1]), lon: parseFloat(m[3]) };
+
+    return null;
+  }
+
+  $("useGmapsLink").onclick = async () => {
+    const link = gmapsLinkEl.value.trim();
+    if(!link) return;
+
+    const coords = parseGmapsLink(link);
+    if(coords){
+      const p = {
+        id: uid(),
+        emoji: "🗺️",
+        name: "Lieu Google Maps",
+        type: "Lien",
+        lat: coords.lat,
+        lon: coords.lon,
+        desc: "Destination définie depuis un lien Google Maps.\nTu peux lancer la navigation.",
+        gmaps: link
+      };
+      openPlace(p);
       return;
     }
-    selectedPlace = {
-      id: "custom-coords",
-      emoji: "📌",
-      name: `GPS ${lat.toFixed(5)}, ${lon.toFixed(5)}`,
-      type: "Coordonnées",
-      lat, lon,
-      desc: "Destination définie depuis des coordonnées.\nTu peux lancer la navigation."
-    };
-    openPlace(selectedPlace);
+
+    // Si pas de coords dans le lien : on garde le lien, et on essaie de géocoder le texte saisi dans la barre d’adresse si présent
+    const fallbackName = addrEl.value.trim() || "Lieu Google Maps";
+    try{
+      const res = await nominatimSearch(fallbackName);
+      if(res?.length){
+        const it = res[0];
+        const p = {
+          id: uid(),
+          emoji: "🗺️",
+          name: fallbackName,
+          type: "Lien",
+          lat: parseFloat(it.lat),
+          lon: parseFloat(it.lon),
+          desc: "Lien Google Maps enregistré.\nCoordonnées estimées via recherche.",
+          gmaps: link
+        };
+        openPlace(p);
+      } else {
+        const p = {
+          id: uid(),
+          emoji: "🗺️",
+          name: fallbackName,
+          type: "Lien",
+          lat: NaN,
+          lon: NaN,
+          desc: "Lien Google Maps enregistré.\nAjoute des coordonnées dans “Gérer” si tu veux la navigation flèche.",
+          gmaps: link
+        };
+        openPlace(p);
+      }
+    }catch{
+      const p = {
+        id: uid(),
+        emoji: "🗺️",
+        name: fallbackName,
+        type: "Lien",
+        lat: NaN,
+        lon: NaN,
+        desc: "Lien Google Maps enregistré.\nAjoute des coordonnées dans “Gérer” si tu veux la navigation flèche.",
+        gmaps: link
+      };
+      openPlace(p);
+    }
   };
 
   /* =========================
-     Place detail actions
+     Manage places (CRUD)
   ========================== */
-  placeBack.onclick = () => show("home");
-  placeGoNav.onclick = () => startNav(); // quick play
-  startFromPlace.onclick = () => startNav();
+  let editingId = null;
+
+  function loadIntoForm(p){
+    editingId = p.id;
+    mName.value = p.name || "";
+    mType.value = p.type || "";
+    mDesc.value = p.desc || "";
+    mGmaps.value = p.gmaps || "";
+    mLat.value = Number.isFinite(p.lat) ? String(p.lat) : "";
+    mLon.value = Number.isFinite(p.lon) ? String(p.lon) : "";
+    manageHint.textContent = "Mode édition : modifie puis Enregistrer.";
+  }
+
+  function resetForm(){
+    editingId = null;
+    mName.value = "";
+    mType.value = "";
+    mDesc.value = "";
+    mGmaps.value = "";
+    mLat.value = "";
+    mLon.value = "";
+    manageHint.textContent = "";
+  }
+
+  resetFormBtn.onclick = resetForm;
+
+  async function geocodeIfNeeded(name){
+    const q = (name || "").trim();
+    if(q.length < 3) return null;
+    try{
+      const res = await nominatimSearch(q + " Toulouse");
+      if(res?.length){
+        return { lat: parseFloat(res[0].lat), lon: parseFloat(res[0].lon) };
+      }
+    }catch{}
+    return null;
+  }
+
+  savePlaceBtn.onclick = async () => {
+    const name = mName.value.trim();
+    if(!name){
+      manageHint.textContent = "Nom requis.";
+      return;
+    }
+
+    const type = mType.value.trim() || "Lieu";
+    const desc = mDesc.value.trim() || "";
+    const gmaps = mGmaps.value.trim() || "";
+
+    // coords priority:
+    // 1) manual lat/lon
+    // 2) parse from gmaps link
+    // 3) geocode name
+    let lat = parseFloat(String(mLat.value).replace(",", "."));
+    let lon = parseFloat(String(mLon.value).replace(",", "."));
+
+    if(!Number.isFinite(lat) || !Number.isFinite(lon)){
+      const parsed = parseGmapsLink(gmaps);
+      if(parsed){
+        lat = parsed.lat; lon = parsed.lon;
+      } else {
+        const gc = await geocodeIfNeeded(name);
+        if(gc){ lat = gc.lat; lon = gc.lon; }
+      }
+    }
+
+    const obj = {
+      id: editingId || uid(),
+      emoji: "📍",
+      name,
+      type,
+      lat: Number.isFinite(lat) ? lat : NaN,
+      lon: Number.isFinite(lon) ? lon : NaN,
+      desc,
+      gmaps: gmaps || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}`
+    };
+
+    if(editingId){
+      const idx = places.findIndex(x => x.id === editingId);
+      if(idx >= 0) places[idx] = obj;
+      else places.unshift(obj);
+    } else {
+      places.unshift(obj);
+    }
+
+    savePlaces();
+    renderDiscover();
+    renderManage();
+    resetForm();
+    manageHint.textContent = "Enregistré.";
+  };
+
+  function deletePlace(id){
+    places = places.filter(p => p.id !== id);
+    savePlaces();
+    renderDiscover();
+    renderManage();
+    manageHint.textContent = "Supprimé.";
+    if(selected?.id === id){
+      selected = null;
+      dest = null;
+      refreshDest();
+      show("discover");
+    }
+  }
+
+  resetDefaultsBtn.onclick = () => {
+    places = structuredClone(DEFAULT_PLACES);
+    savePlaces();
+    renderDiscover();
+    renderManage();
+    resetForm();
+    manageHint.textContent = "Liste réinitialisée.";
+  };
+
+  exportJsonBtn.onclick = () => {
+    exportBox.style.display = exportBox.style.display === "none" ? "block" : "none";
+    exportBox.value = JSON.stringify(places, null, 2);
+  };
 
   /* =========================
-     Heading strategy
+     Heading logic
   ========================== */
   function bestHeading(){
     if(compassHeading != null){ mode = "Boussole"; return compassHeading; }
@@ -908,9 +1252,6 @@
     lastFix = {lat: curr.lat, lon: curr.lon, t: curr.t};
   }
 
-  /* =========================
-     Proximity ring
-  ========================== */
   function updateProximity(distanceM){
     if(distanceM == null){
       ringWrap.style.transform = "scale(1)";
@@ -924,9 +1265,6 @@
     ringProg.style.strokeDashoffset = `${CIRC * (1 - t)}`;
   }
 
-  /* =========================
-     Wake Lock
-  ========================== */
   async function setWakeLock(on){
     try{
       if(!("wakeLock" in navigator)) return;
@@ -936,35 +1274,32 @@
   }
 
   /* =========================
-     Start/Stop Navigation
+     Navigation start/stop
   ========================== */
   async function startNav(){
-    if(!dest){
-      placeHint.textContent = "Définis une destination d’abord.";
-      homeHint.textContent = "Choisis un lieu ou définis une destination.";
+    if(!dest || !Number.isFinite(dest.lat) || !Number.isFinite(dest.lon)){
+      navHint.textContent = "Destination sans coordonnées. Ajoute lat/lon dans “Gérer”.";
+      show("nav");
       return;
     }
     if(location.protocol !== "https:" && location.hostname !== "localhost"){
-      placeHint.textContent = "HTTPS requis pour GPS/boussole.";
+      navHint.textContent = "HTTPS requis pour GPS/boussole.";
+      show("nav");
       return;
     }
     if(!navigator.geolocation){
-      placeHint.textContent = "GPS non supporté.";
+      navHint.textContent = "GPS non supporté.";
+      show("nav");
       return;
     }
 
     destLabel.textContent = `Destination: ${dest.label || "—"}`;
     show("nav");
-
     await setWakeLock(wakeEnabled);
 
-    // reset state
-    user = null;
-    compassHeading = null;
-    gpsHeading = null;
-    lastFix = null;
+    user = null; compassHeading = null; gpsHeading = null; lastFix = null;
 
-    // iOS compass permission (must be inside a click)
+    // iOS permission (must be inside click)
     if(typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function"){
       try{
         const res = await DeviceOrientationEvent.requestPermission();
@@ -974,7 +1309,7 @@
       }
     }
 
-    // Orientation listener
+    // Orientation
     if(typeof DeviceOrientationEvent !== "undefined"){
       const useAbs = ("ondeviceorientationabsolute" in window);
       orientationHandler = (e) => {
@@ -990,7 +1325,7 @@
       window.addEventListener(useAbs ? "deviceorientationabsolute" : "deviceorientation", orientationHandler, true);
     }
 
-    // GPS watch
+    // GPS
     pillGps.innerHTML = "<b>GPS</b> demande…";
     watchId = navigator.geolocation.watchPosition(
       (pos) => {
@@ -1001,7 +1336,6 @@
         const hdg = pos.coords.heading;
 
         user = { lat, lon, acc, speed: spd, heading: hdg };
-
         const bad = (acc != null && acc > 50);
         pillGps.innerHTML = `<b>GPS</b> ±${Math.round(acc ?? 0)}m${bad ? " (faible)" : ""}`;
 
@@ -1030,11 +1364,7 @@
     }
     orientationHandler = null;
 
-    user = null;
-    compassHeading = null;
-    gpsHeading = null;
-    lastFix = null;
-    mode = "—";
+    user = null; compassHeading = null; gpsHeading = null; lastFix = null; mode = "—";
 
     pillGps.innerHTML = "<b>GPS</b> —";
     pillMode.innerHTML = "<b>Mode</b> —";
@@ -1046,7 +1376,7 @@
     updateProximity(null);
 
     setWakeLock(false);
-    show("place"); // retour sur la fiche du lieu
+    show(selected ? "place" : "discover");
   }
 
   $("stop").onclick = stopNav;
@@ -1068,13 +1398,9 @@
     }
   };
 
-  /* =========================
-     UI update
-  ========================== */
   let arrivedOnce = false;
-
   function updateUI(){
-    if(!dest || !user){
+    if(!dest || !user || !Number.isFinite(dest.lat) || !Number.isFinite(dest.lon)){
       pillMode.innerHTML = "<b>Mode</b> —";
       pillCap.innerHTML = "<b>Cap</b> —";
       updateProximity(null);
@@ -1115,9 +1441,6 @@
       (compassHeading != null ? ` • Boussole: ${Math.round(compassHeading)}°` : "");
   }
 
-  /* =========================
-     Wake lock on visibility
-  ========================== */
   document.addEventListener("visibilitychange", () => {
     if(document.hidden) setWakeLock(false);
     else if(wakeEnabled && viewNav.classList.contains("active")) setWakeLock(true);
@@ -1126,8 +1449,9 @@
   /* =========================
      Init
   ========================== */
-  renderPlaces();
-  show("home");
+  renderDiscover();
+  renderManage();
+  show("discover");
 })();
 </script>
 </body>
