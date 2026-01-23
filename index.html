@@ -3,30 +3,23 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-  
-  <!-- PWA Settings -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" /> <!-- Change selon le thème, géré par CSS/JS -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#ffffff" />
-  
   <title>City Compass</title>
 
   <style>
-    /* =========================
-       DESIGN SYSTEM (Apple/Google Style)
-    ========================== */
     :root{
       /* Dark Mode (Default base) */
       --bg-body: #000000;
-      --bg-surface: #1C1C1E; /* Apple Dark Gray */
-      --bg-input: #2C2C2E;
+      --bg-surface: #1C1C1E;
       --stroke: rgba(255,255,255,0.12);
       --text-primary: #FFFFFF;
-      --text-secondary: #8E8E93; /* Apple Gray */
-      --accent: #0A84FF; /* Apple Blue Dark Mode */
+      --text-secondary: #8E8E93;
+      --accent: #0A84FF;
       --accent-soft: rgba(10, 132, 255, 0.15);
       --danger: #FF453A;
-      --nav-bg: rgba(29, 29, 29, 0.85); /* Glass effect */
+      --nav-bg: rgba(29, 29, 29, 0.85);
       --shadow: 0 4px 12px rgba(0,0,0,0.2);
       --r-btn: 12px;
       --r-card: 16px;
@@ -35,12 +28,11 @@
     [data-theme="light"]{
       /* Light Mode */
       --bg-body: #FFFFFF;
-      --bg-surface: #F2F2F7; /* Apple System Gray 6 */
-      --bg-input: #FFFFFF;
+      --bg-surface: #F2F2F7;
       --stroke: rgba(0,0,0,0.08);
       --text-primary: #000000;
       --text-secondary: #8E8E93;
-      --accent: #007AFF; /* Apple Blue */
+      --accent: #007AFF;
       --accent-soft: rgba(0, 122, 255, 0.12);
       --danger: #FF3B30;
       --nav-bg: rgba(255, 255, 255, 0.85);
@@ -48,7 +40,7 @@
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
-    html, body{ height:100%; margin:0; padding:0; }
+    html, body{ height:100%; margin:0; padding:0; overflow: hidden; }
     
     body{
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -56,244 +48,135 @@
       line-height: 1.4;
       color: var(--text-primary);
       background-color: var(--bg-body);
-      /* Suppression des dégradés complexes pour un look "Clean" */
       transition: background-color 0.3s ease, color 0.3s ease;
-      overflow: hidden; /* App container handles scroll */
     }
 
-    /* Layout Principal */
-    .app{
-      display: flex;
-      flex-direction: column;
-      height: 100dvh;
-      height: 100vh;
-      width: 100%;
-      position: relative;
-    }
+    .app{ display: flex; flex-direction: column; height: 100dvh; height: 100vh; width: 100%; position: relative; }
 
-    /* Header (Top Bar) */
+    /* Top Bar */
     .topbar{
       flex: 0 0 auto;
       padding: calc(env(safe-area-inset-top) + 12px) 20px 12px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--bg-body);
-      z-index: 10;
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg-body); z-index: 10;
     }
     .brand h1{ margin:0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
     .brand p{ margin:2px 0 0; font-size: 13px; color: var(--text-secondary); }
 
     .iconBtn{
-      background: var(--bg-surface);
-      border: none;
-      color: var(--text-primary);
-      width: 40px; height: 40px;
-      border-radius: 50%;
+      background: var(--bg-surface); border: none; color: var(--text-primary);
+      width: 40px; height: 40px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-      cursor: pointer;
-      transition: transform 0.1s;
+      font-size: 18px; cursor: pointer; transition: transform 0.1s;
     }
     .iconBtn:active{ transform: scale(0.92); }
 
-    /* Main Content Area */
+    /* Main Content */
     .main{
-      flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
-      -webkit-overflow-scrolling: touch;
-      position: relative;
-      /* Padding bottom pour ne pas être caché par la nav bar */
+      flex: 1; overflow-y: auto; overflow-x: hidden;
+      -webkit-overflow-scrolling: touch; position: relative;
       padding-bottom: calc(60px + env(safe-area-inset-bottom)); 
     }
-
     .section{ padding: 0 20px 20px 20px; }
-    
-    /* Views */
     .view{ display:none; animation: fadeIn 0.3s ease; }
     .view.active{ display:block; }
     @keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
 
-    /* Elements UI */
-    .label{
-      font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;
-      font-weight: 600; color: var(--text-secondary);
-      margin: 24px 0 8px 0;
-    }
-    .sep{ height: 1px; background: var(--stroke); margin: 20px 0; }
-
-    /* Inputs */
+    /* Elements */
+    .label{ font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; color: var(--text-secondary); margin: 24px 0 8px 0; }
+    
     input, textarea{
-      width: 100%; padding: 16px;
-      border-radius: var(--r-btn);
-      border: 1px solid transparent;
-      background: var(--bg-surface);
-      color: var(--text-primary);
-      font-size: 17px; font-family: inherit;
-      outline: none; appearance: none;
-      transition: all 0.2s;
+      width: 100%; padding: 16px; border-radius: var(--r-btn);
+      border: 1px solid transparent; background: var(--bg-surface);
+      color: var(--text-primary); font-size: 17px; outline: none; transition: all 0.2s;
+      font-family: inherit;
     }
-    input:focus, textarea:focus{
-      background: var(--bg-body);
-      border-color: var(--accent);
-      box-shadow: 0 0 0 4px var(--accent-soft);
-    }
+    input:focus, textarea:focus{ background: var(--bg-body); border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
 
-    /* Buttons */
     .btn{
-      width: 100%; padding: 16px;
-      border-radius: var(--r-btn);
-      border: none;
-      background: var(--bg-surface);
-      color: var(--accent);
-      font-weight: 600; font-size: 17px;
-      cursor: pointer; transition: opacity 0.2s;
-      text-align: center;
+      width: 100%; padding: 16px; border-radius: var(--r-btn); border: none;
+      background: var(--bg-surface); color: var(--accent); font-weight: 600; font-size: 17px;
+      cursor: pointer; text-align: center; transition: opacity 0.2s;
     }
     .btn:active{ opacity: 0.7; }
-    
-    .btnPrimary{
-      background: var(--accent);
-      color: #FFFFFF;
-      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
-    }
-    .btnAlert{
-      background: var(--danger);
-      color: #FFFFFF;
-      box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
-    }
-    .btnRow{ display: flex; gap: 12px; }
-    .btnRow .btn{ flex: 1; }
+    .btnPrimary{ background: var(--accent); color: #FFFFFF; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3); }
+    .btnAlert{ background: var(--danger); color: #FFFFFF; box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3); }
+    .btnRow{ display: flex; gap: 12px; } .btnRow .btn{ flex: 1; }
 
-    /* Search Bar Styled like iOS Maps */
+    /* Search */
     .suggestWrap{ position: relative; }
-    .searchPill{
-      background: var(--bg-surface);
-      border-radius: 12px;
-      display: flex; align-items: center;
-      padding: 4px 12px;
-    }
+    .searchPill{ background: var(--bg-surface); border-radius: 12px; display: flex; align-items: center; padding: 4px 12px; }
     .searchPill .magnify{ font-size: 18px; color: var(--text-secondary); margin-right: 8px; }
     .searchPill input{ background: transparent; padding: 12px 0; border: none; box-shadow: none; }
-
     .suggest{
       position: absolute; top: calc(100% + 8px); left: 0; right: 0;
-      background: var(--bg-body);
-      border-radius: 12px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.25); /* Strong shadow for popup */
-      z-index: 100; overflow: hidden; max-height: 300px; overflow-y: auto;
-      border: 1px solid var(--stroke);
+      background: var(--bg-body); border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+      z-index: 100; overflow: hidden; max-height: 300px; overflow-y: auto; border: 1px solid var(--stroke);
     }
-    .suggest button{
-      width: 100%; text-align: left; padding: 16px;
-      background: transparent; border: none; border-bottom: 1px solid var(--stroke);
-      color: var(--text-primary); font-size: 16px;
-    }
-    .suggest button:last-child{ border-bottom: none; }
-    .suggest .small{ color: var(--text-secondary); font-size: 14px; margin-top: 2px; }
+    .suggest button{ width: 100%; text-align: left; padding: 16px; background: transparent; border: none; border-bottom: 1px solid var(--stroke); color: var(--text-primary); font-size: 16px; }
 
-    /* Cards (Places) */
+    /* Places */
     .placeList{ display: flex; flex-direction: column; gap: 12px; }
-    .placeCard{
-      background: var(--bg-surface);
-      border-radius: var(--r-card);
-      padding: 16px;
-      display: flex; align-items: center; gap: 16px;
-      transition: transform 0.1s;
-    }
+    .placeCard{ background: var(--bg-surface); border-radius: var(--r-card); padding: 16px; display: flex; align-items: center; gap: 16px; transition: transform 0.1s; }
     .placeCard:active{ transform: scale(0.98); }
-    .badge{
-      width: 48px; height: 48px; border-radius: 10px;
-      background: var(--bg-body);
-      font-size: 24px; display: flex; align-items: center; justify-content: center;
-      box-shadow: var(--shadow);
-    }
+    .badge{ width: 48px; height: 48px; border-radius: 10px; background: var(--bg-body); font-size: 24px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow); }
     .placeName{ font-weight: 600; font-size: 17px; }
     .placeMeta{ color: var(--text-secondary); font-size: 14px; margin-top: 2px; }
 
-    /* Bottom Navigation (Fixed) */
+    /* Bottom Nav */
     .bottomNav{
       position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--nav-bg);
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
       border-top: 1px solid var(--stroke);
       padding: 10px 20px calc(10px + env(safe-area-inset-bottom)) 20px;
-      display: flex; justify-content: space-around;
-      z-index: 50;
+      display: flex; justify-content: space-around; z-index: 50;
     }
-    .navTab{
-      background: transparent; border: none;
-      color: var(--text-secondary);
-      font-size: 11px; font-weight: 600;
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
-      cursor: pointer;
-    }
+    .navTab{ background: transparent; border: none; color: var(--text-secondary); font-size: 11px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
     .navTab.active{ color: var(--accent); }
-    /* Icon simulé par emoji pour l'instant */
     .navTab::before{ content:''; font-size: 24px; display: block; margin-bottom: 2px; }
-    #tabDiscover::before{ content: '🏠'; filter: grayscale(1); }
-    #tabDiscover.active::before{ filter: grayscale(0); }
-    #tabNav::before{ content: '🧭'; filter: grayscale(1); }
-    #tabNav.active::before{ filter: grayscale(0); }
-    #tabManage::before{ content: '⚙️'; filter: grayscale(1); }
-    #tabManage.active::before{ filter: grayscale(0); }
+    #tabDiscover::before{ content: '🏠'; filter: grayscale(1); } #tabDiscover.active::before{ filter: grayscale(0); }
+    #tabNav::before{ content: '🧭'; filter: grayscale(1); } #tabNav.active::before{ filter: grayscale(0); }
+    #tabManage::before{ content: '⚙️'; filter: grayscale(1); } #tabManage.active::before{ filter: grayscale(0); }
 
-    /* Compass / Nav UI */
-    .navHeader{
-      display: flex; align-items: center; gap: 16px; margin-bottom: 20px;
-    }
-    .compassWrap{ margin: 40px 0; display: flex; justify-content: center; }
+    /* COMPASS UI FIXES */
+    .navHeader{ display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+    .compassWrap{ margin: 40px 0; display: flex; justify-content: center; align-items: center; }
     .ringWrap{
       width: min(80vw, 320px); aspect-ratio: 1/1; position: relative;
     }
     .ringSvg circle{ stroke: var(--stroke); }
-    .ringSvg #ringProg{ stroke: var(--accent); }
-    .arrowSvg path{ fill: var(--text-primary); }
+    .ringSvg #ringProg{ stroke: var(--accent); transition: stroke-dashoffset 0.3s linear; }
     
-    .metrics{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: center; }
-    .metric{
-      background: var(--bg-surface); padding: 16px; border-radius: var(--r-card);
+    /* Centrage strict de la flèche */
+    .arrowSvg {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      transform-origin: 50% 50%; /* Pivot au centre */
+      pointer-events: none;
+      transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1); /* Smooth rotation */
     }
+    .arrowSvg path{ fill: var(--text-primary); }
+
+    .metrics{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: center; }
+    .metric{ background: var(--bg-surface); padding: 16px; border-radius: var(--r-card); }
     .metric .k{ font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; }
     .metric .v{ font-size: 24px; font-weight: 700; margin-top: 4px; color: var(--accent); }
 
     .chips{ display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 20px; }
-    .chip{
-      font-size: 13px; color: var(--text-secondary);
-      background: var(--bg-surface); padding: 6px 12px; border-radius: 20px;
-    }
+    .chip{ font-size: 13px; color: var(--text-secondary); background: var(--bg-surface); padding: 6px 12px; border-radius: 20px; }
     .chip b{ color: var(--text-primary); }
 
-    /* Unit Segment Control */
-    .seg{
-      display: flex; background: var(--bg-surface); padding: 4px; border-radius: 12px;
-    }
-    .segBtn{
-      flex: 1; border: none; background: transparent; padding: 8px;
-      font-size: 14px; font-weight: 500; color: var(--text-secondary);
-      border-radius: 8px; cursor: pointer;
-    }
-    .segBtn[aria-pressed="true"]{
-      background: var(--bg-body); color: var(--text-primary);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1); font-weight: 600;
-    }
+    .seg{ display: flex; background: var(--bg-surface); padding: 4px; border-radius: 12px; }
+    .segBtn{ flex: 1; border: none; background: transparent; padding: 8px; font-size: 14px; font-weight: 500; color: var(--text-secondary); border-radius: 8px; cursor: pointer; }
+    .segBtn[aria-pressed="true"]{ background: var(--bg-body); color: var(--text-primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); font-weight: 600; }
 
     .foot{ text-align: center; color: var(--text-secondary); font-size: 13px; margin-top: 24px; }
-    
-    /* Place Detail View */
     .detailTitle{ font-size: 28px; margin: 10px 0; font-weight: 800; line-height: 1.2; }
     .detailText{ font-size: 17px; line-height: 1.5; color: var(--text-secondary); }
 
-    /* Manage Row */
-    .manageRow{
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 16px; background: var(--bg-surface); border-radius: var(--r-card);
-      margin-bottom: 10px;
-    }
+    .manageRow{ display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--bg-surface); border-radius: var(--r-card); margin-bottom: 10px; }
     .miniBtn{ width: 36px; height: 36px; border-radius: 50%; font-size: 16px; padding: 0; background: var(--bg-body); border: 1px solid var(--stroke); }
     .miniBtn.danger{ color: var(--danger); border-color: rgba(255, 59, 48, 0.2); }
-
   </style>
 </head>
 
@@ -306,15 +189,14 @@
         <h1>City Compass</h1>
         <p>Toulouse</p>
       </div>
-      <button class="iconBtn" id="themeBtn" type="button" aria-label="Thème">◑</button>
+      <button class="iconBtn" id="themeBtn" type="button">◑</button>
     </div>
 
-    <!-- Main Content -->
+    <!-- Main -->
     <div class="main">
       
       <!-- VIEW: DISCOVER -->
       <div class="view active section" id="viewDiscover">
-        
         <div class="label">Recherche</div>
         <div class="suggestWrap">
           <div class="searchPill">
@@ -333,21 +215,17 @@
         <div class="placeList" id="placeList"></div>
 
         <div class="label">Outils</div>
-        <div class="seg" role="group" aria-label="Unités" style="margin-bottom: 20px;">
+        <div class="seg" role="group" style="margin-bottom: 20px;">
           <button id="unitM" class="segBtn" type="button" aria-pressed="false">Mètres</button>
           <button id="unitKM" class="segBtn" type="button" aria-pressed="true">Kilomètres</button>
         </div>
         
-        <!-- Google Maps Link Input -->
          <div class="searchPill">
             <div class="magnify">🔗</div>
             <input id="gmapsLink" placeholder="Coller un lien Google Maps" />
          </div>
-         <button class="btn btnPrimary" id="useGmapsLink" type="button" style="margin-top:12px;">Importer le lien</button>
-         
-         <div class="foot" id="discoverHint">
-            Mode silencieux : Vibration active.
-         </div>
+         <button class="btn btnPrimary" id="useGmapsLink" type="button" style="margin-top:12px;">Importer</button>
+         <div class="foot" id="discoverHint"></div>
       </div>
 
       <!-- VIEW: PLACE DETAIL -->
@@ -355,7 +233,7 @@
         <div class="navHeader">
           <button class="iconBtn" id="placeBack" type="button">←</button>
           <div style="flex:1"></div>
-          <button class="iconBtn" id="openInGmaps" type="button" title="Ouvrir Maps">🗺️</button>
+          <button class="iconBtn" id="openInGmaps" type="button">🗺️</button>
         </div>
 
         <div class="chips" style="justify-content: flex-start; margin:0 0 10px 0;">
@@ -374,8 +252,7 @@
         <div class="btnRow" style="margin-top:12px;">
            <button class="btn" id="addToRouteBtn" type="button">Ajouter étape (+)</button>
         </div>
-        
-        <button class="btn" id="editThisPlace" type="button" style="margin-top:12px; background: transparent; color: var(--text-secondary);">Modifier les infos</button>
+        <button class="btn" id="editThisPlace" type="button" style="margin-top:12px; background: transparent; color: var(--text-secondary);">Modifier</button>
       </div>
 
       <!-- VIEW: NAV -->
@@ -392,20 +269,29 @@
 
         <div class="compassWrap">
           <div class="ringWrap" id="ringWrap">
+            <!-- Cercle de fond -->
             <svg class="ringSvg" viewBox="0 0 100 100" aria-hidden="true">
               <circle cx="50" cy="50" r="45" fill="none" stroke-width="2" style="opacity:0.3"></circle>
+              <!-- Cercle de progression -->
               <circle id="ringProg" cx="50" cy="50" r="45" fill="none"
-                      stroke-width="4" stroke-linecap="round" stroke-dasharray="282.7" stroke-dashoffset="282.7"></circle>
+                      stroke-width="4" stroke-linecap="round" 
+                      transform="rotate(-90 50 50)"
+                      stroke-dasharray="282.7" stroke-dashoffset="282.7"></circle>
             </svg>
+            
+            <!-- Flèche de navigation centrée -->
             <svg id="arrow" class="arrowSvg" viewBox="0 0 100 100">
-               <path d="M50 15 L85 85 L50 70 L15 85 Z" fill="currentColor"></path>
+               <!-- Triangle isocèle centré verticalement sur (50,50) -->
+               <!-- Pointe vers le haut (50, 15), Base en bas (30, 80) et (70, 80) -->
+               <!-- Centre de rotation (50, 50) est au milieu du SVG -->
+               <path d="M50 15 L75 80 L50 70 L25 80 Z" fill="currentColor"></path>
             </svg>
           </div>
         </div>
 
         <div class="metrics">
           <div class="metric">
-            <div class="k">Distance</div>
+            <div class="k">Distance (Vol d'oiseau)</div>
             <div class="v" id="distance">—</div>
           </div>
           <div class="metric">
@@ -422,33 +308,26 @@
         <div class="foot" id="navHint" style="font-size: 15px; font-weight: 500;">
           Suis la flèche.
         </div>
-        <div class="foot" id="debug" style="font-size: 11px; opacity: 0.5;"></div>
-        
         <button class="btn" id="stop" type="button" style="margin-top:20px; color: var(--danger);">Arrêter</button>
       </div>
 
       <!-- VIEW: MANAGE -->
       <div class="view section" id="viewManage">
         <div class="label">Éditeur</div>
-        <input id="mName" placeholder="Nom du lieu" />
+        <input id="mName" placeholder="Nom" />
         <input id="mType" placeholder="Catégorie" style="margin-top:12px;" />
-        <textarea id="mDesc" rows="3" placeholder="Description courte" style="margin-top:12px;"></textarea>
-        <input id="mGmaps" placeholder="Lien Google Maps" style="margin-top:12px;" />
-        
+        <textarea id="mDesc" rows="3" placeholder="Description" style="margin-top:12px;"></textarea>
         <div class="btnRow" style="margin-top:12px;">
           <input id="mLat" inputmode="decimal" placeholder="Lat" />
           <input id="mLon" inputmode="decimal" placeholder="Lon" />
         </div>
-        
         <div class="btnRow" style="margin-top:20px;">
           <button class="btn btnPrimary" id="savePlace" type="button">Enregistrer</button>
           <button class="btn" id="resetForm" type="button">Effacer</button>
         </div>
         <div class="foot" id="manageHint"></div>
-
-        <div class="label">Lieux enregistrés</div>
+        <div class="label">Liste</div>
         <div id="manageList" style="padding-bottom: 20px;"></div>
-
         <div class="btnRow">
            <button class="btn" id="exportJson" type="button">Backup JSON</button>
            <button class="btn" id="resetDefaults" type="button" style="color:var(--danger)">Reset</button>
@@ -458,7 +337,7 @@
 
     </div>
 
-    <!-- Bottom Navigation -->
+    <!-- Bottom Nav -->
     <div class="bottomNav">
       <button class="navTab active" id="tabDiscover" type="button">Découvrir</button>
       <button class="navTab" id="tabNav" type="button">Boussole</button>
@@ -471,24 +350,20 @@
 (() => {
   const $ = (id) => document.getElementById(id);
 
-  /* =========================
-     CONSTANTS & DATA
-  ========================== */
+  /* DATA & INIT */
   const DEFAULT_PLACES = [
-    { id: "capitole", emoji: "🏛️", name: "Place du Capitole", type: "Incontournable", lat: 43.604519, lon: 1.444026, desc: "Le cœur de Toulouse : arcades, ambiance, photos au coucher du soleil." },
-    { id: "jacobins", emoji: "⛪", name: "Couvent des Jacobins", type: "Patrimoine", lat: 43.604941, lon: 1.440824, desc: "Architecture gothique remarquable. Le “palmier” de pierre est à voir absolument." },
-    { id: "saint-sernin", emoji: "⛪", name: "Basilique Saint-Sernin", type: "Patrimoine", lat: 43.608336, lon: 1.441657, desc: "Monument majeur du roman." },
-    { id: "pont-neuf", emoji: "🌉", name: "Pont Neuf", type: "Balade", lat: 43.599514, lon: 1.437357, desc: "Super spot au bord de l’eau." }
+    { id: "capitole", emoji: "🏛️", name: "Place du Capitole", type: "Incontournable", lat: 43.604519, lon: 1.444026, desc: "Le cœur de Toulouse." },
+    { id: "jacobins", emoji: "⛪", name: "Couvent des Jacobins", type: "Patrimoine", lat: 43.604941, lon: 1.440824, desc: "Le palmier des Jacobins." },
+    { id: "saint-sernin", emoji: "⛪", name: "Basilique Saint-Sernin", type: "Patrimoine", lat: 43.608336, lon: 1.441657, desc: "Chef d'œuvre roman." }
   ];
-  
   const POPULAR_PLACES = [
-    { name: "Place du Capitole", context: "Toulouse", lat: 43.6045, lon: 1.4442, desc: "Le cœur historique." },
-    { name: "Cité de l'Espace", context: "Loisirs", lat: 43.5869, lon: 1.4931, desc: "Parc à thème scientifique." },
-    { name: "Halle de la Machine", context: "Montaudran", lat: 43.5732, lon: 1.4777, desc: "Minotaure et Géants." },
-    { name: "Jardin Japonais", context: "Compans", lat: 43.6111, lon: 1.4326, desc: "Havre de paix zen." }
+    { name: "Place du Capitole", context: "Toulouse", lat: 43.6045, lon: 1.4442 },
+    { name: "Cité de l'Espace", context: "Loisirs", lat: 43.5869, lon: 1.4931 },
+    { name: "Halle de la Machine", context: "Montaudran", lat: 43.5732, lon: 1.4777 },
+    { name: "Jardin Japonais", context: "Compans", lat: 43.6111, lon: 1.4326 }
   ];
 
-  const STORAGE_KEY = "cc_places_v3"; // v3 for new design check
+  const STORAGE_KEY = "cc_places_v3";
 
   function loadPlaces(){
     try{
@@ -501,362 +376,183 @@
   function savePlaces(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(places)); }
   let places = loadPlaces();
 
-  /* =========================
-     UI ELEMENTS
-  ========================== */
-  const app = $("app");
-  const themeBtn = $("themeBtn");
-  
-  // Views
-  const viewDiscover = $("viewDiscover");
-  const viewPlace = $("viewPlace");
-  const viewNav = $("viewNav");
-  const viewManage = $("viewManage");
-  
-  // Tabs
-  const tabDiscover = $("tabDiscover");
-  const tabNav = $("tabNav");
-  const tabManage = $("tabManage");
+  /* UI REFS */
+  const app=$("app"), themeBtn=$("themeBtn");
+  const viewDiscover=$("viewDiscover"), viewPlace=$("viewPlace"), viewNav=$("viewNav"), viewManage=$("viewManage");
+  const tabDiscover=$("tabDiscover"), tabNav=$("tabNav"), tabManage=$("tabManage");
+  const placeListEl=$("placeList"), manageListEl=$("manageList"), addrEl=$("addr"), suggestEl=$("suggest");
+  const ringProg=$("ringProg"), arrowEl=$("arrow"), distanceEl=$("distance"), directionEl=$("direction"), navHint=$("navHint"), btnGrantPerms=$("btnGrantPerms");
 
-  // Elements
-  const placeListEl = $("placeList");
-  const manageListEl = $("manageList");
-  const addrEl = $("addr");
-  const suggestEl = $("suggest");
-  const gmapsLinkEl = $("gmapsLink");
-  
-  // Nav UI
-  const ringProg = $("ringProg");
-  const arrowEl = $("arrow");
-  const distanceEl = $("distance");
-  const directionEl = $("direction");
-  const navHint = $("navHint");
-  const btnGrantPerms = $("btnGrantPerms");
-  
-  /* =========================
-     STATE
-  ========================== */
-  let selected = null;
-  let dest = null;
-  let routeQueue = [];
-  let user = null;
-  let watchId = null;
-  let orientationHandler = null;
-  let compassHeading = null;
-  let gpsHeading = null;
-  let lastFix = null;
-  let unitsMode = localStorage.getItem("cc_units") || "km";
+  /* STATE */
+  let selected=null, dest=null, routeQueue=[], user=null, watchId=null, orientationHandler=null;
+  let compassHeading=null, gpsHeading=null, lastFix=null, unitsMode=localStorage.getItem("cc_units")||"km";
+  const CIRC=282.7, CAP_M=1000;
 
-  const CIRC = 282.7; // 2 * PI * 45
-  const CAP_M = 1000;
-
-  /* =========================
-     UTILS
-  ========================== */
+  /* MATHS */
   const toRad = d => d * Math.PI / 180;
   const toDeg = r => r * 180 / Math.PI;
   const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
   function uid(){ return Math.random().toString(16).slice(2); }
   function escapeHtml(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
-  function bearing(lat1, lon1, lat2, lon2){
-    const φ1=toRad(lat1), φ2=toRad(lat2), Δλ=toRad(lon2-lon1);
-    const y=Math.sin(Δλ)*Math.cos(φ2);
-    const x=Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
-    return (toDeg(Math.atan2(y,x))+360)%360;
-  }
+  // Haversine Formula (Distance à vol d'oiseau)
   function haversine(lat1, lon1, lat2, lon2){
-    const R=6371000;
-    const dφ=toRad(lat2-lat1), dλ=toRad(lon2-lon1);
-    const a=Math.sin(dφ/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dλ/2)**2;
-    return 2*R*Math.asin(Math.sqrt(a));
+    const R = 6371000; // Rayon Terre en mètres
+    const φ1 = toRad(lat1), φ2 = toRad(lat2);
+    const Δφ = toRad(lat2 - lat1), Δλ = toRad(lon2 - lon1);
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
   }
+
+  // Bearing (Cap initial)
+  function bearing(lat1, lon1, lat2, lon2){
+    const φ1 = toRad(lat1), φ2 = toRad(lat2);
+    const Δλ = toRad(lon2 - lon1);
+    const y = Math.sin(Δλ) * Math.cos(φ2);
+    const x = Math.cos(φ1) * Math.sin(φ2) -
+              Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+    return (toDeg(Math.atan2(y, x)) + 360) % 360;
+  }
+
   function fmtDistance(m){
     if(m==null) return "—";
     if(unitsMode === "m") return `${Math.round(m)} m`;
     return m < 1000 ? `${Math.round(m)} m` : `${(m/1000).toFixed(2)} km`;
   }
 
-  /* =========================
-     NAVIGATION & TABS
-  ========================== */
+  /* TABS */
   function show(which){
     [viewDiscover, viewPlace, viewNav, viewManage].forEach(el => el.classList.remove("active"));
     [tabDiscover, tabNav, tabManage].forEach(el => el.classList.remove("active"));
-
-    if(which === "discover") { viewDiscover.classList.add("active"); tabDiscover.classList.add("active"); }
-    else if(which === "place") { viewPlace.classList.add("active"); tabDiscover.classList.add("active"); }
-    else if(which === "nav") { viewNav.classList.add("active"); tabNav.classList.add("active"); }
-    else if(which === "manage") { viewManage.classList.add("active"); tabManage.classList.add("active"); }
+    if(which==="discover") { viewDiscover.classList.add("active"); tabDiscover.classList.add("active"); }
+    else if(which==="place") { viewPlace.classList.add("active"); tabDiscover.classList.add("active"); }
+    else if(which==="nav") { viewNav.classList.add("active"); tabNav.classList.add("active"); }
+    else if(which==="manage") { viewManage.classList.add("active"); tabManage.classList.add("active"); }
   }
-
   tabDiscover.onclick = () => show(selected ? "place" : "discover");
   tabNav.onclick = () => show(dest ? "nav" : "discover");
   tabManage.onclick = () => show("manage");
 
-  /* =========================
-     THEME & UNITS
-  ========================== */
+  /* THEME */
   function setTheme(theme){
     app.setAttribute("data-theme", theme);
     localStorage.setItem("cc_theme", theme);
-    // Update status bar color meta for iOS
     document.querySelector('meta[name="theme-color"]').setAttribute("content", theme==="light" ? "#FFFFFF" : "#000000");
   }
   const savedTheme = localStorage.getItem("cc_theme");
   setTheme(savedTheme || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
   themeBtn.onclick = () => setTheme(app.getAttribute("data-theme") === "light" ? "dark" : "light");
 
-  function setUnits(m){
-    unitsMode = m;
-    $("unitM").setAttribute("aria-pressed", m==="m");
-    $("unitKM").setAttribute("aria-pressed", m==="km");
-    localStorage.setItem("cc_units", m);
-    if(user && dest) updateUI(); 
-  }
-  $("unitM").onclick = () => setUnits("m");
-  $("unitKM").onclick = () => setUnits("km");
-  setUnits(unitsMode);
+  function setUnits(m){ unitsMode = m; $("unitM").setAttribute("aria-pressed", m==="m"); $("unitKM").setAttribute("aria-pressed", m==="km"); localStorage.setItem("cc_units", m); if(user && dest) updateUI(); }
+  $("unitM").onclick = () => setUnits("m"); $("unitKM").onclick = () => setUnits("km"); setUnits(unitsMode);
 
-  /* =========================
-     RENDERING
-  ========================== */
+  /* RENDER */
   function renderPlaces(){
-    placeListEl.innerHTML = "";
-    manageListEl.innerHTML = "";
-    
+    placeListEl.innerHTML = ""; manageListEl.innerHTML = "";
     places.forEach(p => {
-      // Card for Discover
       const div = document.createElement("div");
       div.className = "placeCard";
-      div.innerHTML = `
-        <div class="badge">${p.emoji || "📍"}</div>
-        <div style="flex:1">
-          <div class="placeName">${escapeHtml(p.name)}</div>
-          <div class="placeMeta">${escapeHtml(p.type || "Lieu")}</div>
-        </div>
-        <div style="color:var(--accent); font-weight:600;">➔</div>
-      `;
+      div.innerHTML = `<div class="badge">${p.emoji||"📍"}</div><div style="flex:1"><div class="placeName">${escapeHtml(p.name)}</div><div class="placeMeta">${escapeHtml(p.type||"Lieu")}</div></div><div style="color:var(--accent); font-weight:600;">➔</div>`;
       div.onclick = () => openPlace(p);
       placeListEl.appendChild(div);
 
-      // Row for Manage
       const row = document.createElement("div");
       row.className = "manageRow";
-      row.innerHTML = `
-        <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-right:10px;">
-           <strong>${escapeHtml(p.name)}</strong>
-        </div>
-        <div style="display:flex; gap:8px;">
-           <button class="miniBtn" data-act="edit">✎</button>
-           <button class="miniBtn danger" data-act="del">×</button>
-        </div>
-      `;
-      row.querySelector('[data-act="edit"]').onclick = () => loadIntoForm(p);
-      row.querySelector('[data-act="del"]').onclick = () => deletePlace(p.id);
+      row.innerHTML = `<div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-right:10px;"><strong>${escapeHtml(p.name)}</strong></div><div style="display:flex; gap:8px;"><button class="miniBtn" data-act="edit">✎</button><button class="miniBtn danger" data-act="del">×</button></div>`;
+      row.querySelector('[data-act="edit"]').onclick = () => { loadIntoForm(p); show("manage"); };
+      row.querySelector('[data-act="del"]').onclick = () => { places=places.filter(x=>x.id!==p.id); savePlaces(); renderPlaces(); };
       manageListEl.appendChild(row);
     });
   }
 
-  /* =========================
-     PLACE DETAIL
-  ========================== */
   function openPlace(p){
     selected = p;
     dest = { lat: p.lat, lon: p.lon, label: p.name };
-    
-    $("placeTitle").textContent = p.name;
-    $("placeDesc").textContent = p.desc || "Aucune description.";
-    $("placeType").innerHTML = `<b>${escapeHtml(p.type)}</b>`;
-    $("placeCoords").innerHTML = `GPS: ${p.lat?.toFixed(4)}, ${p.lon?.toFixed(4)}`;
-    
+    $("placeTitle").textContent = p.name; $("placeDesc").textContent = p.desc||""; $("placeType").innerHTML = `<b>${escapeHtml(p.type)}</b>`; $("placeCoords").innerHTML = `GPS: ${p.lat?.toFixed(4)}, ${p.lon?.toFixed(4)}`;
     show("place");
   }
   $("placeBack").onclick = () => show("discover");
-
-  $("openInGmaps").onclick = () => {
-    if(!selected) return;
-    const q = selected.gmaps || `https://www.google.com/maps/search/?api=1&query=${selected.lat},${selected.lon}`;
-    window.open(q, "_blank");
-  };
-
-  $("startFromPlace").onclick = () => {
-     dest = { lat: selected.lat, lon: selected.lon, label: selected.name };
-     show("nav");
-     startNav();
-  };
-
-  $("addToRouteBtn").onclick = () => {
-     routeQueue.push(structuredClone(selected));
-     const old = $("addToRouteBtn").textContent;
-     $("addToRouteBtn").textContent = "Ajouté !";
-     setTimeout(() => $("addToRouteBtn").textContent = old, 1500);
-  };
-  
+  $("startFromPlace").onclick = () => { dest = { lat: selected.lat, lon: selected.lon, label: selected.name }; show("nav"); startNav(); };
+  $("addToRouteBtn").onclick = () => { routeQueue.push(structuredClone(selected)); const old=$("addToRouteBtn").textContent; $("addToRouteBtn").textContent="Ajouté !"; setTimeout(()=>$("addToRouteBtn").textContent=old,1500); };
   $("editThisPlace").onclick = () => { loadIntoForm(selected); show("manage"); };
 
-  /* =========================
-     SEARCH & API
-  ========================== */
+  /* SEARCH */
   let suggTimer = null;
   async function apiSearch(q){
     const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5&lat=43.6045&lon=1.4442&autocomplete=1`;
-    try{
-      const r = await fetch(url);
-      const d = await r.json();
-      return d.features.map(f => ({
-         name: f.properties.label,
-         context: f.properties.context,
-         lat: f.geometry.coordinates[1],
-         lon: f.geometry.coordinates[0]
-      }));
-    } catch { return []; }
+    try{ const r = await fetch(url); const d = await r.json(); return d.features.map(f => ({ name: f.properties.label, context: f.properties.context, lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] })); } catch { return []; }
   }
-
   function doSearch(q){
      const term = q.trim().toLowerCase();
      if(!term) { suggestEl.style.display="none"; return; }
-     
-     // Local matches
-     const locals = POPULAR_PLACES.filter(p => p.name.toLowerCase().includes(term)).map(p => ({
-        ...p, isLocal: true
-     }));
-
-     // If short, show local only, else fetch API
-     if(term.length < 3){
-        renderSuggest(locals);
-     } else {
-        if(suggTimer) clearTimeout(suggTimer);
-        suggTimer = setTimeout(async () => {
-           const remotes = await apiSearch(term);
-           renderSuggest([...locals, ...remotes]);
-        }, 300);
-     }
+     const locals = POPULAR_PLACES.filter(p => p.name.toLowerCase().includes(term)).map(p => ({...p, isLocal: true}));
+     if(term.length < 3){ renderSuggest(locals); } 
+     else { if(suggTimer) clearTimeout(suggTimer); suggTimer = setTimeout(async () => { const remotes = await apiSearch(term); renderSuggest([...locals, ...remotes]); }, 300); }
   }
-
   function renderSuggest(list){
-     suggestEl.innerHTML = "";
-     if(!list.length) { suggestEl.style.display="none"; return; }
-     
+     suggestEl.innerHTML = ""; if(!list.length) { suggestEl.style.display="none"; return; }
      list.forEach(it => {
         const btn = document.createElement("button");
-        btn.innerHTML = `
-          <div>${it.isLocal ? "⭐ " : ""}${escapeHtml(it.name)}</div>
-          <div class="small">${escapeHtml(it.context||"")}</div>
-        `;
+        btn.innerHTML = `<div>${it.isLocal?"⭐ ":""}${escapeHtml(it.name)}</div><div class="small">${escapeHtml(it.context||"")}</div>`;
         btn.onclick = () => {
-           const p = {
-              id: uid(), emoji: "📍", name: it.name.split(",")[0], type: "Adresse",
-              lat: it.lat, lon: it.lon, desc: it.desc || it.name
-           };
-           suggestEl.style.display="none";
-           addrEl.value = "";
-           openPlace(p);
+           const p = { id: uid(), emoji: "📍", name: it.name.split(",")[0], type: "Adresse", lat: it.lat, lon: it.lon, desc: it.desc||it.name };
+           suggestEl.style.display="none"; addrEl.value = ""; openPlace(p);
         };
         suggestEl.appendChild(btn);
      });
      suggestEl.style.display = "block";
   }
-
   addrEl.addEventListener("input", () => doSearch(addrEl.value));
-  addrEl.addEventListener("focus", () => { if(!addrEl.value) doSearch(""); }); // show history/pop if needed, here simple
-  document.addEventListener("click", e => { if(!suggestEl.contains(e.target) && e.target !== addrEl) suggestEl.style.display="none"; });
   $("clearAddr").onclick = () => { addrEl.value=""; suggestEl.style.display="none"; };
 
-  /* =========================
-     MANAGE FORM
-  ========================== */
-  let editingId = null;
+  /* MANAGE */
   const mName=$("mName"), mType=$("mType"), mDesc=$("mDesc"), mGmaps=$("mGmaps"), mLat=$("mLat"), mLon=$("mLon");
-  
-  function loadIntoForm(p){
-    editingId = p.id;
-    mName.value=p.name; mType.value=p.type||""; mDesc.value=p.desc||""; mGmaps.value=p.gmaps||"";
-    mLat.value=p.lat||""; mLon.value=p.lon||"";
-    $("manageHint").textContent = "Modification en cours...";
-  }
-  function resetForm(){
-    editingId=null; mName.value=""; mType.value=""; mDesc.value=""; mGmaps.value=""; mLat.value=""; mLon.value="";
-    $("manageHint").textContent = "";
-  }
-  $("resetForm").onclick = resetForm;
-  
+  let editingId = null;
+  function loadIntoForm(p){ editingId=p.id; mName.value=p.name; mType.value=p.type||""; mDesc.value=p.desc||""; mLat.value=p.lat; mLon.value=p.lon; }
   $("savePlace").onclick = () => {
     if(!mName.value) return;
-    const lat = parseFloat(mLat.value.replace(",","."));
-    const lon = parseFloat(mLon.value.replace(",","."));
-    const obj = {
-       id: editingId || uid(),
-       emoji: "📍", name: mName.value, type: mType.value, desc: mDesc.value, gmaps: mGmaps.value,
-       lat: isFinite(lat)?lat:NaN, lon: isFinite(lon)?lon:NaN
-    };
-    
-    if(editingId){
-       const idx = places.findIndex(x=>x.id===editingId);
-       if(idx>=0) places[idx]=obj; else places.unshift(obj);
-    } else {
-       places.unshift(obj);
-    }
-    savePlaces(); renderPlaces(); resetForm();
-    show("manage");
+    const lat = parseFloat(mLat.value.replace(",",".")); const lon = parseFloat(mLon.value.replace(",","."));
+    const obj = { id: editingId || uid(), emoji: "📍", name: mName.value, type: mType.value, desc: mDesc.value, lat: isFinite(lat)?lat:NaN, lon: isFinite(lon)?lon:NaN };
+    if(editingId){ const idx = places.findIndex(x=>x.id===editingId); if(idx>=0) places[idx]=obj; else places.unshift(obj); } else { places.unshift(obj); }
+    savePlaces(); renderPlaces(); editingId=null; mName.value=""; show("manage");
   };
-  
-  function deletePlace(id){
-     places = places.filter(p=>p.id!==id);
-     savePlaces(); renderPlaces();
-  }
-  
+  $("resetForm").onclick = () => { editingId=null; mName.value=""; mType.value=""; mDesc.value=""; mLat.value=""; mLon.value=""; };
   $("resetDefaults").onclick = () => { places=structuredClone(DEFAULT_PLACES); savePlaces(); renderPlaces(); };
-  $("exportJson").onclick = () => { $("exportBox").style.display="block"; $("exportBox").value=JSON.stringify(places); };
 
-  /* =========================
-     COMPASS & GPS LOGIC
-  ========================== */
+  /* COMPASS LOGIC */
   btnGrantPerms.onclick = async () => {
     if(typeof DeviceOrientationEvent?.requestPermission === "function"){
-      try{
-         const r = await DeviceOrientationEvent.requestPermission();
-         if(r==="granted") {
-            btnGrantPerms.style.display="none";
-            window.addEventListener("deviceorientation", orientationHandler, true);
-         } else alert("Requis pour la boussole.");
-      }catch(e){console.error(e);}
+      try{ const r = await DeviceOrientationEvent.requestPermission(); if(r==="granted") { btnGrantPerms.style.display="none"; window.addEventListener("deviceorientation", orientationHandler, true); } else alert("Requis pour la boussole."); }catch{}
     }
     navigator.geolocation.getCurrentPosition(()=>{},()=>{},{});
   };
 
   async function startNav(){
     if(!navigator.geolocation) return alert("GPS indisponible");
-    
-    // Check permission UI
     if(typeof DeviceOrientationEvent?.requestPermission === "function") btnGrantPerms.style.display="block";
     
-    // Orientation
     orientationHandler = (e) => {
       if(e.webkitCompassHeading) compassHeading = (e.webkitCompassHeading + 360)%360;
       else if(e.alpha) compassHeading = (360 - e.alpha)%360;
-      
       if(compassHeading) btnGrantPerms.style.display="none";
       updateUI();
     };
     if(window.DeviceOrientationEvent) window.addEventListener("deviceorientation", orientationHandler, true);
     
-    // GPS
     watchId = navigator.geolocation.watchPosition(pos => {
        const { latitude: lat, longitude: lon, accuracy: acc, heading: hdg, speed: spd } = pos.coords;
        user = { lat, lon, acc };
-       
        if(isFinite(hdg) && spd > 0.5) gpsHeading = hdg;
        else if(lastFix) {
-          // Compute heading
           const dist = haversine(lastFix.lat, lastFix.lon, lat, lon);
           if(dist > 2) gpsHeading = bearing(lastFix.lat, lastFix.lon, lat, lon);
        }
        lastFix = { lat, lon };
        updateUI();
-    }, err => {
-       navHint.textContent = "Erreur GPS: " + err.message;
-    }, { enableHighAccuracy:true, maximumAge:0 });
+    }, err => { navHint.textContent = "Erreur GPS: " + err.message; }, { enableHighAccuracy:true, maximumAge:0 });
 
     if(navigator.wakeLock) try{ navigator.wakeLock.request("screen"); }catch{}
   }
@@ -864,8 +560,7 @@
   function stopNav(){
     if(watchId) navigator.geolocation.clearWatch(watchId);
     if(orientationHandler) window.removeEventListener("deviceorientation", orientationHandler);
-    watchId=null; user=null; lastFix=null;
-    show("discover");
+    watchId=null; user=null; lastFix=null; show("discover");
   }
   $("stop").onclick = stopNav; $("back").onclick = stopNav;
 
@@ -874,40 +569,29 @@
     
     const d = haversine(user.lat, user.lon, dest.lat, dest.lon);
     const b = bearing(user.lat, user.lon, dest.lat, dest.lon);
-    
-    // Heading priority: Compass > GPS > None
     const h = (compassHeading != null) ? compassHeading : gpsHeading;
-    const rot = (h != null) ? (b - h + 360)%360 : 0; // if no heading, point North/Forward
     
-    // Update Arrow
-    if(h != null) {
-       arrowEl.style.transform = `rotate(${rot}deg)`;
-       $("mode").innerHTML = (compassHeading != null) ? "Boussole" : "Marche (GPS)";
-       navHint.textContent = "Suis la flèche.";
-    } else {
-       // Pas de cap connu
-       arrowEl.style.transform = `rotate(${b}deg)`; // Point to True North bearing relative to screen top? No, that's confusing.
-       // Without compass, we can only show distance.
-       navHint.textContent = "Avance pour détecter le cap.";
-       $("mode").innerHTML = "En attente...";
-    }
-
+    // Rotation relative : Cap à suivre (b) - Mon Cap (h)
+    // Si h est null (pas de boussole/GPS heading), on pointe le cap (b) arbitrairement (Nord = 0)
+    const rot = (h != null) ? (b - h + 360)%360 : 0;
+    
+    // Appliquer la rotation centrée
+    arrowEl.style.transform = `rotate(${rot}deg)`;
+    
+    $("mode").innerHTML = (compassHeading != null) ? "Boussole" : (gpsHeading ? "GPS (Marche)" : "En attente...");
+    navHint.textContent = (h != null) ? "Suis la flèche." : "Avance pour orienter la flèche.";
+    
     distanceEl.textContent = fmtDistance(d);
     directionEl.textContent = Math.round(b) + "°";
     $("gps").textContent = `GPS ±${Math.round(user.acc)}m`;
-
-    // Ring size logic
-    const pct = clamp(1 - (d/CAP_M), 0, 1);
-    const dash = CIRC * pct; 
-    ringProg.style.strokeDashoffset = CIRC - dash; // Invert logic for nice fill
-    
     $("destLabel").textContent = dest.label;
     
-    // Vibration arrival
+    const pct = clamp(1 - (d/CAP_M), 0, 1);
+    ringProg.style.strokeDashoffset = CIRC - (CIRC * pct); 
+    
     if(d < 25 && navigator.vibrate) navigator.vibrate([100,50,100]);
   }
 
-  // Init
   renderPlaces();
 })();
 </script>
