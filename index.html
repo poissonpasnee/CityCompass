@@ -142,7 +142,7 @@
     [data-theme="light"] .searchPill{ background: rgba(255,255,255,.80); }
     .searchPill .magnify{ font-weight:1000; opacity:.9; }
     .searchPill input{ border:0; background:transparent; padding:8px 6px; box-shadow:none; }
-
+    
     /* Suggestions */
     .suggestWrap{ position:relative; }
     .suggest{
@@ -439,7 +439,6 @@
               <input id="mLat" inputmode="decimal" placeholder="Latitude (optionnel)" />
               <input id="mLon" inputmode="decimal" placeholder="Longitude (optionnel)" />
             </div>
-
             <div class="btnRow" style="margin-top:10px;">
               <button class="btn btnPrimary" id="savePlace" type="button">Enregistrer</button>
               <button class="btn" id="resetForm" type="button">Nouveau</button>
@@ -528,6 +527,48 @@
       lon: 1.437357,
       desc: "Super spot au bord de l’eau, parfait en fin de journée.",
       gmaps: "https://www.google.com/maps/search/?api=1&query=Pont%20Neuf%20Toulouse"
+    }
+  ];
+
+  /* =========================
+     POPULAR PLACES (Suggestions)
+  ========================== */
+  const POPULAR_PLACES = [
+    {
+      name: "Place du Capitole",
+      context: "Toulouse, Centre-ville",
+      lat: 43.6045, lon: 1.4442,
+      desc: "Le cœur historique de Toulouse. Une immense place piétonne face à l'Hôtel de Ville et au Théâtre, ornée de la croix occitane."
+    },
+    {
+      name: "Basilique Saint-Sernin",
+      context: "Toulouse, Patrimoine",
+      lat: 43.6084, lon: 1.4420,
+      desc: "Un chef-d'œuvre de l'art roman classé à l'UNESCO. Une étape majeure sur les chemins de Saint-Jacques-de-Compostelle."
+    },
+    {
+      name: "Cité de l'Espace",
+      context: "Toulouse, Loisirs",
+      lat: 43.5869, lon: 1.4931,
+      desc: "Le parc à thème scientifique pour découvrir l'espace, voir la fusée Ariane 5 grandeur nature et explorer les étoiles."
+    },
+    {
+      name: "Halle de la Machine",
+      context: "Toulouse, Montaudran",
+      lat: 43.5732, lon: 1.4777,
+      desc: "L'écurie des machines géantes comme le Minotaure et l'Araignée, sur la mythique Piste des Géants de l'Aéropostale."
+    },
+    {
+      name: "Jardin Japonais",
+      context: "Toulouse, Compans",
+      lat: 43.6111, lon: 1.4326,
+      desc: "Un havre de paix zen inspiré des jardins de Kyoto, avec son pavillon de thé et son lac, au cœur du parc Compans-Caffarelli."
+    },
+    {
+      name: "Quai de la Daurade",
+      context: "Toulouse, Garonne",
+      lat: 43.6009, lon: 1.4395,
+      desc: "Le spot préféré des Toulousains pour admirer le coucher de soleil sur la Garonne et le Pont Neuf."
     }
   ];
 
@@ -850,27 +891,22 @@
     show("manage");
   };
 
-   /* =========================
-     API Adresse (Gouv) - Optimisée Toulouse
+  /* =========================
+     Search API Gouv (Toulouse) & Local Pop
   ========================== */
+  let suggTimer = null;
+
   async function searchAddressGouv(q){
-    // Coordonnées du centre de Toulouse pour le "biais" géographique
     const lat = 43.6045; 
     const lon = 1.4442;
-
-    // Ajout des paramètres &lat=...&lon=... pour prioriser la zone
-    // autocomplete=1 améliore la tolérance aux fautes de frappe
     const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5&lat=${lat}&lon=${lon}&autocomplete=1`;
-    
     try {
       const res = await fetch(url);
       if(!res.ok) return [];
       const json = await res.json();
-      
-      // On retourne un tableau d'objets formatés pour showSuggest
       return json.features.map(f => ({
-        displayname: f.properties.label,     // Ex: "1 Place du Capitole"
-        context: f.properties.context,       // Ex: "31000, Toulouse, Haute-Garonne"
+        displayname: f.properties.label,
+        context: f.properties.context,
         lat: f.geometry.coordinates[1],
         lon: f.geometry.coordinates[0]
       }));
@@ -879,7 +915,6 @@
       return [];
     }
   }
-
 
   function hideSuggest(){
     suggestEl.style.display = "none";
@@ -892,19 +927,20 @@
     items.forEach(it => {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.innerHTML = escapeHtml(it.displayname) + `<span class="small">${escapeHtml(it.context || "")}</span>`;
+      const icon = it.isLocal ? "⭐ " : "";
+      btn.innerHTML = icon + escapeHtml(it.displayname) + `<span class="small">${escapeHtml(it.context || "")}</span>`;
       btn.onclick = () => {
         hideSuggest();
         const p = {
-          id: uid(), emoji: "📍",
+          id: uid(), 
+          emoji: it.isLocal ? "⭐" : "📍",
           name: it.displayname.split(",")[0],
-          type: "Adresse",
+          type: it.isLocal ? "Lieu populaire" : "Adresse",
           lat: it.lat, lon: it.lon,
-          desc: it.displayname,
+          desc: it.customDesc || it.displayname,
           gmaps: `https://www.google.com/maps/search/?api=1&query=${it.lat},${it.lon}`
         };
         selected = p;
-        // Pre-fill destination
         dest = { lat: p.lat, lon: p.lon, label: p.name };
         refreshDest();
         openPlace(p);
@@ -914,14 +950,59 @@
     suggestEl.style.display = "block";
   }
 
+  // Unified Search Handler
+  async function handleSearch(q) {
+    let results = [];
+    const term = q.toLowerCase();
+
+    // 1. Local
+    const localMatches = POPULAR_PLACES.filter(p => 
+      q === "" || p.name.toLowerCase().includes(term)
+    ).map(p => ({
+      displayname: p.name,
+      context: p.context,
+      lat: p.lat, lon: p.lon,
+      isLocal: true,
+      customDesc: p.desc
+    }));
+
+    results = [...localMatches];
+
+    // 2. API (si > 2 chars)
+    if (q.length > 2) {
+      try {
+        const apiRes = await searchAddressGouv(q);
+        results = [...results, ...apiRes];
+      } catch (e) { console.warn(e); }
+    }
+
+    showSuggest(results);
+  }
+
   addrEl.addEventListener("input", () => {
     const q = addrEl.value.trim();
     if(suggTimer) clearTimeout(suggTimer);
-    if(q.length < 3){ hideSuggest(); return; }
-    suggTimer = setTimeout(async () => {
-      try { showSuggest(await searchAddressGouv(q)); }
-      catch { hideSuggest(); }
+    
+    suggTimer = setTimeout(() => {
+      if(q.length === 0) { 
+        handleSearch(""); 
+      } else if (q.length < 3) {
+        // < 3 : local only
+        const localOnly = POPULAR_PLACES.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
+        if(localOnly.length) showSuggest(localOnly.map(p => ({
+            displayname: p.name, context: p.context, lat: p.lat, lon: p.lon,
+            isLocal: true, customDesc: p.desc
+        })));
+        else hideSuggest();
+      } else {
+        handleSearch(q);
+      }
     }, 250);
+  });
+
+  addrEl.addEventListener("focus", () => {
+    const q = addrEl.value.trim();
+    if(q.length === 0) handleSearch(""); 
   });
 
   document.addEventListener("click", (e) => {
@@ -957,13 +1038,13 @@
     const s = link.trim();
     // 1) Patterns: @lat,lon
     let m = s.match(/@(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)/);
-    if(m) return { lat: parseFloat(m [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/46895707/e4711187-a2d0-4c23-99fb-ec6f88faa123/paste.txt)), lon: parseFloat(m[3]) };
+    if(m) return { lat: parseFloat(m[1]), lon: parseFloat(m[3]) };
     // 2) q=lat,lon
     m = s.match(/[?&]q=(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)/);
-    if(m) return { lat: parseFloat(m [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/46895707/e4711187-a2d0-4c23-99fb-ec6f88faa123/paste.txt)), lon: parseFloat(m[3]) };
+    if(m) return { lat: parseFloat(m[1]), lon: parseFloat(m[3]) };
     // 3) query=lat,lon (api=1)
     m = s.match(/[?&]query=(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)/);
-    if(m) return { lat: parseFloat(m [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/46895707/e4711187-a2d0-4c23-99fb-ec6f88faa123/paste.txt)), lon: parseFloat(m[3]) };
+    if(m) return { lat: parseFloat(m[1]), lon: parseFloat(m[3]) };
     return null;
   }
 
@@ -1330,4 +1411,3 @@
 </script>
 </body>
 </html>
-```
