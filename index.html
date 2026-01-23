@@ -16,10 +16,9 @@
       --muted: rgba(255,255,255,.62);
       --shadow: 0 20px 60px rgba(0,0,0,.45);
       --r: 24px;
-      --focus: rgba(52,199,89,.22); /* accent sobre (iOS-like) */
+      --focus: rgba(52,199,89,.22);
     }
 
-    /* Light theme */
     [data-theme="light"]{
       --bg0:#f5f6fa; --bg1:#eceff5;
       --glass: rgba(255,255,255,.78);
@@ -32,9 +31,11 @@
     }
 
     *{ box-sizing:border-box; }
-    body{
+    html, body{
+      height:100%;
       margin:0;
-      min-height:100vh;
+    }
+    body{
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       color: var(--text);
       background:
@@ -42,17 +43,39 @@
         radial-gradient(900px 700px at 80% 20%, rgba(255,255,255,.08), transparent 60%),
         radial-gradient(900px 800px at 50% 110%, rgba(52,199,89,.14), transparent 60%),
         linear-gradient(180deg, var(--bg0), var(--bg1));
-      padding: 18px 14px 28px;
+      padding: 0; /* full screen */
+      overflow:hidden; /* single-screen app feel */
     }
 
-    .wrap{ max-width: 560px; margin: 0 auto; }
-    .topbar{
-      display:flex; align-items:flex-start; gap:10px;
-      padding: 6px 2px 12px;
+    /* App takes full viewport, safe-area aware */
+    .app{
+      height: 100dvh;
+      height: 100vh; /* fallback */
+      padding:
+        calc(env(safe-area-inset-top) + 16px)
+        calc(env(safe-area-inset-right) + 14px)
+        calc(env(safe-area-inset-bottom) + 18px)
+        calc(env(safe-area-inset-left) + 14px);
+      display:flex;
+      flex-direction:column;
+      gap:12px;
     }
-    .brand{ flex:1; }
+
+    /* Top bar */
+    .topbar{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      flex: 0 0 auto;
+    }
+    .brand{ flex:1; min-width:0; }
     .title{ margin:0; font-size:20px; font-weight: 900; letter-spacing:.2px; }
-    .subtitle{ margin:6px 0 0; color: var(--muted); font-size:13px; line-height:1.35; }
+    .subtitle{
+      margin:6px 0 0;
+      color: var(--muted);
+      font-size:13px;
+      line-height:1.35;
+    }
 
     .chip{
       border:1px solid rgba(255,255,255,.14);
@@ -63,18 +86,28 @@
       font-weight: 900;
       cursor:pointer;
       user-select:none;
+      flex: 0 0 auto;
     }
     [data-theme="light"] .chip{ background: rgba(255,255,255,.60); }
 
+    /* Main card fills remaining space */
+    .main{
+      flex: 1 1 auto;
+      min-height: 0; /* allow inner scrolling */
+      display:flex;
+    }
+
     .card{
+      width:100%;
       border-radius: var(--r);
       background: linear-gradient(180deg, var(--glass), var(--glass2));
       border: 1px solid rgba(255,255,255,.14);
       box-shadow: var(--shadow);
       backdrop-filter: blur(18px) saturate(160%);
       -webkit-backdrop-filter: blur(18px) saturate(160%);
-      overflow:hidden;
       position:relative;
+      overflow:hidden;
+      display:flex;
     }
     .card::before{
       content:"";
@@ -86,7 +119,15 @@
       pointer-events:none;
     }
 
-    .section{ padding: 14px; position:relative; z-index:1; }
+    .section{
+      padding: 14px;
+      position:relative;
+      z-index:1;
+      width:100%;
+      overflow:auto; /* scroll inside card if needed */
+      -webkit-overflow-scrolling: touch;
+    }
+
     .label{ font-size:12px; color: var(--muted); margin: 2px 0 6px; }
     .row{ display:flex; gap:10px; align-items:center; }
     .row.between{ justify-content:space-between; }
@@ -102,6 +143,7 @@
       color: var(--text);
       outline:none;
       box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+      min-width:0;
     }
     [data-theme="light"] input{ background: rgba(255,255,255,.62); }
     input::placeholder{ color: rgba(255,255,255,.45); }
@@ -132,7 +174,6 @@
       background: rgba(10,15,26,.06);
       border-color: rgba(10,15,26,.10);
     }
-
     .full{ width:100%; }
 
     .pills{ display:flex; flex-wrap:wrap; gap:8px; margin-top: 10px; }
@@ -154,7 +195,7 @@
       line-height: 1.35;
     }
 
-    /* Suggestions dropdown */
+    /* Suggestions */
     .suggestWrap{ position:relative; }
     .suggest{
       position:absolute; left:0; right:0; top: calc(100% + 8px);
@@ -185,10 +226,10 @@
     .small{ display:block; margin-top:2px; font-size:12px; font-weight:600; color: var(--muted); }
 
     /* Views */
-    .view{ display:none; }
+    .view{ display:none; height:100%; }
     .view.active{ display:block; }
 
-    /* Segmented control unités */
+    /* Units segmented */
     .unitToggle{
       display:flex;
       gap:8px;
@@ -198,7 +239,6 @@
       background: rgba(255,255,255,.08);
     }
     [data-theme="light"] .unitToggle{ background: rgba(255,255,255,.62); }
-
     .unitBtn{
       flex:1;
       padding:10px 12px;
@@ -224,22 +264,21 @@
       margin-bottom: 10px;
     }
     .navHeader .chip{ padding: 9px 12px; }
-    .navHeader .brand{ flex:1; }
+    .navHeader .brand{ flex:1; min-width:0; }
 
     .compassWrap{ display:flex; justify-content:center; padding: 6px 0 0; }
     .ringWrap{
-      width: 260px; height: 260px;
+      width: min(72vw, 320px);
+      aspect-ratio: 1 / 1;
       position: relative;
       transform: scale(1);
       transition: transform .15s ease;
     }
-    .ringSvg{
+    .ringSvg, .arrowSvg{
       position:absolute; inset:0; margin:auto;
-      width:260px; height:260px;
+      width:100%; height:100%;
     }
     .arrowSvg{
-      position:absolute; inset:0; margin:auto;
-      width:260px; height:260px;
       transform-origin: 50% 50%;
       filter: drop-shadow(0 16px 30px rgba(0,0,0,.35));
     }
@@ -257,10 +296,6 @@
 
     .toolbar{ margin-top: 10px; display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
 
-    @media (max-width: 360px){
-      .ringWrap,.ringSvg,.arrowSvg{ width:230px; height:230px; }
-    }
-
     .fadeIn{ animation: fadeIn .18s ease-out; }
     @keyframes fadeIn{
       from{ opacity:.0; transform: translateY(6px); }
@@ -270,7 +305,7 @@
 </head>
 
 <body>
-  <div class="wrap" id="app" data-theme="dark">
+  <div class="app" id="app" data-theme="dark">
     <div class="topbar">
       <div class="brand">
         <h1 class="title">City Compass</h1>
@@ -279,131 +314,130 @@
       <button class="chip" id="themeBtn" type="button" title="Jour/Nuit">☾</button>
     </div>
 
-    <!-- VIEW 1: Setup -->
-    <div class="view active fadeIn" id="viewSetup">
+    <div class="main">
       <div class="card">
         <div class="section">
-          <div class="label">Adresse (autocomplete)</div>
-          <div class="suggestWrap">
-            <input id="addr" autocomplete="off" placeholder="Ex: Place du Capitole, Toulouse" />
-            <div id="suggest" class="suggest"></div>
-          </div>
-
-          <div class="grid2" style="margin-top:10px;">
-            <button id="setAddr" class="primary" type="button">Définir</button>
-            <button id="clearAddr" type="button">Effacer</button>
-          </div>
-
-          <div class="sep"></div>
-
-          <div class="row between">
-            <div class="label" style="margin:0;">Coordonnées GPS</div>
-            <button class="chip" id="toggleCoords" type="button">Afficher</button>
-          </div>
-
-          <div id="coordsBox" style="display:none; margin-top:10px;">
-            <div class="row">
-              <input id="lat" inputmode="decimal" placeholder="Latitude (ex: 43.6045)" />
-              <input id="lon" inputmode="decimal" placeholder="Longitude (ex: 1.4440)" />
+          <!-- VIEW 1: Setup -->
+          <div class="view active fadeIn" id="viewSetup">
+            <div class="label">Adresse (autocomplete)</div>
+            <div class="suggestWrap">
+              <input id="addr" autocomplete="off" placeholder="Ex: Place du Capitole, Toulouse" />
+              <div id="suggest" class="suggest"></div>
             </div>
-            <button id="setCoords" class="primary full" type="button" style="margin-top:10px;">
-              Définir depuis coordonnées
+
+            <div class="grid2" style="margin-top:10px;">
+              <button id="setAddr" class="primary" type="button">Définir</button>
+              <button id="clearAddr" type="button">Effacer</button>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="row between">
+              <div class="label" style="margin:0;">Coordonnées GPS</div>
+              <button class="chip" id="toggleCoords" type="button">Afficher</button>
+            </div>
+
+            <div id="coordsBox" style="display:none; margin-top:10px;">
+              <div class="row">
+                <input id="lat" inputmode="decimal" placeholder="Latitude (ex: 43.6045)" />
+                <input id="lon" inputmode="decimal" placeholder="Longitude (ex: 1.4440)" />
+              </div>
+              <button id="setCoords" class="primary full" type="button" style="margin-top:10px;">
+                Définir depuis coordonnées
+              </button>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="label">Unités</div>
+            <div class="unitToggle" role="group" aria-label="Unités">
+              <button id="unitM" class="unitBtn" type="button" aria-pressed="false">mètres</button>
+              <button id="unitKM" class="unitBtn" type="button" aria-pressed="true">km</button>
+            </div>
+
+            <button id="start" class="primary full" type="button" style="margin-top:12px;">
+              Démarrer la navigation
             </button>
-          </div>
 
-          <div class="sep"></div>
-
-          <div class="label">Unités</div>
-          <div class="unitToggle" role="group" aria-label="Unités">
-            <button id="unitM" class="unitBtn" type="button" aria-pressed="false">mètres</button>
-            <button id="unitKM" class="unitBtn" type="button" aria-pressed="true">km</button>
-          </div>
-
-          <button id="start" class="primary full" type="button" style="margin-top:12px;">
-            Démarrer la navigation
-          </button>
-
-          <div class="pills">
-            <div class="pill" id="stDest"><b>Destination</b> —</div>
-            <div class="pill" id="stHttps"><b>HTTPS</b> —</div>
-          </div>
-
-          <div class="foot" id="setupHint">
-            iPhone: si la boussole web est limitée, la flèche se base sur le “cap de marche” (avance quelques mètres).
-          </div>
-          <div class="foot" style="margin-top:6px;">
-            Vibration et écran actif : activés par défaut.
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- VIEW 2: Compass -->
-    <div class="view" id="viewNav">
-      <div class="card">
-        <div class="section">
-          <div class="navHeader">
-            <button class="chip" id="back" type="button">←</button>
-            <div class="brand">
-              <div class="title" style="font-size:18px;">Navigation</div>
-              <div class="subtitle" id="destLabel">Destination: —</div>
+            <div class="pills">
+              <div class="pill" id="stDest"><b>Destination</b> —</div>
+              <div class="pill" id="stHttps"><b>HTTPS</b> —</div>
             </div>
-            <button class="chip" id="stop" type="button">⏹</button>
-          </div>
 
-          <div class="compassWrap">
-            <div class="ringWrap" id="ringWrap">
-              <svg class="ringSvg" viewBox="0 0 100 100" aria-hidden="true">
-                <defs>
-                  <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stop-color="rgba(255,255,255,.85)"></stop>
-                    <stop offset="1" stop-color="rgba(255,255,255,.18)"></stop>
-                  </linearGradient>
-                </defs>
-                <circle cx="50" cy="50" r="36" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="5"></circle>
-                <circle id="ringProg" cx="50" cy="50" r="36" fill="none" stroke="url(#ringGrad)"
-                        stroke-width="5" stroke-linecap="round" stroke-dasharray="226.2" stroke-dashoffset="226.2"></circle>
-              </svg>
-
-              <svg id="arrow" class="arrowSvg" viewBox="0 0 100 100" aria-label="Flèche">
-                <defs>
-                  <linearGradient id="arrowGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="rgba(255,255,255,.94)"></stop>
-                    <stop offset="1" stop-color="rgba(255,255,255,.34)"></stop>
-                  </linearGradient>
-                </defs>
-                <path d="M50 10 L63 40 L54 40 L54 78 L46 78 L46 40 L37 40 Z"
-                      fill="url(#arrowGrad)" stroke="rgba(255,255,255,.25)" stroke-width="0.8"></path>
-                <circle cx="50" cy="82.5" r="6.2" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.20)"></circle>
-                <circle cx="50" cy="82.5" r="2.2" fill="rgba(255,255,255,.70)"></circle>
-              </svg>
+            <div class="foot" id="setupHint">
+              iPhone: si la boussole web est limitée, la flèche se base sur le “cap de marche” (avance quelques mètres).
+            </div>
+            <div class="foot" style="margin-top:6px;">
+              Vibration et écran actif : activés par défaut.
             </div>
           </div>
 
-          <div class="metrics">
-            <div class="metric">
-              <div class="k">Distance</div>
-              <div class="v" id="distance">—</div>
+          <!-- VIEW 2: Compass -->
+          <div class="view" id="viewNav">
+            <div class="navHeader">
+              <button class="chip" id="back" type="button">←</button>
+              <div class="brand">
+                <div class="title" style="font-size:18px;">Navigation</div>
+                <div class="subtitle" id="destLabel" style="margin-top:4px;">Destination: —</div>
+              </div>
+              <button class="chip" id="stop" type="button">⏹</button>
             </div>
-            <div class="metric">
-              <div class="k">Direction</div>
-              <div class="v" id="direction">—</div>
+
+            <div class="compassWrap">
+              <div class="ringWrap" id="ringWrap">
+                <svg class="ringSvg" viewBox="0 0 100 100" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0" stop-color="rgba(255,255,255,.85)"></stop>
+                      <stop offset="1" stop-color="rgba(255,255,255,.18)"></stop>
+                    </linearGradient>
+                  </defs>
+                  <circle cx="50" cy="50" r="36" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="5"></circle>
+                  <circle id="ringProg" cx="50" cy="50" r="36" fill="none" stroke="url(#ringGrad)"
+                          stroke-width="5" stroke-linecap="round" stroke-dasharray="226.2" stroke-dashoffset="226.2"></circle>
+                </svg>
+
+                <svg id="arrow" class="arrowSvg" viewBox="0 0 100 100" aria-label="Flèche">
+                  <defs>
+                    <linearGradient id="arrowGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stop-color="rgba(255,255,255,.94)"></stop>
+                      <stop offset="1" stop-color="rgba(255,255,255,.34)"></stop>
+                    </linearGradient>
+                  </defs>
+                  <path d="M50 10 L63 40 L54 40 L54 78 L46 78 L46 40 L37 40 Z"
+                        fill="url(#arrowGrad)" stroke="rgba(255,255,255,.25)" stroke-width="0.8"></path>
+                  <circle cx="50" cy="82.5" r="6.2" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.20)"></circle>
+                  <circle cx="50" cy="82.5" r="2.2" fill="rgba(255,255,255,.70)"></circle>
+                </svg>
+              </div>
             </div>
+
+            <div class="metrics">
+              <div class="metric">
+                <div class="k">Distance</div>
+                <div class="v" id="distance">—</div>
+              </div>
+              <div class="metric">
+                <div class="k">Direction</div>
+                <div class="v" id="direction">—</div>
+              </div>
+            </div>
+
+            <div class="pills">
+              <div class="pill" id="gps"><b>GPS</b> —</div>
+              <div class="pill" id="mode"><b>Mode</b> —</div>
+              <div class="pill" id="cap"><b>Cap</b> —</div>
+            </div>
+
+            <div class="toolbar">
+              <button id="recenter" type="button">Recentrer</button>
+              <button id="copy" type="button">Copier coords</button>
+            </div>
+
+            <div class="foot" id="navHint">Suis la flèche. L’anneau se resserre en approchant.</div>
+            <div class="foot" id="debug"></div>
           </div>
 
-          <div class="pills">
-            <div class="pill" id="gps"><b>GPS</b> —</div>
-            <div class="pill" id="mode"><b>Mode</b> —</div>
-            <div class="pill" id="cap"><b>Cap</b> —</div>
-          </div>
-
-          <div class="toolbar">
-            <button id="recenter" type="button">Recentrer</button>
-            <button id="copy" type="button">Copier coords</button>
-          </div>
-
-          <div class="foot" id="navHint">Suis la flèche. L’anneau se resserre en approchant.</div>
-          <div class="foot" id="debug"></div>
         </div>
       </div>
     </div>
@@ -444,7 +478,7 @@
   const navHint = $("navHint");
   const debugEl = $("debug");
 
-  // Toujours activés (comme demandé)
+  // Always on
   const vibrateEnabled = true;
   const wakeEnabled = true;
 
@@ -462,14 +496,14 @@
   const MIN_MOVE_M = 3;
   const MIN_DT_MS = 1200;
 
-  // ring/proximity
+  // Proximity ring
   const CIRC = 226.2;
   const CAP_M = 1000;
 
   // Units
-  let unitsMode = "km"; // "km" or "m"
+  let unitsMode = "km";
 
-  // wake lock
+  // Wake lock
   let wakeLock = null;
 
   // Helpers
@@ -504,8 +538,6 @@
   function show(which){
     viewSetup.classList.toggle("active", which === "setup");
     viewNav.classList.toggle("active", which === "nav");
-    if(which === "setup") viewSetup.classList.add("fadeIn");
-    if(which === "nav") viewNav.classList.add("fadeIn");
   }
 
   // Theme
@@ -545,7 +577,7 @@
   // HTTPS status
   stHttps.innerHTML = `<b>HTTPS</b> ${location.protocol === "https:" ? "OK" : "requis"}`;
 
-  // Suggestions (Nominatim)
+  // Suggestions
   let suggTimer = null;
 
   async function nominatimSearch(q){
@@ -620,10 +652,7 @@
     }
   };
 
-  $("clearAddr").onclick = () => {
-    addrEl.value = "";
-    hideSuggest();
-  };
+  $("clearAddr").onclick = () => { addrEl.value = ""; hideSuggest(); };
 
   $("toggleCoords").onclick = () => {
     const box = $("coordsBox");
@@ -710,25 +739,22 @@
 
     await setWakeLock(wakeEnabled);
 
-    // reset state
     user = null;
     compassHeading = null;
     gpsHeading = null;
     lastFix = null;
 
-    // iOS compass permission (must be inside click)
+    // iOS compass permission
     if(typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function"){
       try{
         const res = await DeviceOrientationEvent.requestPermission();
-        if(res !== "granted"){
-          compassHeading = null;
-        }
+        if(res !== "granted") compassHeading = null;
       }catch{
         compassHeading = null;
       }
     }
 
-    // start device orientation (best effort)
+    // Orientation listener
     if(typeof DeviceOrientationEvent !== "undefined"){
       const useAbs = ("ondeviceorientationabsolute" in window);
       orientationHandler = (e) => {
@@ -744,7 +770,7 @@
       window.addEventListener(useAbs ? "deviceorientationabsolute" : "deviceorientation", orientationHandler, true);
     }
 
-    // start GPS watch
+    // GPS watch
     pillGps.innerHTML = "<b>GPS</b> demande…";
     watchId = navigator.geolocation.watchPosition(
       (pos) => {
