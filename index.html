@@ -8,7 +8,7 @@
 
   <style>
     :root{
-      --bg0:#050812; --bg1:#0b1230;
+      --bg0:#0b0f1a; --bg1:#070a12;
       --glass: rgba(255,255,255,.12);
       --glass2: rgba(255,255,255,.07);
       --stroke: rgba(255,255,255,.18);
@@ -16,19 +16,19 @@
       --muted: rgba(255,255,255,.62);
       --shadow: 0 20px 60px rgba(0,0,0,.45);
       --r: 24px;
-      --focus: rgba(130,160,255,.22);
+      --focus: rgba(52,199,89,.22); /* accent sobre (iOS-like) */
     }
 
     /* Light theme */
     [data-theme="light"]{
-      --bg0:#f5f7ff; --bg1:#eef2ff;
-      --glass: rgba(255,255,255,.72);
-      --glass2: rgba(255,255,255,.42);
+      --bg0:#f5f6fa; --bg1:#eceff5;
+      --glass: rgba(255,255,255,.78);
+      --glass2: rgba(255,255,255,.50);
       --stroke: rgba(10,15,26,.12);
       --text: rgba(10,15,26,.92);
       --muted: rgba(10,15,26,.60);
       --shadow: 0 18px 50px rgba(10,15,26,.16);
-      --focus: rgba(80,110,255,.18);
+      --focus: rgba(52,199,89,.18);
     }
 
     *{ box-sizing:border-box; }
@@ -38,9 +38,9 @@
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       color: var(--text);
       background:
-        radial-gradient(1200px 700px at 20% 15%, rgba(110,140,255,.35), transparent 60%),
-        radial-gradient(900px 700px at 80% 20%, rgba(255,120,180,.25), transparent 55%),
-        radial-gradient(1000px 900px at 50% 110%, rgba(120,255,220,.14), transparent 55%),
+        radial-gradient(900px 600px at 20% 10%, rgba(255,255,255,.10), transparent 60%),
+        radial-gradient(900px 700px at 80% 20%, rgba(255,255,255,.08), transparent 60%),
+        radial-gradient(900px 800px at 50% 110%, rgba(52,199,89,.14), transparent 60%),
         linear-gradient(180deg, var(--bg0), var(--bg1));
       padding: 18px 14px 28px;
     }
@@ -64,7 +64,7 @@
       cursor:pointer;
       user-select:none;
     }
-    [data-theme="light"] .chip{ background: rgba(255,255,255,.55); }
+    [data-theme="light"] .chip{ background: rgba(255,255,255,.60); }
 
     .card{
       border-radius: var(--r);
@@ -80,9 +80,9 @@
       content:"";
       position:absolute; inset:-120px -120px auto auto;
       width:260px;height:260px;
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), transparent 55%);
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.28), transparent 55%);
       transform: rotate(18deg);
-      opacity:.25;
+      opacity:.22;
       pointer-events:none;
     }
 
@@ -98,12 +98,12 @@
       padding: 12px;
       border-radius: 16px;
       border:1px solid rgba(255,255,255,.14);
-      background: rgba(10,14,28,.32);
+      background: rgba(10,14,28,.30);
       color: var(--text);
       outline:none;
       box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
     }
-    [data-theme="light"] input{ background: rgba(255,255,255,.58); }
+    [data-theme="light"] input{ background: rgba(255,255,255,.62); }
     input::placeholder{ color: rgba(255,255,255,.45); }
     [data-theme="light"] input::placeholder{ color: rgba(10,15,26,.40); }
     input:focus{
@@ -122,20 +122,17 @@
       cursor:pointer;
       box-shadow: 0 10px 26px rgba(0,0,0,.24);
     }
-    [data-theme="light"] button{ background: rgba(255,255,255,.55); }
+    [data-theme="light"] button{ background: rgba(255,255,255,.62); }
 
     .primary{
-      background: linear-gradient(180deg, rgba(130,160,255,.28), rgba(255,255,255,.10));
-      border-color: rgba(130,160,255,.32);
+      background: rgba(255,255,255,.12);
+      border-color: rgba(255,255,255,.20);
     }
     [data-theme="light"] .primary{
-      background: linear-gradient(180deg, rgba(90,120,255,.22), rgba(255,255,255,.55));
-      border-color: rgba(90,120,255,.20);
+      background: rgba(10,15,26,.06);
+      border-color: rgba(10,15,26,.10);
     }
-    .danger{
-      background: rgba(255,90,90,.12);
-      border-color: rgba(255,90,90,.22);
-    }
+
     .full{ width:100%; }
 
     .pills{ display:flex; flex-wrap:wrap; gap:8px; margin-top: 10px; }
@@ -147,7 +144,7 @@
       color: var(--muted);
       font-size: 12px;
     }
-    [data-theme="light"] .pill{ background: rgba(255,255,255,.50); }
+    [data-theme="light"] .pill{ background: rgba(255,255,255,.55); }
     .pill b{ color: var(--text); }
 
     .foot{
@@ -173,7 +170,7 @@
       max-height: 240px;
       overflow:auto;
     }
-    [data-theme="light"] .suggest{ background: rgba(255,255,255,.78); }
+    [data-theme="light"] .suggest{ background: rgba(255,255,255,.82); }
     .suggest button{
       width:100%;
       text-align:left;
@@ -190,6 +187,36 @@
     /* Views */
     .view{ display:none; }
     .view.active{ display:block; }
+
+    /* Segmented control unités */
+    .unitToggle{
+      display:flex;
+      gap:8px;
+      padding:8px;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+    }
+    [data-theme="light"] .unitToggle{ background: rgba(255,255,255,.62); }
+
+    .unitBtn{
+      flex:1;
+      padding:10px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: transparent;
+      box-shadow:none;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .unitBtn[aria-pressed="true"]{
+      background: rgba(255,255,255,.18);
+      border-color: rgba(255,255,255,.22);
+    }
+    [data-theme="light"] .unitBtn[aria-pressed="true"]{
+      background: rgba(10,15,26,.08);
+      border-color: rgba(10,15,26,.10);
+    }
 
     /* Compass */
     .navHeader{
@@ -224,7 +251,7 @@
       background: rgba(255,255,255,.07);
       padding: 12px;
     }
-    [data-theme="light"] .metric{ background: rgba(255,255,255,.55); }
+    [data-theme="light"] .metric{ background: rgba(255,255,255,.62); }
     .k{ font-size:12px; color: var(--muted); }
     .v{ margin-top:6px; font-size:16px; font-weight: 1000; letter-spacing:.2px; }
 
@@ -234,10 +261,7 @@
       .ringWrap,.ringSvg,.arrowSvg{ width:230px; height:230px; }
     }
 
-    /* Tiny "iOS-like" animations */
-    .fadeIn{
-      animation: fadeIn .18s ease-out;
-    }
+    .fadeIn{ animation: fadeIn .18s ease-out; }
     @keyframes fadeIn{
       from{ opacity:.0; transform: translateY(6px); }
       to{ opacity:1; transform: translateY(0); }
@@ -289,20 +313,10 @@
 
           <div class="sep"></div>
 
-          <div class="label">Options</div>
-          <div class="pills">
-            <label class="pill" style="cursor:pointer;">
-              <input id="optVibrate" type="checkbox" checked style="vertical-align:middle;margin-right:6px;">
-              <b>Vibration</b> arrivée
-            </label>
-            <label class="pill" style="cursor:pointer;">
-              <input id="optWake" type="checkbox" checked style="vertical-align:middle;margin-right:6px;">
-              <b>Écran</b> actif
-            </label>
-            <label class="pill" style="cursor:pointer;">
-              <input id="optKm" type="checkbox" checked style="vertical-align:middle;margin-right:6px;">
-              <b>Unités</b> km
-            </label>
+          <div class="label">Unités</div>
+          <div class="unitToggle" role="group" aria-label="Unités">
+            <button id="unitM" class="unitBtn" type="button" aria-pressed="false">mètres</button>
+            <button id="unitKM" class="unitBtn" type="button" aria-pressed="true">km</button>
           </div>
 
           <button id="start" class="primary full" type="button" style="margin-top:12px;">
@@ -316,6 +330,9 @@
 
           <div class="foot" id="setupHint">
             iPhone: si la boussole web est limitée, la flèche se base sur le “cap de marche” (avance quelques mètres).
+          </div>
+          <div class="foot" style="margin-top:6px;">
+            Vibration et écran actif : activés par défaut.
           </div>
         </div>
       </div>
@@ -390,14 +407,13 @@
         </div>
       </div>
     </div>
-
   </div>
 
 <script>
 (() => {
-  // ======= DOM
   const $ = (id) => document.getElementById(id);
 
+  // DOM
   const app = $("app");
   const themeBtn = $("themeBtn");
 
@@ -413,9 +429,8 @@
   const stHttps = $("stHttps");
   const setupHint = $("setupHint");
 
-  const optVibrate = $("optVibrate");
-  const optWake = $("optWake");
-  const optKm = $("optKm");
+  const unitMBtn = $("unitM");
+  const unitKBtn = $("unitKM");
 
   const destLabel = $("destLabel");
   const ringWrap = $("ringWrap");
@@ -429,28 +444,35 @@
   const navHint = $("navHint");
   const debugEl = $("debug");
 
-  // ======= State
-  let dest = null;                // {lat, lon, label}
-  let user = null;                // {lat, lon, acc, speed, heading}
-  let compassHeading = null;      // from deviceorientation
-  let gpsHeading = null;          // from coords.heading or computed from movement
+  // Toujours activés (comme demandé)
+  const vibrateEnabled = true;
+  const wakeEnabled = true;
+
+  // State
+  let dest = null;
+  let user = null;
+  let compassHeading = null;
+  let gpsHeading = null;
   let mode = "—";
 
   let watchId = null;
   let orientationHandler = null;
 
-  let lastFix = null;             // {lat, lon, t}
+  let lastFix = null;
   const MIN_MOVE_M = 3;
   const MIN_DT_MS = 1200;
 
   // ring/proximity
-  const CIRC = 226.2; // 2π*36
+  const CIRC = 226.2;
   const CAP_M = 1000;
+
+  // Units
+  let unitsMode = "km"; // "km" or "m"
 
   // wake lock
   let wakeLock = null;
 
-  // ======= Math helpers
+  // Helpers
   const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
   const toRad = (d) => d*Math.PI/180;
   const toDeg = (r) => r*180/Math.PI;
@@ -474,11 +496,11 @@
 
   function fmtDistance(m){
     if(m==null) return "—";
-    if(!optKm.checked) return `${Math.round(m)} m`;
+    if(unitsMode === "m") return `${Math.round(m)} m`;
     return m < 1000 ? `${Math.round(m)} m` : `${(m/1000).toFixed(2)} km`;
   }
 
-  // ======= Views
+  // Views
   function show(which){
     viewSetup.classList.toggle("active", which === "setup");
     viewNav.classList.toggle("active", which === "nav");
@@ -486,7 +508,7 @@
     if(which === "nav") viewNav.classList.add("fadeIn");
   }
 
-  // ======= Theme
+  // Theme
   function setTheme(theme){
     app.setAttribute("data-theme", theme);
     themeBtn.textContent = theme === "light" ? "☀" : "☾";
@@ -496,7 +518,6 @@
   if(savedTheme === "light" || savedTheme === "dark"){
     setTheme(savedTheme);
   } else {
-    // default: follow system
     const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
     setTheme(prefersLight ? "light" : "dark");
   }
@@ -505,10 +526,26 @@
     setTheme(cur === "light" ? "dark" : "light");
   };
 
-  // ======= HTTPS status
+  // Units segmented
+  function setUnits(mode){
+    unitsMode = mode;
+    const isM = mode === "m";
+    unitMBtn.setAttribute("aria-pressed", isM ? "true" : "false");
+    unitKBtn.setAttribute("aria-pressed", !isM ? "true" : "false");
+    localStorage.setItem("cc_units", mode);
+    updateUI();
+  }
+  unitMBtn.onclick = () => setUnits("m");
+  unitKBtn.onclick = () => setUnits("km");
+
+  const savedUnits = localStorage.getItem("cc_units");
+  if(savedUnits === "m" || savedUnits === "km") setUnits(savedUnits);
+  else setUnits("km");
+
+  // HTTPS status
   stHttps.innerHTML = `<b>HTTPS</b> ${location.protocol === "https:" ? "OK" : "requis"}`;
 
-  // ======= Suggestions (Nominatim)
+  // Suggestions (Nominatim)
   let suggTimer = null;
 
   async function nominatimSearch(q){
@@ -557,7 +594,7 @@
     if(!suggestEl.contains(e.target) && e.target !== addrEl) hideSuggest();
   });
 
-  // ======= Setup actions
+  // Setup actions
   function refreshDest(){
     stDest.innerHTML = `<b>Destination</b> ${dest ? "OK" : "—"}`;
     if(dest) setupHint.textContent = "Destination prête. Appuie sur “Démarrer la navigation”.";
@@ -606,7 +643,7 @@
     refreshDest();
   };
 
-  // ======= Heading strategy
+  // Heading strategy
   function bestHeading(){
     if(compassHeading != null){ mode = "Boussole"; return compassHeading; }
     if(gpsHeading != null){ mode = "Cap de marche"; return gpsHeading; }
@@ -627,7 +664,7 @@
     lastFix = {lat: curr.lat, lon: curr.lon, t: curr.t};
   }
 
-  // ======= Proximity ring
+  // Proximity ring
   function updateProximity(distanceM){
     if(distanceM == null){
       ringWrap.style.transform = "scale(1)";
@@ -635,25 +672,25 @@
       return;
     }
     const d = clamp(distanceM, 0, CAP_M);
-    const t = 1 - (d / CAP_M);  // 0 far -> 1 near
+    const t = 1 - (d / CAP_M);
     const scale = 1.10 - (0.38 * t);
     ringWrap.style.transform = `scale(${scale.toFixed(3)})`;
     ringProg.style.strokeDashoffset = `${CIRC * (1 - t)}`;
   }
 
-  // ======= Wake Lock
+  // Wake Lock
   async function setWakeLock(on){
     try{
       if(!("wakeLock" in navigator)) return;
       if(on){
         wakeLock = await navigator.wakeLock.request("screen");
-      }else{
+      } else {
         if(wakeLock){ await wakeLock.release(); wakeLock = null; }
       }
     }catch{}
   }
 
-  // ======= Start/Stop
+  // Start/Stop
   async function startNav(){
     if(!dest){
       setupHint.textContent = "Définis d’abord une destination.";
@@ -668,12 +705,10 @@
       return;
     }
 
-    // switch view
     destLabel.textContent = `Destination: ${dest.label || "—"}`;
     show("nav");
 
-    // keep screen awake
-    await setWakeLock(optWake.checked);
+    await setWakeLock(wakeEnabled);
 
     // reset state
     user = null;
@@ -686,7 +721,7 @@
       try{
         const res = await DeviceOrientationEvent.requestPermission();
         if(res !== "granted"){
-          compassHeading = null; // fallback to movement
+          compassHeading = null;
         }
       }catch{
         compassHeading = null;
@@ -697,11 +732,9 @@
     if(typeof DeviceOrientationEvent !== "undefined"){
       const useAbs = ("ondeviceorientationabsolute" in window);
       orientationHandler = (e) => {
-        // iOS Safari
         if(typeof e.webkitCompassHeading === "number"){
           compassHeading = (e.webkitCompassHeading + 360) % 360;
         } else if (e.alpha != null) {
-          // alpha is device rotation; approximate heading
           compassHeading = (360 - e.alpha) % 360;
         } else {
           compassHeading = null;
@@ -719,14 +752,13 @@
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
         const spd = pos.coords.speed;
-        const hdg = pos.coords.heading; // often null
+        const hdg = pos.coords.heading;
 
         user = { lat, lon, acc, speed: spd, heading: hdg };
 
         const bad = (acc != null && acc > 50);
         pillGps.innerHTML = `<b>GPS</b> ±${Math.round(acc ?? 0)}m${bad ? " (faible)" : ""}`;
 
-        // use coords.heading if present and moving, else compute from movement
         if(Number.isFinite(hdg) && (spd == null || spd > 0.2)){
           gpsHeading = (hdg + 360) % 360;
         } else {
@@ -778,9 +810,7 @@
   $("stop").onclick = stopNav;
   $("back").onclick = stopNav;
 
-  // Utility buttons
   $("recenter").onclick = () => {
-    // just refresh UI / hint
     navHint.textContent = "Recentré. Marche pour stabiliser le cap si nécessaire.";
     updateUI();
   };
@@ -796,7 +826,7 @@
     }
   };
 
-  // ======= UI update
+  // UI update
   let arrivedOnce = false;
 
   function updateUI(){
@@ -814,7 +844,6 @@
     pillMode.innerHTML = `<b>Mode</b> ${mode}`;
     pillCap.innerHTML = `<b>Cap</b> ${hdg == null ? "—" : Math.round(hdg) + "°"}`;
 
-    // rotate arrow: relative if heading known else absolute bearing
     const rot = (hdg == null) ? brg : (brg - hdg + 360) % 360;
     arrowEl.style.transform = `rotate(${rot}deg)`;
 
@@ -825,7 +854,7 @@
 
     if(d < 15){
       navHint.textContent = "Arrivé (≈ 15 m).";
-      if(optVibrate.checked && !arrivedOnce && "vibrate" in navigator){
+      if(vibrateEnabled && !arrivedOnce && "vibrate" in navigator){
         navigator.vibrate([200,120,200]);
       }
       arrivedOnce = true;
@@ -842,12 +871,14 @@
       (compassHeading != null ? ` • Boussole: ${Math.round(compassHeading)}°` : "");
   }
 
-  // stop wake lock when hidden
+  // Wake lock on visibility
   document.addEventListener("visibilitychange", () => {
     if(document.hidden) setWakeLock(false);
-    else if(optWake.checked && viewNav.classList.contains("active")) setWakeLock(true);
+    else if(wakeEnabled && viewNav.classList.contains("active")) setWakeLock(true);
   });
 
+  // Start view
+  show("setup");
 })();
 </script>
 </body>
