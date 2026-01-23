@@ -22,8 +22,9 @@
       --muted: rgba(255,255,255,.66);
       --shadow: 0 18px 48px rgba(0,0,0,.45);
       --r: 22px;
-      --accent: rgba(60,130,255,.85); /* style Google-ish */
+      --accent: rgba(60,130,255,.85);
       --focus: rgba(60,130,255,.22);
+      --danger: rgba(255, 90, 90, 0.85);
     }
     [data-theme="light"]{
       --bg0:#f5f6fa; --bg1:#eceff5;
@@ -130,6 +131,18 @@
       background: color-mix(in srgb, var(--accent) 14%, rgba(255,255,255,.78));
       border-color: color-mix(in srgb, var(--accent) 18%, rgba(16,24,40,.10));
     }
+    /* Bouton d'alerte pour les permissions */
+    .btnAlert{
+      background: color-mix(in srgb, var(--danger) 26%, rgba(255,255,255,.10));
+      border-color: color-mix(in srgb, var(--danger) 35%, rgba(255,255,255,.12));
+      color: #ffcccc;
+    }
+    [data-theme="light"] .btnAlert{
+       background: color-mix(in srgb, var(--danger) 14%, rgba(255,255,255,.78));
+       border-color: color-mix(in srgb, var(--danger) 18%, rgba(16,24,40,.10));
+       color: #b91c1c;
+    }
+
     .btnRow{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
     .full{ width:100%; }
 
@@ -364,6 +377,11 @@
               </div>
               <button class="iconBtn" id="stop" type="button">⏹</button>
             </div>
+
+            <!-- BOUTON PERMISSION iOS / CAPTEURS -->
+            <button id="btnGrantPerms" class="btn btnAlert full" style="display:none; margin-bottom:12px;">
+              ⚠️ Activer Boussole & GPS
+            </button>
 
             <div class="compassWrap">
               <div class="ringWrap" id="ringWrap">
@@ -631,6 +649,7 @@
   const openInGmapsBtn = $("openInGmaps");
 
   const destLabel = $("destLabel");
+  const btnGrantPerms = $("btnGrantPerms"); // New Button
   const ringWrap = $("ringWrap");
   const ringProg = $("ringProg");
   const arrowEl = $("arrow");
@@ -711,7 +730,7 @@
     const φ1=toRad(lat1), φ2=toRad(lat2);
     const Δλ=toRad(lon2-lon1);
     const y=Math.sin(Δλ)*Math.cos(φ2);
-    const x=Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(φ2)*0 + // harmless noop
+    const x=Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(φ2)*0 + 
             (Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ));
     return (toDeg(Math.atan2(y,x))+360)%360;
   }
@@ -866,7 +885,6 @@
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  // Nouveau bouton "Ajouter étape"
   addToRouteBtn.onclick = () => {
     if(!selected) return;
     routeQueue.push(structuredClone(selected));
@@ -878,7 +896,6 @@
 
   startFromPlace.onclick = () => {
     if(!selected) return;
-    // Définit la destination immédiate SANS vider la file
     dest = { lat: selected.lat, lon: selected.lon, label: selected.name };
     refreshDest();
     show("nav");
@@ -950,7 +967,6 @@
     suggestEl.style.display = "block";
   }
 
-  // Unified Search Handler
   async function handleSearch(q) {
     let results = [];
     const term = q.toLowerCase();
@@ -987,7 +1003,6 @@
       if(q.length === 0) { 
         handleSearch(""); 
       } else if (q.length < 3) {
-        // < 3 : local only
         const localOnly = POPULAR_PLACES.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
         if(localOnly.length) showSuggest(localOnly.map(p => ({
             displayname: p.name, context: p.context, lat: p.lat, lon: p.lon,
@@ -1036,13 +1051,10 @@
   function parseGmapsLink(link){
     if(!link) return null;
     const s = link.trim();
-    // 1) Patterns: @lat,lon
     let m = s.match(/@(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)/);
     if(m) return { lat: parseFloat(m[1]), lon: parseFloat(m[3]) };
-    // 2) q=lat,lon
     m = s.match(/[?&]q=(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)/);
     if(m) return { lat: parseFloat(m[1]), lon: parseFloat(m[3]) };
-    // 3) query=lat,lon (api=1)
     m = s.match(/[?&]query=(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)/);
     if(m) return { lat: parseFloat(m[1]), lon: parseFloat(m[3]) };
     return null;
@@ -1064,7 +1076,6 @@
       return;
     }
 
-    // Fallback: search name if present
     const fallbackName = addrEl.value.trim() || "Lieu Google Maps";
     try{
       const res = await searchAddressGouv(fallbackName);
@@ -1232,6 +1243,31 @@
   }
 
   /* =========================
+     PERMISSIONS BUTTON HANDLER
+  ========================== */
+  btnGrantPerms.onclick = async () => {
+    // 1. Demande boussole (iOS 13+)
+    if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+      try {
+        const response = await DeviceOrientationEvent.requestPermission();
+        if (response === "granted") {
+          btnGrantPerms.style.display = "none";
+          // Re-bind orientation if needed
+          window.addEventListener("deviceorientation", orientationHandler, true);
+        } else {
+          alert("Permission boussole refusée. Rechargez la page pour réessayer.");
+        }
+      } catch (e) { console.error(e); }
+    } else {
+      btnGrantPerms.style.display = "none";
+    }
+
+    // 2. Force GPS prompt if needed
+    navigator.geolocation.getCurrentPosition(() => {}, () => {}, {});
+  };
+
+
+  /* =========================
      Navigation start/stop
   ========================== */
   async function startNav(){
@@ -1257,12 +1293,12 @@
 
     user = null; compassHeading = null; gpsHeading = null; lastFix = null;
 
-    // iOS permission
+    // Check if we need to show the Permission Button (iOS 13+)
     if(typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function"){
-      try{
-        const res = await DeviceOrientationEvent.requestPermission();
-        if(res !== "granted") compassHeading = null;
-      }catch{ compassHeading = null; }
+      // On affiche le bouton pour que l'utilisateur clique
+      btnGrantPerms.style.display = "block";
+    } else {
+      btnGrantPerms.style.display = "none";
     }
 
     // Orientation
@@ -1271,6 +1307,8 @@
       orientationHandler = (e) => {
         if(typeof e.webkitCompassHeading === "number"){
           compassHeading = (e.webkitCompassHeading + 360) % 360;
+          // If we get data, we can hide the button
+          if(compassHeading !== null) btnGrantPerms.style.display = "none";
         } else if (e.alpha != null) {
           compassHeading = (360 - e.alpha) % 360;
         } else {
@@ -1323,6 +1361,7 @@
     directionEl.textContent = "—";
     navHint.textContent = "Suis la flèche. L’anneau se resserre en approchant.";
     debugEl.textContent = "";
+    btnGrantPerms.style.display = "none"; // Hide button on stop
     updateProximity(null);
     setWakeLock(false);
     show(selected ? "place" : "discover");
