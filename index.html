@@ -850,25 +850,36 @@
     show("manage");
   };
 
-  /* =========================
-     Search API Gouv (Toulouse)
+   /* =========================
+     API Adresse (Gouv) - Optimisée Toulouse
   ========================== */
-  let suggTimer = null;
+  async function searchAddressGouv(q){
+    // Coordonnées du centre de Toulouse pour le "biais" géographique
+    const lat = 43.6045; 
+    const lon = 1.4442;
 
-  async function searchAddressGouv(q) {
-    const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5&lat=43.6045&lon=1.4440&type=housenumber`;
+    // Ajout des paramètres &lat=...&lon=... pour prioriser la zone
+    // autocomplete=1 améliore la tolérance aux fautes de frappe
+    const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5&lat=${lat}&lon=${lon}&autocomplete=1`;
+    
     try {
-      const r = await fetch(url);
-      const data = await r.json();
-      return data.features.map(f => ({
-        displayname: f.properties.label,
-        lat: f.geometry.coordinates [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/46895707/e4711187-a2d0-4c23-99fb-ec6f88faa123/paste.txt),
-        lon: f.geometry.coordinates[0],
-        city: f.properties.city,
-        context: f.properties.context || f.properties.city
+      const res = await fetch(url);
+      if(!res.ok) return [];
+      const json = await res.json();
+      
+      // On retourne un tableau d'objets formatés pour showSuggest
+      return json.features.map(f => ({
+        displayname: f.properties.label,     // Ex: "1 Place du Capitole"
+        context: f.properties.context,       // Ex: "31000, Toulouse, Haute-Garonne"
+        lat: f.geometry.coordinates[1],
+        lon: f.geometry.coordinates[0]
       }));
-    } catch (e) { return []; }
+    } catch(e) {
+      console.warn("Erreur API Adresse:", e);
+      return [];
+    }
   }
+
 
   function hideSuggest(){
     suggestEl.style.display = "none";
