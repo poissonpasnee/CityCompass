@@ -2,63 +2,63 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
   <meta name="theme-color" content="#0b0f1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>City Compass — Toulouse</title>
 
   <style>
     :root{
       --bg0:#0b0f1a; --bg1:#070a12;
       --card: rgba(255,255,255,.10);
-      --card2: rgba(255,255,255,.06);
       --stroke: rgba(255,255,255,.14);
       --text: rgba(255,255,255,.94);
       --muted: rgba(255,255,255,.66);
       --shadow: 0 18px 48px rgba(0,0,0,.45);
       --r: 22px;
-      --accent: rgba(60,130,255,.85); /* style Google-ish */
-      --focus: rgba(60,130,255,.22);
+      --accent: rgba(25,103,210,.92);
+      --focus: rgba(25,103,210,.20);
     }
     [data-theme="light"]{
       --bg0:#f5f6fa; --bg1:#eceff5;
-      --card: rgba(255,255,255,.86);
-      --card2: rgba(255,255,255,.58);
+      --card: rgba(255,255,255,.90);
       --stroke: rgba(16,24,40,.10);
       --text: rgba(16,24,40,.92);
       --muted: rgba(16,24,40,.60);
       --shadow: 0 18px 42px rgba(16,24,40,.12);
       --accent: rgba(25,103,210,.92);
-      --focus: rgba(25,103,210,.18);
+      --focus: rgba(25,103,210,.16);
     }
 
     *{ box-sizing:border-box; }
     html, body{ height:100%; margin:0; }
     body{
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      font-size: 17px;                 /* TEXTE PLUS GRAND */
+      font-size: 18px; /* texte plus grand */
       line-height: 1.35;
       color: var(--text);
       background:
-        radial-gradient(1000px 700px at 20% 10%, rgba(60,130,255,.20), transparent 55%),
-        radial-gradient(900px 700px at 80% 20%, rgba(255,255,255,.10), transparent 60%),
+        radial-gradient(1000px 700px at 20% 10%, rgba(25,103,210,.18), transparent 55%),
+        radial-gradient(900px 700px at 80% 20%, rgba(255,255,255,.09), transparent 60%),
         linear-gradient(180deg, var(--bg0), var(--bg1));
       overflow:hidden;
     }
 
+    /* full-screen webapp container */
     .app{
       height: 100dvh;
       height: 100vh;
       padding:
-        calc(env(safe-area-inset-top) + 14px)
-        calc(env(safe-area-inset-right) + 14px)
-        calc(env(safe-area-inset-bottom) + 14px)
-        calc(env(safe-area-inset-left) + 14px);
+        calc(env(safe-area-inset-top) + 12px)
+        calc(env(safe-area-inset-right) + 12px)
+        calc(env(safe-area-inset-bottom) + 12px)
+        calc(env(safe-area-inset-left) + 12px);
       display:flex;
       flex-direction:column;
       gap:12px;
     }
 
-    /* Top bar (Google-ish) */
     .topbar{
       display:flex;
       align-items:center;
@@ -66,7 +66,7 @@
       flex:0 0 auto;
     }
     .brand{ flex:1; min-width:0; }
-    .title{ margin:0; font-size:22px; font-weight:900; letter-spacing:.2px; }
+    .title{ margin:0; font-size:22px; font-weight:1000; letter-spacing:.2px; }
     .subtitle{ margin:4px 0 0; color: var(--muted); font-size:14px; }
 
     .iconBtn{
@@ -75,18 +75,17 @@
       color: var(--text);
       border-radius: 16px;
       padding: 10px 12px;
-      font-weight: 900;
+      font-weight: 1000;
       cursor:pointer;
       user-select:none;
     }
-    [data-theme="light"] .iconBtn{ background: rgba(255,255,255,.70); }
+    [data-theme="light"] .iconBtn{ background: rgba(255,255,255,.78); }
 
-    /* Main card (full height) */
     .main{ flex:1 1 auto; min-height:0; display:flex; }
     .card{
       width:100%;
       border-radius: var(--r);
-      background: linear-gradient(180deg, var(--card), var(--card2));
+      background: rgba(255,255,255,.08);
       border:1px solid var(--stroke);
       box-shadow: var(--shadow);
       backdrop-filter: blur(16px) saturate(150%);
@@ -95,6 +94,8 @@
       display:flex;
       position:relative;
     }
+    [data-theme="light"] .card{ background: rgba(255,255,255,.88); }
+
     .section{
       width:100%;
       overflow:auto;
@@ -105,55 +106,48 @@
     .view{ display:none; height:100%; }
     .view.active{ display:block; }
 
-    .label{ font-size:13px; font-weight:800; color: var(--muted); margin: 4px 0 8px; }
+    .label{ font-size:13px; font-weight:900; color: var(--muted); margin: 4px 0 8px; }
     .sep{ height:1px; background: rgba(255,255,255,.10); margin: 14px 0; }
     [data-theme="light"] .sep{ background: rgba(16,24,40,.08); }
 
-    /* Inputs */
     input, textarea{
       width:100%;
-      padding: 14px 14px;             /* plus grand */
+      padding: 14px;
       border-radius: 18px;
       border:1px solid var(--stroke);
       background: rgba(10,14,28,.26);
       color: var(--text);
       outline:none;
       box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
-      font-size: 17px;
+      font-size: 18px;
     }
-    [data-theme="light"] input, [data-theme="light"] textarea{
-      background: rgba(255,255,255,.75);
-    }
+    [data-theme="light"] input, [data-theme="light"] textarea{ background: rgba(255,255,255,.80); }
+    input:focus, textarea:focus{ box-shadow: 0 0 0 3px var(--focus), inset 0 1px 0 rgba(255,255,255,.08); }
     input::placeholder, textarea::placeholder{ color: rgba(255,255,255,.45); }
     [data-theme="light"] input::placeholder, [data-theme="light"] textarea::placeholder{ color: rgba(16,24,40,.40); }
-    input:focus, textarea:focus{
-      box-shadow: 0 0 0 3px var(--focus), inset 0 1px 0 rgba(255,255,255,.08);
-    }
 
-    /* Primary Google-ish button */
     .btn{
-      padding: 14px 14px;             /* plus grand */
+      padding: 14px;
       border-radius: 18px;
       border:1px solid var(--stroke);
       background: rgba(255,255,255,.10);
       color: var(--text);
-      font-weight: 900;
+      font-weight: 1000;
       cursor:pointer;
-      font-size: 16.5px;
+      font-size: 17px;
     }
-    [data-theme="light"] .btn{ background: rgba(255,255,255,.78); }
+    [data-theme="light"] .btn{ background: rgba(255,255,255,.86); }
     .btnPrimary{
-      background: color-mix(in srgb, var(--accent) 26%, rgba(255,255,255,.10));
-      border-color: color-mix(in srgb, var(--accent) 35%, rgba(255,255,255,.12));
+      background: color-mix(in srgb, var(--accent) 22%, rgba(255,255,255,.10));
+      border-color: color-mix(in srgb, var(--accent) 30%, var(--stroke));
     }
     [data-theme="light"] .btnPrimary{
-      background: color-mix(in srgb, var(--accent) 14%, rgba(255,255,255,.78));
-      border-color: color-mix(in srgb, var(--accent) 18%, rgba(16,24,40,.10));
+      background: color-mix(in srgb, var(--accent) 10%, rgba(255,255,255,.86));
+      border-color: color-mix(in srgb, var(--accent) 14%, rgba(16,24,40,.10));
     }
     .btnRow{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
     .full{ width:100%; }
 
-    /* Search bar (Google-style pill) */
     .searchPill{
       border-radius: 999px;
       border:1px solid var(--stroke);
@@ -163,35 +157,33 @@
       gap:10px;
       padding: 10px 12px;
     }
-    [data-theme="light"] .searchPill{ background: rgba(255,255,255,.80); }
+    [data-theme="light"] .searchPill{ background: rgba(255,255,255,.90); }
     .searchPill .magnify{ font-weight:1000; opacity:.9; }
     .searchPill input{
-      border:0;
-      background: transparent;
+      border:0; background: transparent;
       padding: 8px 6px;
       border-radius: 12px;
       box-shadow:none;
-      font-size: 17px;
+      font-size: 18px;
     }
     .searchPill input:focus{ box-shadow:none; }
 
-    /* Suggestions */
     .suggestWrap{ position:relative; }
     .suggest{
       position:absolute; left:0; right:0; top: calc(100% + 10px);
       border-radius: 18px;
       overflow:hidden;
       border:1px solid var(--stroke);
-      background: rgba(10,14,28,.68);
+      background: rgba(10,14,28,.70);
       backdrop-filter: blur(16px) saturate(140%);
       -webkit-backdrop-filter: blur(16px) saturate(140%);
       box-shadow: 0 18px 48px rgba(0,0,0,.45);
       display:none;
       z-index: 30;
-      max-height: 280px;
+      max-height: 320px;
       overflow:auto;
     }
-    [data-theme="light"] .suggest{ background: rgba(255,255,255,.92); }
+    [data-theme="light"] .suggest{ background: rgba(255,255,255,.96); }
     .suggest button{
       width:100%;
       text-align:left;
@@ -199,14 +191,13 @@
       border:0;
       background: transparent;
       color: var(--text);
-      font-weight: 900;
+      font-weight: 1000;
       font-size: 16px;
       cursor:pointer;
     }
     .suggest button:hover{ background: rgba(255,255,255,.10); }
-    .small{ display:block; margin-top:4px; font-size:13px; font-weight:650; color: var(--muted); }
+    .small{ display:block; margin-top:4px; font-size:13px; font-weight:700; color: var(--muted); }
 
-    /* Place cards */
     .placeList{ display:flex; flex-direction:column; gap:10px; margin-top:8px; }
     .placeCard{
       border-radius: 20px;
@@ -216,7 +207,8 @@
       cursor:pointer;
       user-select:none;
     }
-    [data-theme="light"] .placeCard{ background: rgba(255,255,255,.82); }
+    [data-theme="light"] .placeCard{ background: rgba(255,255,255,.92); }
+
     .placeTop{ display:flex; align-items:center; gap:12px; }
     .badge{
       width:42px; height:42px; border-radius: 16px;
@@ -227,10 +219,48 @@
       flex:0 0 auto;
     }
     [data-theme="light"] .badge{ background: rgba(16,24,40,.05); }
-    .placeName{ font-size:18px; font-weight:1000; letter-spacing:.2px; }
+    .placeName{ font-size:19px; font-weight:1100; letter-spacing:.2px; }
     .placeMeta{ margin-top:6px; color: var(--muted); font-size:14px; }
 
-    /* Bottom nav (simple) */
+    .chips{ display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+    .chip{
+      padding: 10px 12px;
+      border-radius: 999px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.08);
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 900;
+    }
+    [data-theme="light"] .chip{ background: rgba(255,255,255,.90); }
+    .chip b{ color: var(--text); }
+
+    .detailTitle{ margin:0; font-size:21px; font-weight:1100; }
+    .detailText{ margin-top:10px; font-size:16.5px; color: var(--muted); white-space:pre-wrap; line-height:1.45; }
+
+    .seg{
+      display:flex; gap:8px; padding:8px;
+      border-radius: 18px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.08);
+    }
+    [data-theme="light"] .seg{ background: rgba(255,255,255,.90); }
+    .segBtn{
+      flex:1; border-radius: 14px;
+      border:1px solid var(--stroke);
+      background: transparent;
+      padding: 12px 10px;
+      font-weight: 1000;
+      cursor:pointer;
+    }
+    .segBtn[aria-pressed="true"]{
+      background: color-mix(in srgb, var(--accent) 14%, rgba(255,255,255,.08));
+      border-color: color-mix(in srgb, var(--accent) 24%, var(--stroke));
+    }
+    [data-theme="light"] .segBtn[aria-pressed="true"]{
+      background: color-mix(in srgb, var(--accent) 10%, rgba(255,255,255,.90));
+    }
+
     .bottomNav{
       flex:0 0 auto;
       display:grid;
@@ -242,51 +272,53 @@
       border:1px solid var(--stroke);
       background: rgba(255,255,255,.08);
       padding: 12px 10px;
-      font-weight: 950;
+      font-weight: 1050;
       cursor:pointer;
       text-align:center;
       color: var(--muted);
       user-select:none;
     }
-    [data-theme="light"] .navTab{ background: rgba(255,255,255,.78); }
+    [data-theme="light"] .navTab{ background: rgba(255,255,255,.86); }
     .navTab.active{
       color: var(--text);
       border-color: color-mix(in srgb, var(--accent) 30%, var(--stroke));
       background: color-mix(in srgb, var(--accent) 12%, rgba(255,255,255,.10));
     }
     [data-theme="light"] .navTab.active{
-      background: color-mix(in srgb, var(--accent) 10%, rgba(255,255,255,.78));
+      background: color-mix(in srgb, var(--accent) 10%, rgba(255,255,255,.86));
     }
 
-    /* Detail / chips */
-    .chips{ display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
-    .chip{
-      padding: 10px 12px;
-      border-radius: 999px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.08);
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 850;
+    /* -------- FULLSCREEN NAV (compass truly full screen) -------- */
+    .app.navMode{
+      padding: 0;
+      gap:0;
     }
-    [data-theme="light"] .chip{ background: rgba(255,255,255,.80); }
-    .chip b{ color: var(--text); }
+    .app.navMode .topbar,
+    .app.navMode .bottomNav{ display:none; }
+    .app.navMode .main{ flex:1 1 auto; min-height:0; }
+    .app.navMode .card{
+      border-radius: 0;
+      border-left:0; border-right:0;
+      border-top:0; border-bottom:0;
+      box-shadow:none;
+    }
+    .app.navMode .section{ padding:
+        calc(env(safe-area-inset-top) + 12px)
+        calc(env(safe-area-inset-right) + 12px)
+        calc(env(safe-area-inset-bottom) + 12px)
+        calc(env(safe-area-inset-left) + 12px);
+    }
 
-    .detailTitle{ margin:0; font-size:20px; font-weight:1000; }
-    .detailText{ margin-top:10px; font-size:16px; color: var(--muted); white-space:pre-wrap; line-height:1.45; }
-
-    /* Compass */
     .navHeader{
       display:flex; align-items:center; gap:10px;
       margin-bottom: 10px;
     }
     .navHeader .brand{ flex:1; min-width:0; }
-    .navHeader .title{ font-size:18px; }
     .navHeader .subtitle{ font-size:14px; }
 
     .compassWrap{ display:flex; justify-content:center; padding: 8px 0 0; }
     .ringWrap{
-      width: min(78vw, 340px);
+      width: min(84vw, 380px);
       aspect-ratio: 1 / 1;
       position: relative;
       transform: scale(1);
@@ -305,63 +337,50 @@
       background: rgba(255,255,255,.08);
       padding: 14px;
     }
-    [data-theme="light"] .metric{ background: rgba(255,255,255,.82); }
-    .k{ font-size:13px; color: var(--muted); font-weight:850; }
-    .v{ margin-top:6px; font-size:18px; font-weight:1000; }
+    [data-theme="light"] .metric{ background: rgba(255,255,255,.92); }
+    .k{ font-size:13px; color: var(--muted); font-weight:900; }
+    .v{ margin-top:6px; font-size:18px; font-weight:1100; }
 
     .toolbar{ margin-top: 12px; display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-
     .foot{ margin-top: 12px; color: var(--muted); font-size:14px; line-height:1.35; }
 
-    /* Segmented (units) */
-    .seg{
-      display:flex; gap:8px; padding:8px;
-      border-radius: 18px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.08);
-    }
-    [data-theme="light"] .seg{ background: rgba(255,255,255,.80); }
-    .segBtn{
-      flex:1; border-radius: 14px;
-      border:1px solid var(--stroke);
-      background: transparent;
-      padding: 12px 10px;
-      font-weight: 950;
-      cursor:pointer;
-    }
-    .segBtn[aria-pressed="true"]{
-      background: color-mix(in srgb, var(--accent) 14%, rgba(255,255,255,.08));
-      border-color: color-mix(in srgb, var(--accent) 24%, var(--stroke));
-    }
-    [data-theme="light"] .segBtn[aria-pressed="true"]{
-      background: color-mix(in srgb, var(--accent) 10%, rgba(255,255,255,.80));
-    }
-
-    /* Manage places list */
-    .manageRow{
-      display:grid;
-      grid-template-columns: 1fr auto;
-      gap:10px;
-      align-items:center;
-      padding: 12px;
-      border-radius: 18px;
+    /* Waypoints UI */
+    .wpList{ display:flex; flex-direction:column; gap:10px; margin-top:10px; }
+    .wpItem{
       border:1px solid var(--stroke);
       background: rgba(255,255,255,.06);
+      border-radius: 18px;
+      padding: 12px;
     }
-    [data-theme="light"] .manageRow{ background: rgba(255,255,255,.78); }
-    .manageName{ font-size:17px; font-weight:1000; }
-    .manageSub{ margin-top:4px; color: var(--muted); font-size:14px; }
+    [data-theme="light"] .wpItem{ background: rgba(255,255,255,.90); }
+    .wpTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .wpName{ font-weight:1100; font-size:16.5px; }
+    .wpSub{ margin-top:6px; color: var(--muted); font-size:14px; }
+    .miniRow{ display:flex; gap:8px; }
     .miniBtn{
       padding: 10px 12px;
       border-radius: 16px;
       border:1px solid var(--stroke);
       background: rgba(255,255,255,.08);
       cursor:pointer;
-      font-weight: 950;
+      font-weight: 1100;
     }
-    [data-theme="light"] .miniBtn{ background: rgba(255,255,255,.86); }
-
+    [data-theme="light"] .miniBtn{ background: rgba(255,255,255,.94); }
     .danger{ border-color: rgba(255,90,90,.35); }
+
+    .progressBar{
+      height: 10px;
+      border-radius: 999px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      overflow:hidden;
+      margin-top:10px;
+    }
+    .progressFill{
+      height:100%;
+      width:0%;
+      background: color-mix(in srgb, var(--accent) 55%, rgba(255,255,255,.10));
+    }
   </style>
 </head>
 
@@ -370,7 +389,7 @@
     <div class="topbar">
       <div class="brand">
         <h1 class="title">City Compass</h1>
-        <p class="subtitle">Découvre Toulouse : sélection → fiche → flèche (sans carte).</p>
+        <p class="subtitle">Recherche fiable (Toulouse/31) + étapes (waypoints) + boussole plein écran.</p>
       </div>
       <button class="iconBtn" id="themeBtn" type="button" title="Jour/Nuit">☾</button>
     </div>
@@ -381,29 +400,29 @@
 
           <!-- VIEW: DISCOVER -->
           <div class="view active" id="viewDiscover">
-            <div class="label">Lieux magnifiques (modifiable)</div>
+            <div class="label">Lieux (modifiable)</div>
             <div class="placeList" id="placeList"></div>
 
             <div class="sep"></div>
 
-            <div class="label">Rechercher une adresse / lien Google Maps</div>
+            <div class="label">Recherche précise (Toulouse / Haute-Garonne)</div>
             <div class="suggestWrap">
               <div class="searchPill">
                 <div class="magnify">🔎</div>
-                <input id="addr" autocomplete="off" placeholder="Ex: Place du Capitole, Toulouse" />
+                <input id="addr" autocomplete="off" placeholder="Ex: 12 rue d'Alsace Lorraine, Toulouse" />
               </div>
               <div id="suggest" class="suggest"></div>
             </div>
 
             <div class="btnRow" style="margin-top:10px;">
-              <button class="btn btnPrimary" id="setAddr" type="button">Ouvrir la fiche</button>
+              <button class="btn btnPrimary" id="openFromSearch" type="button">Ouvrir la fiche</button>
               <button class="btn" id="clearAddr" type="button">Effacer</button>
             </div>
 
             <div class="sep"></div>
 
-            <div class="label">Ou coller un lien Google Maps (facultatif)</div>
-            <input id="gmapsLink" placeholder="Colle un lien Google Maps (optionnel)" />
+            <div class="label">Ou coller un lien Google Maps</div>
+            <input id="gmapsLink" placeholder="Colle un lien Google Maps (idéal: contient @lat,lon)" />
             <button class="btn btnPrimary full" id="useGmapsLink" type="button" style="margin-top:10px;">
               Utiliser ce lien
             </button>
@@ -422,16 +441,16 @@
             </div>
 
             <div class="foot" id="discoverHint">
-              Tu peux modifier la liste des lieux dans l’onglet “Gérer”. Vibration + écran actif : activés par défaut.
+              La recherche est d’abord “centrée” sur Toulouse/31 (plus fiable), puis élargit si besoin.
             </div>
           </div>
 
-          <!-- VIEW: PLACE DETAIL -->
+          <!-- VIEW: PLACE / ROUTE BUILDER -->
           <div class="view" id="viewPlace">
             <div class="navHeader">
               <button class="iconBtn" id="placeBack" type="button">←</button>
               <div class="brand">
-                <div class="title" style="font-size:18px; margin:0;">Fiche</div>
+                <div class="title" style="font-size:18px; margin:0;">Fiche & Itinéraire</div>
                 <div class="subtitle" id="placeSubtitle" style="margin-top:4px;">—</div>
               </div>
               <button class="iconBtn" id="openInGmaps" type="button" title="Google Maps">🗺️</button>
@@ -445,26 +464,51 @@
               <div class="chip" id="placeType"><b>Type</b> —</div>
             </div>
 
+            <div class="sep"></div>
+
+            <div class="label">Étapes avant la destination (waypoints)</div>
+            <div class="foot" style="margin-top:0;">
+              Ajoute 1 ou plusieurs points. La boussole te guide vers l’étape 1, puis 2… puis destination.
+            </div>
+
+            <div class="suggestWrap" style="margin-top:10px;">
+              <div class="searchPill">
+                <div class="magnify">➕</div>
+                <input id="wpSearch" autocomplete="off" placeholder="Ajouter une étape (adresse, lieu…)" />
+              </div>
+              <div id="wpSuggest" class="suggest"></div>
+            </div>
+
+            <div class="btnRow" style="margin-top:10px;">
+              <button class="btn btnPrimary" id="addWpManual" type="button">Ajouter étape</button>
+              <button class="btn" id="clearWpSearch" type="button">Effacer</button>
+            </div>
+
+            <div class="wpList" id="wpList"></div>
+
             <div class="btnRow" style="margin-top:12px;">
-              <button class="btn btnPrimary" id="startFromPlace" type="button">Lancer la navigation</button>
-              <button class="btn" id="editThisPlace" type="button">Modifier</button>
+              <button class="btn btnPrimary" id="startRoute" type="button">Démarrer (plein écran)</button>
+              <button class="btn" id="clearRoute" type="button">Réinitialiser</button>
             </div>
 
             <div class="foot" id="placeHint">
-              iPhone : si la boussole est instable, marche quelques mètres (cap de marche).
+              iPhone : autorise “Mouvement et orientation” quand demandé. Sinon, la flèche suit le “cap de marche”.
             </div>
           </div>
 
-          <!-- VIEW: NAV -->
+          <!-- VIEW: FULLSCREEN NAV -->
           <div class="view" id="viewNav">
             <div class="navHeader">
-              <button class="iconBtn" id="back" type="button">←</button>
+              <button class="iconBtn" id="exitNav" type="button">←</button>
               <div class="brand">
-                <div class="title" style="font-size:18px; margin:0;">Navigation</div>
-                <div class="subtitle" id="destLabel" style="margin-top:4px;">Destination: —</div>
+                <div class="title" style="font-size:18px; margin:0;" id="navTitle">Navigation</div>
+                <div class="subtitle" id="destLabel" style="margin-top:4px;">—</div>
               </div>
               <button class="iconBtn" id="stop" type="button">⏹</button>
             </div>
+
+            <div class="chip" id="stepChip" style="display:inline-block;"><b>Étape</b> —</div>
+            <div class="progressBar"><div class="progressFill" id="routeProgress"></div></div>
 
             <div class="compassWrap">
               <div class="ringWrap" id="ringWrap">
@@ -513,62 +557,22 @@
             </div>
 
             <div class="toolbar">
-              <button class="btn" id="recenter" type="button">Recentrer</button>
+              <button class="btn" id="skipStep" type="button">Passer l’étape</button>
               <button class="btn" id="copy" type="button">Copier coords</button>
             </div>
 
-            <div class="foot" id="navHint">Suis la flèche. L’anneau se resserre en approchant.</div>
+            <div class="foot" id="navHint">Suis la flèche. Validation auto quand tu es proche.</div>
             <div class="foot" id="debug"></div>
-          </div>
-
-          <!-- VIEW: MANAGE PLACES -->
-          <div class="view" id="viewManage">
-            <div class="label">Gérer les lieux (modifiable à tout moment)</div>
-            <div class="foot" style="margin-top:0;">
-              Ajoute un lieu en collant un lien Google Maps (si possible avec coordonnées) ou en mettant un nom/adresse.
-              Les lieux sont enregistrés sur ton téléphone (localStorage).
-            </div>
-
-            <div class="sep"></div>
-
-            <div class="label">Ajouter / modifier</div>
-            <input id="mName" placeholder="Nom du lieu (ex: Couvent des Jacobins)" />
-            <input id="mType" placeholder="Type (ex: Patrimoine, Balade…)" style="margin-top:10px;" />
-            <textarea id="mDesc" rows="4" placeholder="Description (2–4 phrases) — optionnel" style="margin-top:10px;"></textarea>
-            <input id="mGmaps" placeholder="Lien Google Maps (optionnel) — colle ici" style="margin-top:10px;" />
-            <div class="btnRow" style="margin-top:10px;">
-              <input id="mLat" inputmode="decimal" placeholder="Latitude (optionnel)" />
-              <input id="mLon" inputmode="decimal" placeholder="Longitude (optionnel)" />
-            </div>
-
-            <div class="btnRow" style="margin-top:10px;">
-              <button class="btn btnPrimary" id="savePlace" type="button">Enregistrer</button>
-              <button class="btn" id="resetForm" type="button">Nouveau</button>
-            </div>
-
-            <div class="sep"></div>
-
-            <div class="label">Mes lieux</div>
-            <div id="manageList" class="placeList"></div>
-
-            <div class="btnRow" style="margin-top:12px;">
-              <button class="btn danger" id="resetDefaults" type="button">Réinitialiser</button>
-              <button class="btn" id="exportJson" type="button">Exporter JSON</button>
-            </div>
-
-            <textarea id="exportBox" rows="6" style="margin-top:10px; display:none;" readonly></textarea>
-
-            <div class="foot" id="manageHint"></div>
           </div>
 
         </div>
       </div>
     </div>
 
-    <div class="bottomNav">
+    <div class="bottomNav" id="bottomNav">
       <button class="navTab active" id="tabDiscover" type="button">Découvrir</button>
+      <button class="navTab" id="tabRoute" type="button">Itinéraire</button>
       <button class="navTab" id="tabNav" type="button">Boussole</button>
-      <button class="navTab" id="tabManage" type="button">Gérer</button>
     </div>
   </div>
 
@@ -577,79 +581,36 @@
   const $ = (id) => document.getElementById(id);
 
   /* =========================
-     DEFAULT PLACES (Toulouse)
+     DEFAULT PLACES (editable)
   ========================== */
   const DEFAULT_PLACES = [
-    {
-      id: "capitole",
-      emoji: "🏛️",
-      name: "Place du Capitole",
-      type: "Incontournable",
-      lat: 43.604519,
-      lon: 1.444026,
-      desc: "Le cœur de Toulouse : arcades, ambiance, photos au coucher du soleil.",
-      gmaps: "https://www.google.com/maps/search/?api=1&query=Place%20du%20Capitole%20Toulouse"
-    },
-    {
-      id: "jacobins",
-      emoji: "⛪",
-      name: "Couvent des Jacobins",
-      type: "Patrimoine",
-      lat: 43.604941,
-      lon: 1.440824,
-      desc: "Architecture gothique remarquable. Le “palmier” de pierre est à voir absolument.",
-      gmaps: "https://www.google.com/maps/search/?api=1&query=Couvent%20des%20Jacobins%20Toulouse"
-    },
-    {
-      id: "saint-sernin",
-      emoji: "⛪",
-      name: "Basilique Saint-Sernin",
-      type: "Patrimoine",
-      lat: 43.608336,
-      lon: 1.441657,
-      desc: "Monument majeur du roman. Super balade autour, et visite si ouvert.",
-      gmaps: "https://www.google.com/maps/search/?api=1&query=Basilique%20Saint-Sernin%20Toulouse"
-    },
-    {
-      id: "jardin-japonais",
-      emoji: "🌿",
-      name: "Jardin Japonais (Compans)",
-      type: "Nature",
-      lat: 43.611715,
-      lon: 1.434880,
-      desc: "Pause calme : pont, bassins, ambiance zen au milieu de la ville.",
-      gmaps: "https://www.google.com/maps/search/?api=1&query=Jardin%20Japonais%20Compans%20Caffarelli%20Toulouse"
-    },
-    {
-      id: "pont-neuf",
-      emoji: "🌉",
-      name: "Pont Neuf & Quais de la Garonne",
-      type: "Balade",
-      lat: 43.599514,
-      lon: 1.437357,
-      desc: "Super spot au bord de l’eau, parfait en fin de journée.",
-      gmaps: "https://www.google.com/maps/search/?api=1&query=Pont%20Neuf%20Toulouse"
-    }
+    { id:"capitole", emoji:"🏛️", name:"Place du Capitole", type:"Incontournable", lat:43.604519, lon:1.444026,
+      desc:"Le cœur de Toulouse : arcades, ambiance, photos au coucher du soleil.",
+      gmaps:"https://www.google.com/maps/search/?api=1&query=Place%20du%20Capitole%20Toulouse" },
+    { id:"jacobins", emoji:"⛪", name:"Couvent des Jacobins", type:"Patrimoine", lat:43.604941, lon:1.440824,
+      desc:"Architecture gothique remarquable. Le “palmier” de pierre est à voir absolument.",
+      gmaps:"https://www.google.com/maps/search/?api=1&query=Couvent%20des%20Jacobins%20Toulouse" },
+    { id:"saint-sernin", emoji:"⛪", name:"Basilique Saint-Sernin", type:"Patrimoine", lat:43.608336, lon:1.441657,
+      desc:"Monument majeur du roman. Super balade autour, et visite si ouvert.",
+      gmaps:"https://www.google.com/maps/search/?api=1&query=Basilique%20Saint-Sernin%20Toulouse" },
+    { id:"jardin-japonais", emoji:"🌿", name:"Jardin Japonais (Compans)", type:"Nature", lat:43.611715, lon:1.434880,
+      desc:"Pause calme : pont, bassins, ambiance zen au milieu de la ville.",
+      gmaps:"https://www.google.com/maps/search/?api=1&query=Jardin%20Japonais%20Compans%20Caffarelli%20Toulouse" },
+    { id:"pont-neuf", emoji:"🌉", name:"Pont Neuf & Quais", type:"Balade", lat:43.599514, lon:1.437357,
+      desc:"Super spot au bord de l’eau, parfait en fin de journée.",
+      gmaps:"https://www.google.com/maps/search/?api=1&query=Pont%20Neuf%20Toulouse" }
   ];
+  const STORAGE_KEY = "cc_places_v3";
 
-  const STORAGE_KEY = "cc_places_v2";
-
+  let places = loadPlaces();
   function loadPlaces(){
     try{
       const raw = localStorage.getItem(STORAGE_KEY);
       if(!raw) return structuredClone(DEFAULT_PLACES);
       const arr = JSON.parse(raw);
-      if(!Array.isArray(arr) || !arr.length) return structuredClone(DEFAULT_PLACES);
-      return arr;
-    }catch{
-      return structuredClone(DEFAULT_PLACES);
-    }
+      return Array.isArray(arr) && arr.length ? arr : structuredClone(DEFAULT_PLACES);
+    }catch{ return structuredClone(DEFAULT_PLACES); }
   }
-  function savePlaces(){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(places));
-  }
-
-  let places = loadPlaces();
 
   /* =========================
      DOM
@@ -660,18 +621,19 @@
   const viewDiscover = $("viewDiscover");
   const viewPlace = $("viewPlace");
   const viewNav = $("viewNav");
-  const viewManage = $("viewManage");
 
   const tabDiscover = $("tabDiscover");
+  const tabRoute = $("tabRoute");
   const tabNav = $("tabNav");
-  const tabManage = $("tabManage");
 
   const placeListEl = $("placeList");
-  const manageListEl = $("manageList");
-
   const addrEl = $("addr");
   const suggestEl = $("suggest");
   const gmapsLinkEl = $("gmapsLink");
+
+  const wpSearchEl = $("wpSearch");
+  const wpSuggestEl = $("wpSuggest");
+  const wpListEl = $("wpList");
 
   const stDest = $("stDest");
   const stHttps = $("stHttps");
@@ -685,11 +647,19 @@
   const placeDesc = $("placeDesc");
   const placeCoords = $("placeCoords");
   const placeType = $("placeType");
-  const startFromPlace = $("startFromPlace");
-  const editThisPlace = $("editThisPlace");
   const openInGmapsBtn = $("openInGmaps");
 
+  const startRouteBtn = $("startRoute");
+  const clearRouteBtn = $("clearRoute");
+
+  const exitNavBtn = $("exitNav");
+  const stopBtn = $("stop");
+  const skipStepBtn = $("skipStep");
+
   const destLabel = $("destLabel");
+  const stepChip = $("stepChip");
+  const routeProgress = $("routeProgress");
+
   const ringWrap = $("ringWrap");
   const ringProg = $("ringProg");
   const arrowEl = $("arrow");
@@ -701,114 +671,10 @@
   const navHint = $("navHint");
   const debugEl = $("debug");
 
-  // Manage form
-  const mName = $("mName");
-  const mType = $("mType");
-  const mDesc = $("mDesc");
-  const mGmaps = $("mGmaps");
-  const mLat = $("mLat");
-  const mLon = $("mLon");
-  const savePlaceBtn = $("savePlace");
-  const resetFormBtn = $("resetForm");
-  const resetDefaultsBtn = $("resetDefaults");
-  const exportJsonBtn = $("exportJson");
-  const exportBox = $("exportBox");
-  const manageHint = $("manageHint");
-
   /* =========================
-     Always ON
+     Status
   ========================== */
-  const vibrateEnabled = true;
-  const wakeEnabled = true;
-
-  /* =========================
-     State
-  ========================== */
-  let selected = null; // place object
-  let dest = null;     // {lat, lon, label}
-  let user = null;
-  let compassHeading = null;
-  let gpsHeading = null;
-  let mode = "—";
-
-  let watchId = null;
-  let orientationHandler = null;
-
-  let lastFix = null;
-  const MIN_MOVE_M = 3;
-  const MIN_DT_MS = 1200;
-
-  const CIRC = 226.2;
-  const CAP_M = 1000;
-
-  let unitsMode = "km"; // "km" or "m"
-
-  let wakeLock = null;
-
-  /* =========================
-     Utils
-  ========================== */
-  const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
-  const toRad = (d) => d*Math.PI/180;
-  const toDeg = (r) => r*180/Math.PI;
-
-  function uid(){
-    return Math.random().toString(16).slice(2) + Date.now().toString(16);
-  }
-
-  function escapeHtml(s){
-    return String(s ?? "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-
-  function bearing(lat1, lon1, lat2, lon2){
-    const φ1=toRad(lat1), φ2=toRad(lat2);
-    const Δλ=toRad(lon2-lon1);
-    const y=Math.sin(Δλ)*Math.cos(φ2);
-    const x=Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(φ2)*0 + // harmless noop
-            (Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ));
-    return (toDeg(Math.atan2(y,x))+360)%360;
-  }
-
-  function haversine(lat1, lon1, lat2, lon2){
-    const R=6371000;
-    const dφ=toRad(lat2-lat1), dλ=toRad(lon2-lon1);
-    const a=Math.sin(dφ/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dλ/2)**2;
-    return 2*R*Math.asin(Math.sqrt(a));
-  }
-
-  const cardinal = (deg) => ["N","NE","E","SE","S","SO","O","NO","N"][Math.round(deg/45)];
-
-  function fmtDistance(m){
-    if(m==null) return "—";
-    if(unitsMode === "m") return `${Math.round(m)} m`;
-    return m < 1000 ? `${Math.round(m)} m` : `${(m/1000).toFixed(2)} km`;
-  }
-
-  /* =========================
-     Views + Tabs
-  ========================== */
-  function show(which){
-    viewDiscover.classList.toggle("active", which === "discover");
-    viewPlace.classList.toggle("active", which === "place");
-    viewNav.classList.toggle("active", which === "nav");
-    viewManage.classList.toggle("active", which === "manage");
-
-    tabDiscover.classList.toggle("active", which === "discover" || which === "place");
-    tabNav.classList.toggle("active", which === "nav");
-    tabManage.classList.toggle("active", which === "manage");
-  }
-
-  tabDiscover.onclick = () => show(selected ? "place" : "discover");
-  tabNav.onclick = () => {
-    if(dest) show("nav");
-    else show("discover");
-  };
-  tabManage.onclick = () => show("manage");
+  stHttps.innerHTML = `<b>HTTPS</b> ${location.protocol === "https:" ? "OK" : "requis"}`;
 
   /* =========================
      Theme
@@ -820,43 +686,58 @@
   }
   const savedTheme = localStorage.getItem("cc_theme");
   if(savedTheme === "light" || savedTheme === "dark") setTheme(savedTheme);
-  else {
-    const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
-    setTheme(prefersLight ? "light" : "dark");
-  }
-  themeBtn.onclick = () => {
-    const cur = app.getAttribute("data-theme");
-    setTheme(cur === "light" ? "dark" : "light");
-  };
+  else setTheme(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  themeBtn.onclick = () => setTheme(app.getAttribute("data-theme") === "light" ? "dark" : "light");
 
   /* =========================
      Units
   ========================== */
+  let unitsMode = "km";
   function setUnits(mode){
     unitsMode = mode;
-    const isM = mode === "m";
-    unitMBtn.setAttribute("aria-pressed", isM ? "true" : "false");
-    unitKBtn.setAttribute("aria-pressed", !isM ? "true" : "false");
+    unitMBtn.setAttribute("aria-pressed", mode === "m" ? "true" : "false");
+    unitKBtn.setAttribute("aria-pressed", mode === "km" ? "true" : "false");
     localStorage.setItem("cc_units", mode);
     updateUI();
   }
   unitMBtn.onclick = () => setUnits("m");
   unitKBtn.onclick = () => setUnits("km");
-  const savedUnits = localStorage.getItem("cc_units");
-  setUnits(savedUnits === "m" || savedUnits === "km" ? savedUnits : "km");
+  setUnits((localStorage.getItem("cc_units") === "m") ? "m" : "km");
 
   /* =========================
-     Status
+     Views
   ========================== */
-  stHttps.innerHTML = `<b>HTTPS</b> ${location.protocol === "https:" ? "OK" : "requis"}`;
-  function refreshDest(){
-    stDest.innerHTML = `<b>Destination</b> ${dest ? "OK" : "—"}`;
+  let selected = null;          // selected place object
+  let destination = null;       // {lat, lon, label, gmaps?}
+  let waypoints = [];           // array of {lat, lon, label}
+  let routeIndex = 0;           // 0..waypoints.length (last = destination)
+  function refreshDestChip(){
+    stDest.innerHTML = `<b>Destination</b> ${destination ? "OK" : "—"}`;
   }
-  refreshDest();
+  function show(which){
+    viewDiscover.classList.toggle("active", which === "discover");
+    viewPlace.classList.toggle("active", which === "place");
+    viewNav.classList.toggle("active", which === "nav");
+
+    tabDiscover.classList.toggle("active", which === "discover");
+    tabRoute.classList.toggle("active", which === "place");
+    tabNav.classList.toggle("active", which === "nav");
+
+    // fullscreen nav mode
+    app.classList.toggle("navMode", which === "nav");
+  }
+  tabDiscover.onclick = () => show("discover");
+  tabRoute.onclick = () => show("place");
+  tabNav.onclick = () => show("nav");
 
   /* =========================
-     Render lists
+     Render discover list
   ========================== */
+  function esc(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
   function renderDiscover(){
     placeListEl.innerHTML = "";
     places.forEach(p => {
@@ -864,10 +745,10 @@
       div.className = "placeCard";
       div.innerHTML = `
         <div class="placeTop">
-          <div class="badge">${escapeHtml(p.emoji || "📍")}</div>
+          <div class="badge">${esc(p.emoji || "📍")}</div>
           <div style="min-width:0;">
-            <div class="placeName">${escapeHtml(p.name)}</div>
-            <div class="placeMeta">${escapeHtml(p.type || "Lieu")} • Toulouse</div>
+            <div class="placeName">${esc(p.name)}</div>
+            <div class="placeMeta">${esc(p.type || "Lieu")} • Toulouse / 31</div>
           </div>
         </div>
       `;
@@ -876,168 +757,216 @@
     });
   }
 
-  function renderManage(){
-    manageListEl.innerHTML = "";
-    places.forEach(p => {
-      const row = document.createElement("div");
-      row.className = "manageRow";
-      row.innerHTML = `
-        <div style="min-width:0;">
-          <div class="manageName">${escapeHtml(p.name)}</div>
-          <div class="manageSub">${escapeHtml(p.type || "Lieu")} • ${Number.isFinite(p.lat) ? p.lat.toFixed(5) : "—"}, ${Number.isFinite(p.lon) ? p.lon.toFixed(5) : "—"}</div>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <button class="miniBtn" type="button" data-act="edit">✎</button>
-          <button class="miniBtn danger" type="button" data-act="del">🗑</button>
-        </div>
-      `;
-      row.querySelector('[data-act="edit"]').onclick = () => loadIntoForm(p);
-      row.querySelector('[data-act="del"]').onclick = () => deletePlace(p.id);
-      manageListEl.appendChild(row);
-    });
-  }
-
-  /* =========================
-     Place detail
-  ========================== */
   function openPlace(p){
     selected = p;
-    dest = { lat: p.lat, lon: p.lon, label: p.name };
-    refreshDest();
+    destination = { lat: p.lat, lon: p.lon, label: p.name, gmaps: p.gmaps };
+    refreshDestChip();
 
     placeTitle.textContent = p.name || "—";
-    placeSubtitle.textContent = `${p.type || "Lieu"} • Toulouse`;
+    placeSubtitle.textContent = `${p.type || "Lieu"} • Toulouse / 31`;
     placeDesc.textContent = p.desc || "—";
     placeCoords.innerHTML = `<b>GPS</b> ${Number.isFinite(p.lat) ? p.lat.toFixed(5) : "—"}, ${Number.isFinite(p.lon) ? p.lon.toFixed(5) : "—"}`;
-    placeType.innerHTML = `<b>Type</b> ${escapeHtml(p.type || "Lieu")}`;
+    placeType.innerHTML = `<b>Type</b> ${esc(p.type || "Lieu")}`;
+
+    // reset route builder when selecting a new destination
+    waypoints = [];
+    routeIndex = 0;
+    renderWaypoints();
 
     show("place");
   }
 
   placeBack.onclick = () => show("discover");
-
   openInGmapsBtn.onclick = () => {
-    if(!selected) return;
-    const url = selected.gmaps?.trim()
-      ? selected.gmaps.trim()
-      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selected.name || "Toulouse")}`;
+    if(!destination) return;
+    const url = destination.gmaps?.trim()
+      ? destination.gmaps.trim()
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destination.label || "Toulouse")}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  startFromPlace.onclick = () => startNav();
-
-  editThisPlace.onclick = () => {
-    if(!selected) return;
-    loadIntoForm(selected);
-    show("manage");
+  /* =========================
+     Better address search (biased to Toulouse/31)
+     - 1st pass: bounded search around Toulouse/Haute-Garonne
+     - 2nd pass: France-wide fallback
+  ========================== */
+  // Rough bounding box for Haute-Garonne / Toulouse area
+  // viewbox format: left,top,right,bottom (lon,lat,lon,lat)
+  const VIEWBOX_31 = {
+    left: 0.60,   // lon
+    top: 44.35,   // lat
+    right: 2.30,  // lon
+    bottom: 43.05 // lat
   };
 
-  /* =========================
-     Nominatim search
-  ========================== */
-  let suggTimer = null;
-
-  async function nominatimSearch(q){
-    const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&q=${encodeURIComponent(q)}`;
+  async function nominatimSearch(q, {bounded=true}={}){
+    const base = "https://nominatim.openstreetmap.org/search";
+    const params = new URLSearchParams({
+      format: "json",
+      addressdetails: "1",
+      limit: "8",
+      "accept-language": "fr",
+      countrycodes: "fr",
+      q
+    });
+    if(bounded){
+      params.set("bounded", "1");
+      params.set("viewbox", `${VIEWBOX_31.left},${VIEWBOX_31.top},${VIEWBOX_31.right},${VIEWBOX_31.bottom}`);
+    }
+    const url = `${base}?${params.toString()}`;
     const r = await fetch(url, { headers: { "Accept":"application/json" }});
     return r.json();
   }
 
-  function hideSuggest(){
-    suggestEl.style.display = "none";
-    suggestEl.innerHTML = "";
+  function formatLine(it){
+    const a = it.address
+const a = it.address || {};
+      const city = a.city || a.town || a.village || a.municipality || a.county || "";
+      const state = a.state || a.region || "";
+      const postcode = a.postcode || "";
+      const road = a.road || a.pedestrian || a.footway || a.cycleway || "";
+      const house = a.house_number || "";
+      const name = it.name || a.attraction || a.amenity || a.shop || a.tourism || a.leisure || "";
+      const main = (house || road) ? `${house ? house + " " : ""}${road}` : (name || it.display_name.split(",")[0] || "");
+      const sub = `${postcode ? postcode + " " : ""}${city}${state ? " — " + state : ""}`.trim();
+      return { main: main || it.display_name, sub };
+    }
+
+  function scoreResult(it, rawQuery){
+    // Heuristic scoring: prefer Toulouse/Haute-Garonne + better match for query terms
+    const q = rawQuery.toLowerCase().trim();
+    const dn = (it.display_name || "").toLowerCase();
+    const a = it.address || {};
+    const dept = (a.county || "").toLowerCase();
+    const city = (a.city || a.town || a.village || "").toLowerCase();
+    const state = (a.state || a.region || "").toLowerCase();
+
+    let s = 0;
+
+    // hard bias for 31 / Toulouse area
+    if(dn.includes("haute-garonne") || dept.includes("haute-garonne")) s += 25;
+    if(city.includes("toulouse") || dn.includes("toulouse")) s += 18;
+    if(state.includes("occitanie") || dn.includes("occitanie")) s += 6;
+
+    // query token match
+    const tokens = q.split(/\s+/).filter(t => t.length >= 3);
+    for(const t of tokens){
+      if(dn.includes(t)) s += 3;
+    }
+
+    // address completeness
+    if(a.house_number) s += 4;
+    if(a.road) s += 3;
+    if(a.postcode) s += 2;
+
+    // prefer higher importance (if present)
+    if(typeof it.importance === "number") s += it.importance * 5;
+
+    return s;
   }
 
-  function showSuggest(items){
-    if(!items?.length){ hideSuggest(); return; }
-    suggestEl.innerHTML = "";
+  function hideSuggest(el){
+    el.style.display = "none";
+    el.innerHTML = "";
+  }
+
+  function showSuggest(el, items, onPick){
+    if(!items?.length){ hideSuggest(el); return; }
+    el.innerHTML = "";
     items.forEach(it => {
       const btn = document.createElement("button");
       btn.type = "button";
-      const parts = it.display_name.split(",").map(s => s.trim());
-      const main = parts.slice(0,2).join(", ");
-      const rest = parts.slice(2,6).join(", ").trim();
-      btn.innerHTML = `${escapeHtml(main)}<span class="small">${escapeHtml(rest||"")}</span>`;
-      btn.onclick = () => {
-        hideSuggest();
+      const {main, sub} = formatLine(it);
+      btn.innerHTML = `${esc(main)}<span class="small">${esc(sub || it.display_name)}</span>`;
+      btn.onclick = () => onPick(it);
+      el.appendChild(btn);
+    });
+    el.style.display = "block";
+  }
+
+  let addrTimer = null;
+  async function smartSearch(query){
+    const q = query.trim();
+    if(q.length < 3) return [];
+
+    // If query doesn't include Toulouse/31, append context (improves precision)
+    const boosted = /toulouse|haute-garonne|31\b/i.test(q) ? q : `${q}, Toulouse`;
+
+    // Pass 1: bounded 31
+    let res = [];
+    try{ res = await nominatimSearch(boosted, {bounded:true}); }catch{}
+    // Pass 2: fallback France if empty or poor
+    if(!res?.length){
+      try{ res = await nominatimSearch(boosted, {bounded:false}); }catch{}
+    }
+
+    // Sort by heuristic score
+    res = (res || []).sort((a,b) => scoreResult(b, boosted) - scoreResult(a, boosted));
+    return res.slice(0, 8);
+  }
+
+  // Address suggest in Discover
+  addrEl.addEventListener("input", () => {
+    const q = addrEl.value;
+    if(addrTimer) clearTimeout(addrTimer);
+    if(q.trim().length < 3){ hideSuggest(suggestEl); return; }
+    addrTimer = setTimeout(async () => {
+      const res = await smartSearch(q);
+      showSuggest(suggestEl, res, (it) => {
+        hideSuggest(suggestEl);
         const p = {
-          id: uid(),
+          id: "search-" + Date.now(),
           emoji: "📍",
           name: it.display_name,
           type: "Adresse",
           lat: parseFloat(it.lat),
           lon: parseFloat(it.lon),
-          desc: "Destination définie depuis une adresse.\nTu peux lancer la navigation.",
+          desc: "Destination définie depuis la recherche.\nTu peux ajouter des étapes puis démarrer.",
           gmaps: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(it.display_name)}`
         };
-        selected = p;
-        dest = { lat: p.lat, lon: p.lon, label: p.name };
-        refreshDest();
         openPlace(p);
-      };
-      suggestEl.appendChild(btn);
-    });
-    suggestEl.style.display = "block";
-  }
-
-  addrEl.addEventListener("input", () => {
-    const q = addrEl.value.trim();
-    if(suggTimer) clearTimeout(suggTimer);
-    if(q.length < 3){ hideSuggest(); return; }
-    suggTimer = setTimeout(async () => {
-      try { showSuggest(await nominatimSearch(q)); }
-      catch { hideSuggest(); }
-    }, 250);
+      });
+    }, 220);
   });
 
   document.addEventListener("click", (e) => {
-    if(!suggestEl.contains(e.target) && e.target !== addrEl) hideSuggest();
+    if(!suggestEl.contains(e.target) && e.target !== addrEl) hideSuggest(suggestEl);
+    if(!wpSuggestEl.contains(e.target) && e.target !== wpSearchEl) hideSuggest(wpSuggestEl);
   });
 
-  $("setAddr").onclick = async () => {
+  $("openFromSearch").onclick = async () => {
     const q = addrEl.value.trim();
     if(!q) return;
-    try{
-      const res = await nominatimSearch(q);
-      if(!res?.length) return;
-      const it = res[0];
-      const p = {
-        id: uid(),
-        emoji: "📍",
-        name: it.display_name,
-        type: "Adresse",
-        lat: parseFloat(it.lat),
-        lon: parseFloat(it.lon),
-        desc: "Destination définie depuis une adresse.\nTu peux lancer la navigation.",
-        gmaps: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(it.display_name)}`
-      };
-      openPlace(p);
-    }catch{}
+    const res = await smartSearch(q);
+    if(!res.length) return;
+    const it = res[0];
+    const p = {
+      id: "search-" + Date.now(),
+      emoji: "📍",
+      name: it.display_name,
+      type: "Adresse",
+      lat: parseFloat(it.lat),
+      lon: parseFloat(it.lon),
+      desc: "Destination définie depuis la recherche.\nTu peux ajouter des étapes puis démarrer.",
+      gmaps: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(it.display_name)}`
+    };
+    openPlace(p);
   };
 
-  $("clearAddr").onclick = () => { addrEl.value = ""; hideSuggest(); };
+  $("clearAddr").onclick = () => { addrEl.value = ""; hideSuggest(suggestEl); };
 
   /* =========================
      Google Maps link parsing
-     - Essaye d’extraire lat/lon
-     - Sinon garde le lien + tente un geocoding via Nominatim si nom présent
   ========================== */
   function parseGmapsLink(link){
     if(!link) return null;
     const s = link.trim();
-
-    // 1) Patterns: @lat,lon
     let m = s.match(/@(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)/);
     if(m) return { lat: parseFloat(m[1]), lon: parseFloat(m[3]) };
-
-    // 2) q=lat,lon
     m = s.match(/[?&]q=(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)/);
     if(m) return { lat: parseFloat(m[1]), lon: parseFloat(m[3]) };
-
-    // 3) query=lat,lon (api=1)
     m = s.match(/[?&]query=(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)/);
     if(m) return { lat: parseFloat(m[1]), lon: parseFloat(m[3]) };
-
     return null;
   }
 
@@ -1048,58 +977,44 @@
     const coords = parseGmapsLink(link);
     if(coords){
       const p = {
-        id: uid(),
+        id: "gmaps-" + Date.now(),
         emoji: "🗺️",
         name: "Lieu Google Maps",
         type: "Lien",
         lat: coords.lat,
         lon: coords.lon,
-        desc: "Destination définie depuis un lien Google Maps.\nTu peux lancer la navigation.",
+        desc: "Destination définie depuis un lien Google Maps.\nTu peux ajouter des étapes puis démarrer.",
         gmaps: link
       };
       openPlace(p);
       return;
     }
 
-    // Si pas de coords dans le lien : on garde le lien, et on essaie de géocoder le texte saisi dans la barre d’adresse si présent
+    // fallback: try using current text query
     const fallbackName = addrEl.value.trim() || "Lieu Google Maps";
-    try{
-      const res = await nominatimSearch(fallbackName);
-      if(res?.length){
-        const it = res[0];
-        const p = {
-          id: uid(),
-          emoji: "🗺️",
-          name: fallbackName,
-          type: "Lien",
-          lat: parseFloat(it.lat),
-          lon: parseFloat(it.lon),
-          desc: "Lien Google Maps enregistré.\nCoordonnées estimées via recherche.",
-          gmaps: link
-        };
-        openPlace(p);
-      } else {
-        const p = {
-          id: uid(),
-          emoji: "🗺️",
-          name: fallbackName,
-          type: "Lien",
-          lat: NaN,
-          lon: NaN,
-          desc: "Lien Google Maps enregistré.\nAjoute des coordonnées dans “Gérer” si tu veux la navigation flèche.",
-          gmaps: link
-        };
-        openPlace(p);
-      }
-    }catch{
+    const res = await smartSearch(fallbackName);
+    if(res.length){
+      const it = res[0];
       const p = {
-        id: uid(),
+        id: "gmaps-" + Date.now(),
+        emoji: "🗺️",
+        name: fallbackName,
+        type: "Lien",
+        lat: parseFloat(it.lat),
+        lon: parseFloat(it.lon),
+        desc: "Lien Google Maps enregistré. Coordonnées estimées via recherche.",
+        gmaps: link
+      };
+      openPlace(p);
+    } else {
+      const p = {
+        id: "gmaps-" + Date.now(),
         emoji: "🗺️",
         name: fallbackName,
         type: "Lien",
         lat: NaN,
         lon: NaN,
-        desc: "Lien Google Maps enregistré.\nAjoute des coordonnées dans “Gérer” si tu veux la navigation flèche.",
+        desc: "Lien enregistré. Ajoute des coordonnées pour la navigation flèche.",
         gmaps: link
       };
       openPlace(p);
@@ -1107,131 +1022,160 @@
   };
 
   /* =========================
-     Manage places (CRUD)
+     Waypoints (multi-step route)
   ========================== */
-  let editingId = null;
-
-  function loadIntoForm(p){
-    editingId = p.id;
-    mName.value = p.name || "";
-    mType.value = p.type || "";
-    mDesc.value = p.desc || "";
-    mGmaps.value = p.gmaps || "";
-    mLat.value = Number.isFinite(p.lat) ? String(p.lat) : "";
-    mLon.value = Number.isFinite(p.lon) ? String(p.lon) : "";
-    manageHint.textContent = "Mode édition : modifie puis Enregistrer.";
+  function currentTarget(){
+    if(!destination) return null;
+    if(routeIndex < waypoints.length) return waypoints[routeIndex];
+    return destination;
   }
 
-  function resetForm(){
-    editingId = null;
-    mName.value = "";
-    mType.value = "";
-    mDesc.value = "";
-    mGmaps.value = "";
-    mLat.value = "";
-    mLon.value = "";
-    manageHint.textContent = "";
-  }
-
-  resetFormBtn.onclick = resetForm;
-
-  async function geocodeIfNeeded(name){
-    const q = (name || "").trim();
-    if(q.length < 3) return null;
-    try{
-      const res = await nominatimSearch(q + " Toulouse");
-      if(res?.length){
-        return { lat: parseFloat(res[0].lat), lon: parseFloat(res[0].lon) };
-      }
-    }catch{}
-    return null;
-  }
-
-  savePlaceBtn.onclick = async () => {
-    const name = mName.value.trim();
-    if(!name){
-      manageHint.textContent = "Nom requis.";
+  function renderWaypoints(){
+    wpListEl.innerHTML = "";
+    if(!waypoints.length){
+      const empty = document.createElement("div");
+      empty.className = "foot";
+      empty.style.marginTop = "8px";
+      empty.textContent = "Aucune étape. (Optionnel) Ajoute une étape puis démarre.";
+      wpListEl.appendChild(empty);
       return;
     }
 
-    const type = mType.value.trim() || "Lieu";
-    const desc = mDesc.value.trim() || "";
-    const gmaps = mGmaps.value.trim() || "";
+    waypoints.forEach((w, i) => {
+      const item = document.createElement("div");
+      item.className = "wpItem";
+      item.innerHTML = `
+        <div class="wpTop">
+          <div class="wpName">Étape ${i+1}</div>
+          <div class="miniRow">
+            <button class="miniBtn" type="button" data-act="up" ${i===0?"disabled":""}>↑</button>
+            <button class="miniBtn" type="button" data-act="dn" ${i===waypoints.length-1?"disabled":""}>↓</button>
+            <button class="miniBtn danger" type="button" data-act="del">🗑</button>
+          </div>
+        </div>
+        <div class="wpSub">${esc(w.label || "—")}<br>${Number.isFinite(w.lat)?w.lat.toFixed(5):"—"}, ${Number.isFinite(w.lon)?w.lon.toFixed(5):"—"}</div>
+      `;
+      item.querySelector('[data-act="up"]').onclick = () => moveWp(i, -1);
+      item.querySelector('[data-act="dn"]').onclick = () => moveWp(i, +1);
+      item.querySelector('[data-act="del"]').onclick = () => { waypoints.splice(i,1); renderWaypoints(); };
 
-    // coords priority:
-    // 1) manual lat/lon
-    // 2) parse from gmaps link
-    // 3) geocode name
-    let lat = parseFloat(String(mLat.value).replace(",", "."));
-    let lon = parseFloat(String(mLon.value).replace(",", "."));
-
-    if(!Number.isFinite(lat) || !Number.isFinite(lon)){
-      const parsed = parseGmapsLink(gmaps);
-      if(parsed){
-        lat = parsed.lat; lon = parsed.lon;
-      } else {
-        const gc = await geocodeIfNeeded(name);
-        if(gc){ lat = gc.lat; lon = gc.lon; }
-      }
-    }
-
-    const obj = {
-      id: editingId || uid(),
-      emoji: "📍",
-      name,
-      type,
-      lat: Number.isFinite(lat) ? lat : NaN,
-      lon: Number.isFinite(lon) ? lon : NaN,
-      desc,
-      gmaps: gmaps || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}`
-    };
-
-    if(editingId){
-      const idx = places.findIndex(x => x.id === editingId);
-      if(idx >= 0) places[idx] = obj;
-      else places.unshift(obj);
-    } else {
-      places.unshift(obj);
-    }
-
-    savePlaces();
-    renderDiscover();
-    renderManage();
-    resetForm();
-    manageHint.textContent = "Enregistré.";
-  };
-
-  function deletePlace(id){
-    places = places.filter(p => p.id !== id);
-    savePlaces();
-    renderDiscover();
-    renderManage();
-    manageHint.textContent = "Supprimé.";
-    if(selected?.id === id){
-      selected = null;
-      dest = null;
-      refreshDest();
-      show("discover");
-    }
+      wpListEl.appendChild(item);
+    });
   }
 
-  resetDefaultsBtn.onclick = () => {
-    places = structuredClone(DEFAULT_PLACES);
-    savePlaces();
-    renderDiscover();
-    renderManage();
-    resetForm();
-    manageHint.textContent = "Liste réinitialisée.";
+  function moveWp(i, dir){
+    const j = i + dir;
+    if(j < 0 || j >= waypoints.length) return;
+    const tmp = waypoints[i];
+    waypoints[i] = waypoints[j];
+    waypoints[j] = tmp;
+    renderWaypoints();
+  }
+
+  // waypoint suggest
+  let wpTimer = null;
+  wpSearchEl.addEventListener("input", () => {
+    const q = wpSearchEl.value;
+    if(wpTimer) clearTimeout(wpTimer);
+    if(q.trim().length < 3){ hideSuggest(wpSuggestEl); return; }
+    wpTimer = setTimeout(async () => {
+      const res = await smartSearch(q);
+      showSuggest(wpSuggestEl, res, (it) => {
+        hideSuggest(wpSuggestEl);
+        const w = { lat: parseFloat(it.lat), lon: parseFloat(it.lon), label: it.display_name };
+        waypoints.push(w);
+        wpSearchEl.value = "";
+        renderWaypoints();
+      });
+    }, 220);
+  });
+
+  $("addWpManual").onclick = async () => {
+    const q = wpSearchEl.value.trim();
+    if(!q) return;
+    const res = await smartSearch(q);
+    if(!res.length) return;
+    const it = res[0];
+    waypoints.push({ lat: parseFloat(it.lat), lon: parseFloat(it.lon), label: it.display_name });
+    wpSearchEl.value = "";
+    hideSuggest(wpSuggestEl);
+    renderWaypoints();
   };
 
-  exportJsonBtn.onclick = () => {
-    exportBox.style.display = exportBox.style.display === "none" ? "block" : "none";
-    exportBox.value = JSON.stringify(places, null, 2);
+  $("clearWpSearch").onclick = () => { wpSearchEl.value=""; hideSuggest(wpSuggestEl); };
+
+  clearRouteBtn.onclick = () => {
+    waypoints = [];
+    routeIndex = 0;
+    renderWaypoints();
   };
+
+  skipStepBtn.onclick = () => {
+    if(routeIndex < waypoints.length){
+      routeIndex++;
+      arrivedOnce = false;
+      updateRouteUI();
+      updateUI();
+    }
+  };
+
+  function updateRouteUI(){
+    const totalSteps = waypoints.length + 1; // + destination
+    const currentStep = Math.min(routeIndex + 1, totalSteps);
+    const tgt = currentTarget();
+
+    stepChip.innerHTML = `<b>Étape</b> ${currentStep}/${totalSteps}`;
+    destLabel.textContent = tgt ? `➡ ${tgt.label || "Destination"}` : "—";
+
+    const pct = totalSteps ? (routeIndex / totalSteps) * 100 : 0;
+    routeProgress.style.width = `${pct}%`;
+  }
 
   /* =========================
-     Heading logic
+     Fullscreen navigation engine
   ========================== */
+  // Always ON (as requested)
+  const vibrateEnabled = true;
+  const wakeEnabled = true;
+
+  let user = null;
+  let compassHeading = null;
+  let gpsHeading = null;
+  let mode = "—";
+  let watchId = null;
+  let orientationHandler = null;
+  let lastFix = null;
+
+  const MIN_MOVE_M = 3;
+  const MIN_DT_MS = 1200;
+  const CIRC = 226.2;
+  const CAP_M = 1000;
+
+  const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+  const toRad = (d) => d*Math.PI/180;
+  const toDeg = (r) => r*180/Math.PI;
+
+  function bearing(lat1, lon1, lat2, lon2){
+    const φ1=toRad(lat1), φ2=toRad(lat2);
+    const Δλ=toRad(lon2-lon1);
+    const y=Math.sin(Δλ)*Math.cos(φ2);
+    const x=Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+    return (toDeg(Math.atan2(y,x))+360)%360;
+  }
+  function haversine(lat1, lon1, lat2, lon2){
+    const R=6371000;
+    const dφ=toRad(lat2-lat1), dλ=toRad(lon2-lon1);
+    const a=Math.sin(dφ/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dλ/2)**2;
+    return 2*R*Math.asin(Math.sqrt(a));
+  }
+  const cardinal = (deg) => ["N","NE","E","SE","S","SO","O","NO","N"][Math.round(deg/45)];
+
+  function fmtDistance(m){
+    if(m==null) return "—";
+    if(unitsMode === "m") return `${Math.round(m)} m`;
+    return m < 1000 ? `${Math.round(m)} m` : `${(m/1000).toFixed(2)} km`;
+  }
+
   function bestHeading(){
     if(compassHeading != null){ mode = "Boussole"; return compassHeading; }
     if(gpsHeading != null){ mode = "Cap de marche"; return gpsHeading; }
@@ -1240,10 +1184,7 @@
   }
 
   function updateComputedHeading(curr){
-    if(!lastFix){
-      lastFix = {lat: curr.lat, lon: curr.lon, t: curr.t};
-      return;
-    }
+    if(!lastFix){ lastFix = {lat: curr.lat, lon: curr.lon, t: curr.t}; return; }
     const dt = curr.t - lastFix.t;
     if(dt < MIN_DT_MS) return;
     const moved = haversine(lastFix.lat, lastFix.lon, curr.lat, curr.lon);
@@ -1265,6 +1206,7 @@
     ringProg.style.strokeDashoffset = `${CIRC * (1 - t)}`;
   }
 
+  let wakeLock = null;
   async function setWakeLock(on){
     try{
       if(!("wakeLock" in navigator)) return;
@@ -1273,12 +1215,10 @@
     }catch{}
   }
 
-  /* =========================
-     Navigation start/stop
-  ========================== */
   async function startNav(){
-    if(!dest || !Number.isFinite(dest.lat) || !Number.isFinite(dest.lon)){
-      navHint.textContent = "Destination sans coordonnées. Ajoute lat/lon dans “Gérer”.";
+    const tgt = currentTarget();
+    if(!tgt || !Number.isFinite(tgt.lat) || !Number.isFinite(tgt.lon)){
+      navHint.textContent = "Cible sans coordonnées. Corrige la destination/étape.";
       show("nav");
       return;
     }
@@ -1293,23 +1233,21 @@
       return;
     }
 
-    destLabel.textContent = `Destination: ${dest.label || "—"}`;
+    updateRouteUI();
     show("nav");
     await setWakeLock(wakeEnabled);
 
-    user = null; compassHeading = null; gpsHeading = null; lastFix = null;
+    user = null; compassHeading = null; gpsHeading = null; lastFix = null; mode = "—";
+    arrivedOnce = false;
 
-    // iOS permission (must be inside click)
+    // iOS: must be in click gesture
     if(typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function"){
       try{
         const res = await DeviceOrientationEvent.requestPermission();
         if(res !== "granted") compassHeading = null;
-      }catch{
-        compassHeading = null;
-      }
+      }catch{ compassHeading = null; }
     }
 
-    // Orientation
     if(typeof DeviceOrientationEvent !== "undefined"){
       const useAbs = ("ondeviceorientationabsolute" in window);
       orientationHandler = (e) => {
@@ -1325,7 +1263,6 @@
       window.addEventListener(useAbs ? "deviceorientationabsolute" : "deviceorientation", orientationHandler, true);
     }
 
-    // GPS
     pillGps.innerHTML = "<b>GPS</b> demande…";
     watchId = navigator.geolocation.watchPosition(
       (pos) => {
@@ -1371,44 +1308,78 @@
     pillCap.innerHTML = "<b>Cap</b> —";
     distanceEl.textContent = "—";
     directionEl.textContent = "—";
-    navHint.textContent = "Suis la flèche. L’anneau se resserre en approchant.";
+    navHint.textContent = "Suis la flèche. Validation auto quand tu es proche.";
     debugEl.textContent = "";
     updateProximity(null);
 
     setWakeLock(false);
-    show(selected ? "place" : "discover");
+    show("place");
   }
 
-  $("stop").onclick = stopNav;
-  $("back").onclick = stopNav;
-
-  $("recenter").onclick = () => {
-    navHint.textContent = "Recentré. Marche pour stabiliser le cap si nécessaire.";
-    updateUI();
-  };
+  exitNavBtn.onclick = () => stopNav();
+  stopBtn.onclick = () => stopNav();
 
   $("copy").onclick = async () => {
     if(!user) return;
     const txt = `${user.lat.toFixed(6)}, ${user.lon.toFixed(6)}`;
-    try{
-      await navigator.clipboard.writeText(txt);
-      navHint.textContent = "Coordonnées copiées.";
-    }catch{
-      navHint.textContent = txt;
-    }
+    try{ await navigator.clipboard.writeText(txt); navHint.textContent = "Coordonnées copiées."; }
+    catch{ navHint.textContent = txt; }
   };
 
+  startRouteBtn.onclick = () => {
+    if(!destination){
+      navHint.textContent = "Choisis une destination d’abord.";
+      return;
+    }
+    routeIndex = 0;
+    startNav();
+  };
+
+  /* =========================
+     Auto-advance steps
+  ========================== */
+  const ARRIVE_M = 18; // auto validate step when within 18m
   let arrivedOnce = false;
+
+  function maybeAdvance(distanceM){
+    if(distanceM == null) return;
+    if(distanceM <= ARRIVE_M){
+      if(!arrivedOnce){
+        arrivedOnce = true;
+        if(vibrateEnabled && "vibrate" in navigator) navigator.vibrate([180,120,180]);
+        // advance after a short delay (to avoid bouncing)
+        setTimeout(() => {
+          const totalSteps = waypoints.length + 1;
+          if(routeIndex < totalSteps - 1){
+            routeIndex++;
+            arrivedOnce = false;
+            updateRouteUI();
+            navHint.textContent = "Étape validée. Prochaine étape…";
+            updateUI();
+          } else {
+            navHint.textContent = "Arrivé à destination.";
+          }
+        }, 600);
+      }
+    } else {
+      arrivedOnce = false;
+    }
+  }
+
+  /* =========================
+     Main UI update (arrow)
+  ========================== */
   function updateUI(){
-    if(!dest || !user || !Number.isFinite(dest.lat) || !Number.isFinite(dest.lon)){
+    const tgt = currentTarget();
+    if(!tgt || !user || !Number.isFinite(tgt.lat) || !Number.isFinite(tgt.lon)){
       pillMode.innerHTML = "<b>Mode</b> —";
       pillCap.innerHTML = "<b>Cap</b> —";
       updateProximity(null);
       return;
     }
 
-    const d = haversine(user.lat, user.lon, dest.lat, dest.lon);
-    const brg = bearing(user.lat, user.lon, dest.lat, dest.lon);
+    const d = haversine(user.lat, user.lon, tgt.lat, tgt.lon);
+    const brg = bearing(user.lat, user.lon, tgt.lat, tgt.lon);
 
     const hdg = bestHeading();
     pillMode.innerHTML = `<b>Mode</b> ${mode}`;
@@ -1421,19 +1392,7 @@
     directionEl.textContent = `${Math.round(brg)}° ${cardinal(brg)}`;
 
     updateProximity(d);
-
-    if(d < 15){
-      navHint.textContent = "Arrivé (≈ 15 m).";
-      if(vibrateEnabled && !arrivedOnce && "vibrate" in navigator){
-        navigator.vibrate([200,120,200]);
-      }
-      arrivedOnce = true;
-    } else {
-      arrivedOnce = false;
-      navHint.textContent = (hdg == null)
-        ? "Boussole limitée : marche quelques mètres (cap de marche)."
-        : "Suis la flèche. L’anneau se resserre en approchant.";
-    }
+    maybeAdvance(d);
 
     debugEl.textContent =
       `Précision: ±${Math.round(user.acc ?? 0)}m` +
@@ -1441,16 +1400,12 @@
       (compassHeading != null ? ` • Boussole: ${Math.round(compassHeading)}°` : "");
   }
 
-  document.addEventListener("visibilitychange", () => {
-    if(document.hidden) setWakeLock(false);
-    else if(wakeEnabled && viewNav.classList.contains("active")) setWakeLock(true);
-  });
-
   /* =========================
      Init
   ========================== */
+  refreshDestChip();
   renderDiscover();
-  renderManage();
+  renderWaypoints();
   show("discover");
 })();
 </script>
