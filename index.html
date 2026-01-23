@@ -3,28 +3,40 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Boussole Flèche</title>
-
-  <meta name="theme-color" content="#0b0f1a">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0b0f1a" />
+  <title>City Compass</title>
 
   <style>
     :root{
       --bg0:#050812; --bg1:#0b1230;
-      --glass: rgba(255,255,255,.10);
-      --glass2: rgba(255,255,255,.06);
+      --glass: rgba(255,255,255,.12);
+      --glass2: rgba(255,255,255,.07);
       --stroke: rgba(255,255,255,.18);
       --text: rgba(255,255,255,.92);
       --muted: rgba(255,255,255,.62);
       --shadow: 0 20px 60px rgba(0,0,0,.45);
-      --r: 22px;
+      --r: 24px;
+      --focus: rgba(130,160,255,.22);
     }
-    *{box-sizing:border-box}
+
+    /* Light theme */
+    [data-theme="light"]{
+      --bg0:#f5f7ff; --bg1:#eef2ff;
+      --glass: rgba(255,255,255,.72);
+      --glass2: rgba(255,255,255,.42);
+      --stroke: rgba(10,15,26,.12);
+      --text: rgba(10,15,26,.92);
+      --muted: rgba(10,15,26,.60);
+      --shadow: 0 18px 50px rgba(10,15,26,.16);
+      --focus: rgba(80,110,255,.18);
+    }
+
+    *{ box-sizing:border-box; }
     body{
-      margin:0; min-height:100vh;
+      margin:0;
+      min-height:100vh;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      color:var(--text);
+      color: var(--text);
       background:
         radial-gradient(1200px 700px at 20% 15%, rgba(110,140,255,.35), transparent 60%),
         radial-gradient(900px 700px at 80% 20%, rgba(255,120,180,.25), transparent 55%),
@@ -32,221 +44,417 @@
         linear-gradient(180deg, var(--bg0), var(--bg1));
       padding: 18px 14px 28px;
     }
-    .wrap{max-width:560px;margin:0 auto}
-    h1{margin:0;font-size:22px;letter-spacing:.2px}
-    .sub{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.35}
+
+    .wrap{ max-width: 560px; margin: 0 auto; }
+    .topbar{
+      display:flex; align-items:flex-start; gap:10px;
+      padding: 6px 2px 12px;
+    }
+    .brand{ flex:1; }
+    .title{ margin:0; font-size:20px; font-weight: 900; letter-spacing:.2px; }
+    .subtitle{ margin:6px 0 0; color: var(--muted); font-size:13px; line-height:1.35; }
+
+    .chip{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      border-radius:999px;
+      padding: 9px 11px;
+      font-weight: 900;
+      cursor:pointer;
+      user-select:none;
+    }
+    [data-theme="light"] .chip{ background: rgba(255,255,255,.55); }
 
     .card{
-      margin-top:14px;border-radius:var(--r);
+      border-radius: var(--r);
       background: linear-gradient(180deg, var(--glass), var(--glass2));
-      border:1px solid rgba(255,255,255,.16);
-      box-shadow:var(--shadow);
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: var(--shadow);
       backdrop-filter: blur(18px) saturate(160%);
       -webkit-backdrop-filter: blur(18px) saturate(160%);
-      overflow:hidden; position:relative;
+      overflow:hidden;
+      position:relative;
     }
     .card::before{
-      content:""; position:absolute; inset:-120px -120px auto auto;
+      content:"";
+      position:absolute; inset:-120px -120px auto auto;
       width:260px;height:260px;
       background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), transparent 55%);
-      transform: rotate(18deg); opacity:.35; pointer-events:none;
+      transform: rotate(18deg);
+      opacity:.25;
+      pointer-events:none;
     }
-    .section{padding:14px; position:relative; z-index:1}
-    .label{font-size:12px;color:var(--muted);margin:2px 0 6px}
+
+    .section{ padding: 14px; position:relative; z-index:1; }
+    .label{ font-size:12px; color: var(--muted); margin: 2px 0 6px; }
+    .row{ display:flex; gap:10px; align-items:center; }
+    .row.between{ justify-content:space-between; }
+    .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .sep{ height:1px; background: rgba(255,255,255,.12); margin: 12px 0; }
+
     input{
-      width:100%; padding:12px;
-      border-radius:16px;
+      width:100%;
+      padding: 12px;
+      border-radius: 16px;
       border:1px solid rgba(255,255,255,.14);
-      background: rgba(10,14,28,.35);
+      background: rgba(10,14,28,.32);
       color: var(--text);
       outline:none;
       box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
     }
-    input::placeholder{color: rgba(255,255,255,.45)}
-    input:focus{border-color: rgba(255,255,255,.28); box-shadow: 0 0 0 3px rgba(110,140,255,.18), inset 0 1px 0 rgba(255,255,255,.08)}
-    .row{display:flex;gap:10px}
-    .btnRow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-    button{
-      padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.16);
-      background: rgba(255,255,255,.10); color:var(--text);
-      font-weight:700; letter-spacing:.2px;
-      cursor:pointer;
-      box-shadow: 0 10px 26px rgba(0,0,0,.28);
+    [data-theme="light"] input{ background: rgba(255,255,255,.58); }
+    input::placeholder{ color: rgba(255,255,255,.45); }
+    [data-theme="light"] input::placeholder{ color: rgba(10,15,26,.40); }
+    input:focus{
+      border-color: rgba(255,255,255,.28);
+      box-shadow: 0 0 0 3px var(--focus), inset 0 1px 0 rgba(255,255,255,.08);
     }
-    button.primary{
+
+    button{
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.10);
+      color: var(--text);
+      font-weight: 900;
+      letter-spacing: .2px;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.24);
+    }
+    [data-theme="light"] button{ background: rgba(255,255,255,.55); }
+
+    .primary{
       background: linear-gradient(180deg, rgba(130,160,255,.28), rgba(255,255,255,.10));
       border-color: rgba(130,160,255,.32);
     }
-    button.danger{background: rgba(255,90,90,.12); border-color: rgba(255,90,90,.22)}
-    .pillRow{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
-    .pill{
-      padding:8px 10px;border-radius:999px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.08);
-      color:var(--muted); font-size:12px;
+    [data-theme="light"] .primary{
+      background: linear-gradient(180deg, rgba(90,120,255,.22), rgba(255,255,255,.55));
+      border-color: rgba(90,120,255,.20);
     }
-    .pill strong{color:var(--text)}
-    .foot{margin-top:10px;color:var(--muted);font-size:12px;line-height:1.35}
+    .danger{
+      background: rgba(255,90,90,.12);
+      border-color: rgba(255,90,90,.22);
+    }
+    .full{ width:100%; }
 
-    .suggestWrap{position:relative}
+    .pills{ display:flex; flex-wrap:wrap; gap:8px; margin-top: 10px; }
+    .pill{
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    [data-theme="light"] .pill{ background: rgba(255,255,255,.50); }
+    .pill b{ color: var(--text); }
+
+    .foot{
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    /* Suggestions dropdown */
+    .suggestWrap{ position:relative; }
     .suggest{
       position:absolute; left:0; right:0; top: calc(100% + 8px);
-      border-radius:16px; overflow:hidden;
+      border-radius: 16px;
+      overflow:hidden;
       border:1px solid rgba(255,255,255,.14);
-      background: rgba(10,14,28,.60);
+      background: rgba(10,14,28,.62);
       backdrop-filter: blur(18px) saturate(140%);
       -webkit-backdrop-filter: blur(18px) saturate(140%);
       box-shadow: 0 20px 50px rgba(0,0,0,.45);
-      display:none; z-index:10;
+      display:none;
+      z-index: 20;
+      max-height: 240px;
+      overflow:auto;
     }
+    [data-theme="light"] .suggest{ background: rgba(255,255,255,.78); }
     .suggest button{
-      width:100%; text-align:left;
-      border:0; border-radius:0; box-shadow:none;
-      background: transparent; padding:10px 12px; font-weight:700;
+      width:100%;
+      text-align:left;
+      padding: 10px 12px;
+      border:0;
+      border-radius:0;
+      box-shadow:none;
+      background: transparent;
+      font-weight: 900;
     }
-    .suggest button:hover{background: rgba(255,255,255,.08)}
-    .suggest .small{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-top:2px}
+    .suggest button:hover{ background: rgba(255,255,255,.10); }
+    .small{ display:block; margin-top:2px; font-size:12px; font-weight:600; color: var(--muted); }
 
-    .compassCard{margin-top:12px}
-    .compass{display:flex;justify-content:center;align-items:center;padding:14px 0 8px}
-    .ringWrap{width:260px;height:260px;position:relative;transition:transform .15s ease}
-    #arrow{position:absolute;inset:0;margin:auto;width:260px;height:260px;transform-origin:50% 50%;filter: drop-shadow(0 16px 30px rgba(0,0,0,.35))}
-    .readout{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-    .metric{border-radius:18px;border:1px solid rgba(255,255,255,.12);background: rgba(255,255,255,.07);padding:12px}
-    .k{font-size:12px;color:var(--muted)}
-    .v{margin-top:6px;font-size:16px;font-weight:900;letter-spacing:.2px}
-    @media (max-width:360px){.ringWrap{width:230px;height:230px} #arrow{width:230px;height:230px}}
+    /* Views */
+    .view{ display:none; }
+    .view.active{ display:block; }
+
+    /* Compass */
+    .navHeader{
+      display:flex; gap:10px; align-items:flex-start;
+      margin-bottom: 10px;
+    }
+    .navHeader .chip{ padding: 9px 12px; }
+    .navHeader .brand{ flex:1; }
+
+    .compassWrap{ display:flex; justify-content:center; padding: 6px 0 0; }
+    .ringWrap{
+      width: 260px; height: 260px;
+      position: relative;
+      transform: scale(1);
+      transition: transform .15s ease;
+    }
+    .ringSvg{
+      position:absolute; inset:0; margin:auto;
+      width:260px; height:260px;
+    }
+    .arrowSvg{
+      position:absolute; inset:0; margin:auto;
+      width:260px; height:260px;
+      transform-origin: 50% 50%;
+      filter: drop-shadow(0 16px 30px rgba(0,0,0,.35));
+    }
+
+    .metrics{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:12px; }
+    .metric{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.07);
+      padding: 12px;
+    }
+    [data-theme="light"] .metric{ background: rgba(255,255,255,.55); }
+    .k{ font-size:12px; color: var(--muted); }
+    .v{ margin-top:6px; font-size:16px; font-weight: 1000; letter-spacing:.2px; }
+
+    .toolbar{ margin-top: 10px; display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+
+    @media (max-width: 360px){
+      .ringWrap,.ringSvg,.arrowSvg{ width:230px; height:230px; }
+    }
+
+    /* Tiny "iOS-like" animations */
+    .fadeIn{
+      animation: fadeIn .18s ease-out;
+    }
+    @keyframes fadeIn{
+      from{ opacity:.0; transform: translateY(6px); }
+      to{ opacity:1; transform: translateY(0); }
+    }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <h1>Boussole flèche</h1>
-    <p class="sub">Stratégie fiable : boussole si dispo, sinon cap GPS (direction de marche). Fonctionne sur iOS/Android en web.</p>
+  <div class="wrap" id="app" data-theme="dark">
+    <div class="topbar">
+      <div class="brand">
+        <h1 class="title">City Compass</h1>
+        <p class="subtitle">Adresse ou coordonnées → navigation à la flèche (sans carte). iPhone + Android.</p>
+      </div>
+      <button class="chip" id="themeBtn" type="button" title="Jour/Nuit">☾</button>
+    </div>
 
-    <div class="card">
-      <div class="section">
-        <div class="label">Destination par adresse (recherche)</div>
-        <div class="suggestWrap">
-          <input id="addr" autocomplete="off" placeholder="Tape une adresse (ex: Toulouse, Place du Capitole)" />
-          <div id="suggest" class="suggest"></div>
-        </div>
-        <button id="setAddr" class="primary" style="margin-top:10px;width:100%;">Définir depuis l’adresse</button>
+    <!-- VIEW 1: Setup -->
+    <div class="view active fadeIn" id="viewSetup">
+      <div class="card">
+        <div class="section">
+          <div class="label">Adresse (autocomplete)</div>
+          <div class="suggestWrap">
+            <input id="addr" autocomplete="off" placeholder="Ex: Place du Capitole, Toulouse" />
+            <div id="suggest" class="suggest"></div>
+          </div>
 
-        <div style="height:10px"></div>
+          <div class="grid2" style="margin-top:10px;">
+            <button id="setAddr" class="primary" type="button">Définir</button>
+            <button id="clearAddr" type="button">Effacer</button>
+          </div>
 
-        <div class="label">Destination par coordonnées GPS</div>
-        <div class="row">
-          <input id="lat" inputmode="decimal" placeholder="Latitude (ex: 43.6045)" />
-          <input id="lon" inputmode="decimal" placeholder="Longitude (ex: 1.4440)" />
-        </div>
-        <button id="setCoords" style="margin-top:10px;width:100%;">Définir depuis coordonnées</button>
+          <div class="sep"></div>
 
-        <div class="btnRow">
-          <button id="start" class="primary">Démarrer</button>
-          <button id="stop" class="danger">Stop</button>
-        </div>
+          <div class="row between">
+            <div class="label" style="margin:0;">Coordonnées GPS</div>
+            <button class="chip" id="toggleCoords" type="button">Afficher</button>
+          </div>
 
-        <div class="pillRow">
-          <div class="pill" id="stDest"><strong>Destination</strong> : —</div>
-          <div class="pill" id="stGps"><strong>GPS</strong> : —</div>
-          <div class="pill" id="stHeading"><strong>Cap</strong> : —</div>
-          <div class="pill" id="stMode"><strong>Mode</strong> : —</div>
-        </div>
+          <div id="coordsBox" style="display:none; margin-top:10px;">
+            <div class="row">
+              <input id="lat" inputmode="decimal" placeholder="Latitude (ex: 43.6045)" />
+              <input id="lon" inputmode="decimal" placeholder="Longitude (ex: 1.4440)" />
+            </div>
+            <button id="setCoords" class="primary full" type="button" style="margin-top:10px;">
+              Définir depuis coordonnées
+            </button>
+          </div>
 
-        <div class="foot" id="hint">
-          Important : sur iOS Safari, l’accès “boussole” peut être limité. Si la boussole est bloquée, avance : le cap GPS prend le relais.
+          <div class="sep"></div>
+
+          <div class="label">Options</div>
+          <div class="pills">
+            <label class="pill" style="cursor:pointer;">
+              <input id="optVibrate" type="checkbox" checked style="vertical-align:middle;margin-right:6px;">
+              <b>Vibration</b> arrivée
+            </label>
+            <label class="pill" style="cursor:pointer;">
+              <input id="optWake" type="checkbox" checked style="vertical-align:middle;margin-right:6px;">
+              <b>Écran</b> actif
+            </label>
+            <label class="pill" style="cursor:pointer;">
+              <input id="optKm" type="checkbox" checked style="vertical-align:middle;margin-right:6px;">
+              <b>Unités</b> km
+            </label>
+          </div>
+
+          <button id="start" class="primary full" type="button" style="margin-top:12px;">
+            Démarrer la navigation
+          </button>
+
+          <div class="pills">
+            <div class="pill" id="stDest"><b>Destination</b> —</div>
+            <div class="pill" id="stHttps"><b>HTTPS</b> —</div>
+          </div>
+
+          <div class="foot" id="setupHint">
+            iPhone: si la boussole web est limitée, la flèche se base sur le “cap de marche” (avance quelques mètres).
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="card compassCard">
-      <div class="section">
-        <div class="compass">
-          <div class="ringWrap" id="ringWrap">
-            <svg width="260" height="260" viewBox="0 0 100 100" style="position:absolute;inset:0;margin:auto;">
-              <defs>
-                <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="rgba(255,255,255,.85)"/>
-                  <stop offset="1" stop-color="rgba(255,255,255,.18)"/>
-                </linearGradient>
-              </defs>
-              <circle cx="50" cy="50" r="36" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="5"/>
-              <circle id="ringProg" cx="50" cy="50" r="36" fill="none" stroke="url(#ringGrad)" stroke-width="5"
-                      stroke-linecap="round" stroke-dasharray="226.2" stroke-dashoffset="226.2"/>
-            </svg>
-
-            <svg id="arrow" viewBox="0 0 100 100" aria-label="flèche">
-              <defs>
-                <linearGradient id="arrowGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stop-color="rgba(255,255,255,.94)"/>
-                  <stop offset="1" stop-color="rgba(255,255,255,.34)"/>
-                </linearGradient>
-              </defs>
-              <path d="M50 10 L63 40 L54 40 L54 78 L46 78 L46 40 L37 40 Z"
-                    fill="url(#arrowGrad)" stroke="rgba(255,255,255,.25)" stroke-width="0.8"/>
-              <circle cx="50" cy="82.5" r="6.2" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.20)"/>
-              <circle cx="50" cy="82.5" r="2.2" fill="rgba(255,255,255,.70)"/>
-            </svg>
+    <!-- VIEW 2: Compass -->
+    <div class="view" id="viewNav">
+      <div class="card">
+        <div class="section">
+          <div class="navHeader">
+            <button class="chip" id="back" type="button">←</button>
+            <div class="brand">
+              <div class="title" style="font-size:18px;">Navigation</div>
+              <div class="subtitle" id="destLabel">Destination: —</div>
+            </div>
+            <button class="chip" id="stop" type="button">⏹</button>
           </div>
+
+          <div class="compassWrap">
+            <div class="ringWrap" id="ringWrap">
+              <svg class="ringSvg" viewBox="0 0 100 100" aria-hidden="true">
+                <defs>
+                  <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="rgba(255,255,255,.85)"></stop>
+                    <stop offset="1" stop-color="rgba(255,255,255,.18)"></stop>
+                  </linearGradient>
+                </defs>
+                <circle cx="50" cy="50" r="36" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="5"></circle>
+                <circle id="ringProg" cx="50" cy="50" r="36" fill="none" stroke="url(#ringGrad)"
+                        stroke-width="5" stroke-linecap="round" stroke-dasharray="226.2" stroke-dashoffset="226.2"></circle>
+              </svg>
+
+              <svg id="arrow" class="arrowSvg" viewBox="0 0 100 100" aria-label="Flèche">
+                <defs>
+                  <linearGradient id="arrowGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="rgba(255,255,255,.94)"></stop>
+                    <stop offset="1" stop-color="rgba(255,255,255,.34)"></stop>
+                  </linearGradient>
+                </defs>
+                <path d="M50 10 L63 40 L54 40 L54 78 L46 78 L46 40 L37 40 Z"
+                      fill="url(#arrowGrad)" stroke="rgba(255,255,255,.25)" stroke-width="0.8"></path>
+                <circle cx="50" cy="82.5" r="6.2" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.20)"></circle>
+                <circle cx="50" cy="82.5" r="2.2" fill="rgba(255,255,255,.70)"></circle>
+              </svg>
+            </div>
+          </div>
+
+          <div class="metrics">
+            <div class="metric">
+              <div class="k">Distance</div>
+              <div class="v" id="distance">—</div>
+            </div>
+            <div class="metric">
+              <div class="k">Direction</div>
+              <div class="v" id="direction">—</div>
+            </div>
+          </div>
+
+          <div class="pills">
+            <div class="pill" id="gps"><b>GPS</b> —</div>
+            <div class="pill" id="mode"><b>Mode</b> —</div>
+            <div class="pill" id="cap"><b>Cap</b> —</div>
+          </div>
+
+          <div class="toolbar">
+            <button id="recenter" type="button">Recentrer</button>
+            <button id="copy" type="button">Copier coords</button>
+          </div>
+
+          <div class="foot" id="navHint">Suis la flèche. L’anneau se resserre en approchant.</div>
+          <div class="foot" id="debug"></div>
         </div>
-
-        <div class="readout">
-          <div class="metric">
-            <div class="k">Distance</div>
-            <div class="v" id="distance">—</div>
-          </div>
-          <div class="metric">
-            <div class="k">Direction</div>
-            <div class="v" id="direction">—</div>
-          </div>
-        </div>
-
-        <div class="foot" id="debug"></div>
       </div>
     </div>
+
   </div>
 
 <script>
-  // ---------- State
-  let dest = null;         // {lat, lon, label}
-  let user = null;         // {lat, lon, acc, speed, heading}
-  let compassHeading = null; // from sensors
-  let gpsHeading = null;     // from coords.heading or computed from movement
+(() => {
+  // ======= DOM
+  const $ = (id) => document.getElementById(id);
+
+  const app = $("app");
+  const themeBtn = $("themeBtn");
+
+  const viewSetup = $("viewSetup");
+  const viewNav = $("viewNav");
+
+  const addrEl = $("addr");
+  const suggestEl = $("suggest");
+  const latEl = $("lat");
+  const lonEl = $("lon");
+
+  const stDest = $("stDest");
+  const stHttps = $("stHttps");
+  const setupHint = $("setupHint");
+
+  const optVibrate = $("optVibrate");
+  const optWake = $("optWake");
+  const optKm = $("optKm");
+
+  const destLabel = $("destLabel");
+  const ringWrap = $("ringWrap");
+  const ringProg = $("ringProg");
+  const arrowEl = $("arrow");
+  const distanceEl = $("distance");
+  const directionEl = $("direction");
+  const pillGps = $("gps");
+  const pillMode = $("mode");
+  const pillCap = $("cap");
+  const navHint = $("navHint");
+  const debugEl = $("debug");
+
+  // ======= State
+  let dest = null;                // {lat, lon, label}
+  let user = null;                // {lat, lon, acc, speed, heading}
+  let compassHeading = null;      // from deviceorientation
+  let gpsHeading = null;          // from coords.heading or computed from movement
   let mode = "—";
 
   let watchId = null;
   let orientationHandler = null;
 
-  // for computed heading from movement
-  let lastFix = null; // {lat, lon, t}
-  const MIN_MOVE_M = 3;     // meters before recomputing heading
-  const MIN_DT_MS = 1200;   // time between fixes
+  let lastFix = null;             // {lat, lon, t}
+  const MIN_MOVE_M = 3;
+  const MIN_DT_MS = 1200;
 
-  // ---------- UI
-  const addrEl = document.getElementById("addr");
-  const suggestEl = document.getElementById("suggest");
-  const latEl = document.getElementById("lat");
-  const lonEl = document.getElementById("lon");
+  // ring/proximity
+  const CIRC = 226.2; // 2π*36
+  const CAP_M = 1000;
 
-  const stDest = document.getElementById("stDest");
-  const stGps = document.getElementById("stGps");
-  const stHeading = document.getElementById("stHeading");
-  const stMode = document.getElementById("stMode");
+  // wake lock
+  let wakeLock = null;
 
-  const ringWrap = document.getElementById("ringWrap");
-  const ringProg = document.getElementById("ringProg");
-  const arrowEl = document.getElementById("arrow");
+  // ======= Math helpers
+  const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+  const toRad = (d) => d*Math.PI/180;
+  const toDeg = (r) => r*180/Math.PI;
 
-  const distanceEl = document.getElementById("distance");
-  const directionEl = document.getElementById("direction");
-  const hintEl = document.getElementById("hint");
-  const debugEl = document.getElementById("debug");
-
-  // ---------- Math
-  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
-  function toRad(d){ return d*Math.PI/180; }
-  function toDeg(r){ return r*180/Math.PI; }
   function bearing(lat1, lon1, lat2, lon2){
     const φ1=toRad(lat1), φ2=toRad(lat2);
     const Δλ=toRad(lon2-lon1);
@@ -254,117 +462,158 @@
     const x=Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
     return (toDeg(Math.atan2(y,x))+360)%360;
   }
+
   function haversine(lat1, lon1, lat2, lon2){
     const R=6371000;
     const dφ=toRad(lat2-lat1), dλ=toRad(lon2-lon1);
     const a=Math.sin(dφ/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dλ/2)**2;
     return 2*R*Math.asin(Math.sqrt(a));
   }
+
+  const cardinal = (deg) => ["N","NE","E","SE","S","SO","O","NO","N"][Math.round(deg/45)];
+
   function fmtDistance(m){
     if(m==null) return "—";
-    if(m<1000) return `${Math.round(m)} m`;
-    return `${(m/1000).toFixed(2)} km`;
-  }
-  function cardinal(deg){
-    const dirs=["N","NE","E","SE","S","SO","O","NO","N"];
-    return dirs[Math.round(deg/45)];
+    if(!optKm.checked) return `${Math.round(m)} m`;
+    return m < 1000 ? `${Math.round(m)} m` : `${(m/1000).toFixed(2)} km`;
   }
 
-  // ---------- Proximity ring (shrinks + fills)
-  const CIRC = 226.2;
-  function updateProximity(distanceM){
-    if(distanceM==null){
-      ringWrap.style.transform = "scale(1)";
-      ringProg.style.strokeDashoffset = `${CIRC}`;
-      return;
-    }
-    const cap = 1000;
-    const d = clamp(distanceM, 0, cap);
-    const t = 1 - (d/cap); // 0 far, 1 near
-    const scale = 1.10 - (0.38*t);
-    ringWrap.style.transform = `scale(${scale.toFixed(3)})`;
-    ringProg.style.strokeDashoffset = `${CIRC*(1-t)}`;
+  // ======= Views
+  function show(which){
+    viewSetup.classList.toggle("active", which === "setup");
+    viewNav.classList.toggle("active", which === "nav");
+    if(which === "setup") viewSetup.classList.add("fadeIn");
+    if(which === "nav") viewNav.classList.add("fadeIn");
   }
 
-  // ---------- Address search (Nominatim)
-  let suggTimer=null;
+  // ======= Theme
+  function setTheme(theme){
+    app.setAttribute("data-theme", theme);
+    themeBtn.textContent = theme === "light" ? "☀" : "☾";
+    localStorage.setItem("cc_theme", theme);
+  }
+  const savedTheme = localStorage.getItem("cc_theme");
+  if(savedTheme === "light" || savedTheme === "dark"){
+    setTheme(savedTheme);
+  } else {
+    // default: follow system
+    const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+    setTheme(prefersLight ? "light" : "dark");
+  }
+  themeBtn.onclick = () => {
+    const cur = app.getAttribute("data-theme");
+    setTheme(cur === "light" ? "dark" : "light");
+  };
+
+  // ======= HTTPS status
+  stHttps.innerHTML = `<b>HTTPS</b> ${location.protocol === "https:" ? "OK" : "requis"}`;
+
+  // ======= Suggestions (Nominatim)
+  let suggTimer = null;
+
   async function nominatimSearch(q){
     const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&q=${encodeURIComponent(q)}`;
-    const r = await fetch(url, { headers: { "Accept":"application/json" } });
+    const r = await fetch(url, { headers: { "Accept":"application/json" }});
     return r.json();
   }
-  function hideSuggest(){ suggestEl.style.display="none"; suggestEl.innerHTML=""; }
+
+  function hideSuggest(){
+    suggestEl.style.display = "none";
+    suggestEl.innerHTML = "";
+  }
+
   function showSuggest(items){
     if(!items?.length){ hideSuggest(); return; }
-    suggestEl.innerHTML="";
-    items.forEach(it=>{
-      const btn=document.createElement("button");
-      btn.type="button";
-      const parts = it.display_name.split(",");
+    suggestEl.innerHTML = "";
+    items.forEach(it => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      const parts = it.display_name.split(",").map(s => s.trim());
       const main = parts.slice(0,2).join(", ");
       const rest = parts.slice(2,6).join(", ").trim();
       btn.innerHTML = `${main}<span class="small">${rest||""}</span>`;
-      btn.onclick=()=>{
-        dest={lat:parseFloat(it.lat), lon:parseFloat(it.lon), label:it.display_name};
-        stDest.innerHTML=`<strong>Destination</strong> : définie`;
+      btn.onclick = () => {
+        dest = { lat: parseFloat(it.lat), lon: parseFloat(it.lon), label: it.display_name };
         addrEl.value = it.display_name;
         hideSuggest();
-        updateUI();
+        refreshDest();
       };
       suggestEl.appendChild(btn);
     });
-    suggestEl.style.display="block";
+    suggestEl.style.display = "block";
   }
-  addrEl.addEventListener("input", ()=>{
-    const q=addrEl.value.trim();
+
+  addrEl.addEventListener("input", () => {
+    const q = addrEl.value.trim();
     if(suggTimer) clearTimeout(suggTimer);
-    if(q.length<3){ hideSuggest(); return; }
-    suggTimer=setTimeout(async ()=>{
-      try{ showSuggest(await nominatimSearch(q)); } catch{ hideSuggest(); }
+    if(q.length < 3){ hideSuggest(); return; }
+    suggTimer = setTimeout(async () => {
+      try { showSuggest(await nominatimSearch(q)); }
+      catch { hideSuggest(); }
     }, 250);
   });
-  document.addEventListener("click",(e)=>{ if(!suggestEl.contains(e.target) && e.target!==addrEl) hideSuggest(); });
 
-  document.getElementById("setAddr").onclick = async ()=>{
-    const q=addrEl.value.trim(); if(!q) return;
-    hintEl.textContent="Recherche de l’adresse…";
+  document.addEventListener("click", (e) => {
+    if(!suggestEl.contains(e.target) && e.target !== addrEl) hideSuggest();
+  });
+
+  // ======= Setup actions
+  function refreshDest(){
+    stDest.innerHTML = `<b>Destination</b> ${dest ? "OK" : "—"}`;
+    if(dest) setupHint.textContent = "Destination prête. Appuie sur “Démarrer la navigation”.";
+  }
+  refreshDest();
+
+  $("setAddr").onclick = async () => {
+    const q = addrEl.value.trim();
+    if(!q) return;
+    setupHint.textContent = "Recherche de l’adresse…";
     try{
-      const res=await nominatimSearch(q);
-      if(!res?.length){ hintEl.textContent="Adresse introuvable."; return; }
-      const it=res[0];
-      dest={lat:parseFloat(it.lat), lon:parseFloat(it.lon), label:it.display_name};
-      stDest.innerHTML=`<strong>Destination</strong> : définie`;
+      const res = await nominatimSearch(q);
+      if(!res?.length){
+        setupHint.textContent = "Adresse introuvable.";
+        return;
+      }
+      const it = res[0];
+      dest = { lat: parseFloat(it.lat), lon: parseFloat(it.lon), label: it.display_name };
       hideSuggest();
-      hintEl.textContent="Destination définie. Démarre puis marche pour stabiliser le cap.";
-      updateUI();
+      refreshDest();
     }catch{
-      hintEl.textContent="Erreur de recherche d’adresse.";
+      setupHint.textContent = "Erreur de recherche.";
     }
   };
 
-  document.getElementById("setCoords").onclick = ()=>{
-    const lat=parseFloat((latEl.value||"").replace(",","."));
-    const lon=parseFloat((lonEl.value||"").replace(",","."));
-    if(!Number.isFinite(lat)||!Number.isFinite(lon)){
-      hintEl.textContent="Coordonnées invalides.";
+  $("clearAddr").onclick = () => {
+    addrEl.value = "";
+    hideSuggest();
+  };
+
+  $("toggleCoords").onclick = () => {
+    const box = $("coordsBox");
+    const shown = box.style.display !== "none";
+    box.style.display = shown ? "none" : "block";
+    $("toggleCoords").textContent = shown ? "Afficher" : "Masquer";
+  };
+
+  $("setCoords").onclick = () => {
+    const lat = parseFloat((latEl.value||"").replace(",", "."));
+    const lon = parseFloat((lonEl.value||"").replace(",", "."));
+    if(!Number.isFinite(lat) || !Number.isFinite(lon)){
+      setupHint.textContent = "Coordonnées invalides.";
       return;
     }
-    dest={lat, lon, label:`GPS ${lat.toFixed(5)}, ${lon.toFixed(5)}`};
-    stDest.innerHTML=`<strong>Destination</strong> : définie`;
-    hintEl.textContent="Destination définie. Démarre puis marche pour stabiliser le cap.";
-    updateUI();
+    dest = { lat, lon, label: `GPS ${lat.toFixed(5)}, ${lon.toFixed(5)}` };
+    refreshDest();
   };
 
-  // ---------- Heading strategy (best available)
+  // ======= Heading strategy
   function bestHeading(){
-    // Prefer compass if available; else GPS heading; else null
-    if(compassHeading != null) { mode="Boussole"; return compassHeading; }
-    if(gpsHeading != null) { mode="Cap GPS"; return gpsHeading; }
-    mode="—";
+    if(compassHeading != null){ mode = "Boussole"; return compassHeading; }
+    if(gpsHeading != null){ mode = "Cap de marche"; return gpsHeading; }
+    mode = "—";
     return null;
   }
 
-  // Compute heading from two GPS fixes
   function updateComputedHeading(curr){
     if(!lastFix){
       lastFix = {lat: curr.lat, lon: curr.lon, t: curr.t};
@@ -372,105 +621,131 @@
     }
     const dt = curr.t - lastFix.t;
     if(dt < MIN_DT_MS) return;
-
     const moved = haversine(lastFix.lat, lastFix.lon, curr.lat, curr.lon);
     if(moved < MIN_MOVE_M) return;
-
     gpsHeading = bearing(lastFix.lat, lastFix.lon, curr.lat, curr.lon);
     lastFix = {lat: curr.lat, lon: curr.lon, t: curr.t};
   }
 
-  // ---------- Sensors start/stop
-  async function start(){
-    // Must be HTTPS or localhost
+  // ======= Proximity ring
+  function updateProximity(distanceM){
+    if(distanceM == null){
+      ringWrap.style.transform = "scale(1)";
+      ringProg.style.strokeDashoffset = `${CIRC}`;
+      return;
+    }
+    const d = clamp(distanceM, 0, CAP_M);
+    const t = 1 - (d / CAP_M);  // 0 far -> 1 near
+    const scale = 1.10 - (0.38 * t);
+    ringWrap.style.transform = `scale(${scale.toFixed(3)})`;
+    ringProg.style.strokeDashoffset = `${CIRC * (1 - t)}`;
+  }
+
+  // ======= Wake Lock
+  async function setWakeLock(on){
+    try{
+      if(!("wakeLock" in navigator)) return;
+      if(on){
+        wakeLock = await navigator.wakeLock.request("screen");
+      }else{
+        if(wakeLock){ await wakeLock.release(); wakeLock = null; }
+      }
+    }catch{}
+  }
+
+  // ======= Start/Stop
+  async function startNav(){
+    if(!dest){
+      setupHint.textContent = "Définis d’abord une destination.";
+      return;
+    }
     if(location.protocol !== "https:" && location.hostname !== "localhost"){
-      hintEl.textContent="Erreur : il faut HTTPS pour GPS/capteurs.";
+      setupHint.textContent = "HTTPS requis pour GPS/boussole.";
       return;
     }
-
-    // GPS
     if(!navigator.geolocation){
-      stGps.innerHTML = `<strong>GPS</strong> : non supporté`;
+      setupHint.textContent = "GPS non supporté.";
       return;
     }
 
-    stGps.innerHTML = `<strong>GPS</strong> : demande…`;
+    // switch view
+    destLabel.textContent = `Destination: ${dest.label || "—"}`;
+    show("nav");
+
+    // keep screen awake
+    await setWakeLock(optWake.checked);
+
+    // reset state
+    user = null;
+    compassHeading = null;
+    gpsHeading = null;
+    lastFix = null;
+
+    // iOS compass permission (must be inside click)
+    if(typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function"){
+      try{
+        const res = await DeviceOrientationEvent.requestPermission();
+        if(res !== "granted"){
+          compassHeading = null; // fallback to movement
+        }
+      }catch{
+        compassHeading = null;
+      }
+    }
+
+    // start device orientation (best effort)
+    if(typeof DeviceOrientationEvent !== "undefined"){
+      const useAbs = ("ondeviceorientationabsolute" in window);
+      orientationHandler = (e) => {
+        // iOS Safari
+        if(typeof e.webkitCompassHeading === "number"){
+          compassHeading = (e.webkitCompassHeading + 360) % 360;
+        } else if (e.alpha != null) {
+          // alpha is device rotation; approximate heading
+          compassHeading = (360 - e.alpha) % 360;
+        } else {
+          compassHeading = null;
+        }
+        updateUI();
+      };
+      window.addEventListener(useAbs ? "deviceorientationabsolute" : "deviceorientation", orientationHandler, true);
+    }
+
+    // start GPS watch
+    pillGps.innerHTML = "<b>GPS</b> demande…";
     watchId = navigator.geolocation.watchPosition(
-      (pos)=>{
+      (pos) => {
         const acc = pos.coords.accuracy;
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
-        const spd = pos.coords.speed;      // m/s (souvent null à pied)
-        const hdg = pos.coords.heading;    // deg (souvent null à pied / iOS)
+        const spd = pos.coords.speed;
+        const hdg = pos.coords.heading; // often null
 
-        user = {lat, lon, acc, speed: spd, heading: hdg};
+        user = { lat, lon, acc, speed: spd, heading: hdg };
 
-        // Heading from GPS API if present + good quality
+        const bad = (acc != null && acc > 50);
+        pillGps.innerHTML = `<b>GPS</b> ±${Math.round(acc ?? 0)}m${bad ? " (faible)" : ""}`;
+
+        // use coords.heading if present and moving, else compute from movement
         if(Number.isFinite(hdg) && (spd == null || spd > 0.2)){
           gpsHeading = (hdg + 360) % 360;
-          mode = "Cap GPS";
         } else {
-          // otherwise compute from movement
-          updateComputedHeading({lat, lon, t: Date.now()});
+          updateComputedHeading({ lat, lon, t: Date.now() });
         }
 
-        // Status
-        stGps.innerHTML = `<strong>GPS</strong> : OK (±${Math.round(acc ?? 0)} m)`;
         updateUI();
       },
-      (err)=>{
-        stGps.innerHTML = `<strong>GPS</strong> : erreur (${err.code})`;
-        hintEl.textContent = "Localisation refusée ou indisponible.";
+      (err) => {
+        pillGps.innerHTML = `<b>GPS</b> erreur (${err.code})`;
+        navHint.textContent = "Localisation refusée ou indisponible.";
       },
       { enableHighAccuracy:true, maximumAge:0, timeout:20000 }
     );
 
-    // Compass (best-effort)
-    compassHeading = null;
-
-    if(typeof DeviceOrientationEvent === "undefined"){
-      stHeading.innerHTML = `<strong>Cap</strong> : via GPS`;
-      stMode.innerHTML = `<strong>Mode</strong> : Cap GPS`;
-      return;
-    }
-
-    // iOS permission (must be user gesture => inside button click: OK)
-    if(typeof DeviceOrientationEvent.requestPermission === "function"){
-      try{
-        const res = await DeviceOrientationEvent.requestPermission();
-        if(res !== "granted"){
-          stHeading.innerHTML = `<strong>Cap</strong> : via GPS`;
-          stMode.innerHTML = `<strong>Mode</strong> : Cap GPS`;
-          return;
-        }
-      }catch{
-        stHeading.innerHTML = `<strong>Cap</strong> : via GPS`;
-        stMode.innerHTML = `<strong>Mode</strong> : Cap GPS`;
-        return;
-      }
-    }
-
-    function handleOrientation(e){
-      // iOS Safari: webkitCompassHeading is the best if available
-      if(typeof e.webkitCompassHeading === "number"){
-        compassHeading = (e.webkitCompassHeading + 360) % 360;
-      } else if (e.absolute === true && e.alpha != null){
-        compassHeading = (360 - e.alpha) % 360;
-      } else if (e.alpha != null){
-        // fallback (may be device-relative on some Androids)
-        compassHeading = (360 - e.alpha) % 360;
-      } else {
-        compassHeading = null;
-      }
-      updateUI();
-    }
-
-    const useAbs = ("ondeviceorientationabsolute" in window);
-    orientationHandler = handleOrientation;
-    window.addEventListener(useAbs ? "deviceorientationabsolute" : "deviceorientation", orientationHandler, true);
+    updateUI();
   }
 
-  function stop(){
+  function stopNav(){
     if(watchId != null) navigator.geolocation.clearWatch(watchId);
     watchId = null;
 
@@ -480,71 +755,100 @@
     }
     orientationHandler = null;
 
-    user = null; compassHeading = null; gpsHeading = null; lastFix = null; mode="—";
-    stGps.innerHTML = `<strong>GPS</strong> : —`;
-    stHeading.innerHTML = `<strong>Cap</strong> : —`;
-    stMode.innerHTML = `<strong>Mode</strong> : —`;
+    user = null;
+    compassHeading = null;
+    gpsHeading = null;
+    lastFix = null;
+    mode = "—";
+
+    pillGps.innerHTML = "<b>GPS</b> —";
+    pillMode.innerHTML = "<b>Mode</b> —";
+    pillCap.innerHTML = "<b>Cap</b> —";
     distanceEl.textContent = "—";
     directionEl.textContent = "—";
-    updateProximity(null);
-    hintEl.textContent = "Arrêté.";
+    navHint.textContent = "Suis la flèche. L’anneau se resserre en approchant.";
     debugEl.textContent = "";
+    updateProximity(null);
+
+    setWakeLock(false);
+    show("setup");
   }
 
-  document.getElementById("start").onclick = start;
-  document.getElementById("stop").onclick = stop;
+  $("start").onclick = startNav;
+  $("stop").onclick = stopNav;
+  $("back").onclick = stopNav;
 
-  // ---------- UI update
-  function updateUI(){
-    stMode.innerHTML = `<strong>Mode</strong> : ${mode}`;
+  // Utility buttons
+  $("recenter").onclick = () => {
+    // just refresh UI / hint
+    navHint.textContent = "Recentré. Marche pour stabiliser le cap si nécessaire.";
+    updateUI();
+  };
 
-    if(!dest){
-      stDest.innerHTML = `<strong>Destination</strong> : —`;
-      distanceEl.textContent = "—";
-      directionEl.textContent = "—";
-      updateProximity(null);
-      return;
+  $("copy").onclick = async () => {
+    if(!user) return;
+    const txt = `${user.lat.toFixed(6)}, ${user.lon.toFixed(6)}`;
+    try{
+      await navigator.clipboard.writeText(txt);
+      navHint.textContent = "Coordonnées copiées.";
+    }catch{
+      navHint.textContent = txt;
     }
-    stDest.innerHTML = `<strong>Destination</strong> : définie`;
+  };
 
-    if(!user){
-      distanceEl.textContent = "—";
-      directionEl.textContent = "—";
+  // ======= UI update
+  let arrivedOnce = false;
+
+  function updateUI(){
+    if(!dest || !user){
+      pillMode.innerHTML = "<b>Mode</b> —";
+      pillCap.innerHTML = "<b>Cap</b> —";
       updateProximity(null);
       return;
     }
 
     const d = haversine(user.lat, user.lon, dest.lat, dest.lon);
-    updateProximity(d);
-    distanceEl.textContent = fmtDistance(d);
-
     const brg = bearing(user.lat, user.lon, dest.lat, dest.lon);
-    directionEl.textContent = `${Math.round(brg)}° ${cardinal(brg)}`;
 
-    const hdg = bestHeading(); // chosen heading
-    stHeading.innerHTML = `<strong>Cap</strong> : ${hdg == null ? "—" : Math.round(hdg) + "°"}`;
-    stMode.innerHTML = `<strong>Mode</strong> : ${mode}`;
+    const hdg = bestHeading();
+    pillMode.innerHTML = `<b>Mode</b> ${mode}`;
+    pillCap.innerHTML = `<b>Cap</b> ${hdg == null ? "—" : Math.round(hdg) + "°"}`;
 
-    // Rotate arrow: show "where to go" relative to heading if we have it; otherwise absolute bearing
+    // rotate arrow: relative if heading known else absolute bearing
     const rot = (hdg == null) ? brg : (brg - hdg + 360) % 360;
     arrowEl.style.transform = `rotate(${rot}deg)`;
 
-    // Debug info helpful to understand why it "doesn't work"
-    const sp = user.speed;
-    const acc = user.acc;
-    debugEl.textContent =
-      `Précision GPS: ±${Math.round(acc ?? 0)}m` +
-      (sp != null ? ` • Vitesse: ${(sp*3.6).toFixed(1)} km/h` : "") +
-      (gpsHeading != null ? ` • Cap GPS: ${Math.round(gpsHeading)}°` : "") +
-      (compassHeading != null ? ` • Boussole: ${Math.round(compassHeading)}°` : "");
+    distanceEl.textContent = fmtDistance(d);
+    directionEl.textContent = `${Math.round(brg)}° ${cardinal(brg)}`;
 
-    if(d < 15) hintEl.textContent = "Tu es arrivé (≈ 15 m).";
-    else if(hdg == null) hintEl.textContent = "Boussole indisponible : avance pour activer le cap GPS (direction de marche).";
-    else hintEl.textContent = "Suis la flèche. La couronne se resserre en approchant.";
+    updateProximity(d);
+
+    if(d < 15){
+      navHint.textContent = "Arrivé (≈ 15 m).";
+      if(optVibrate.checked && !arrivedOnce && "vibrate" in navigator){
+        navigator.vibrate([200,120,200]);
+      }
+      arrivedOnce = true;
+    } else {
+      arrivedOnce = false;
+      navHint.textContent = (hdg == null)
+        ? "Boussole limitée : marche quelques mètres (cap de marche)."
+        : "Suis la flèche. L’anneau se resserre en approchant.";
+    }
+
+    debugEl.textContent =
+      `Précision: ±${Math.round(user.acc ?? 0)}m` +
+      (gpsHeading != null ? ` • Cap marche: ${Math.round(gpsHeading)}°` : "") +
+      (compassHeading != null ? ` • Boussole: ${Math.round(compassHeading)}°` : "");
   }
 
-  // Init
-  updateProximity(null);
+  // stop wake lock when hidden
+  document.addEventListener("visibilitychange", () => {
+    if(document.hidden) setWakeLock(false);
+    else if(optWake.checked && viewNav.classList.contains("active")) setWakeLock(true);
+  });
+
+})();
 </script>
 </body>
 </html>
