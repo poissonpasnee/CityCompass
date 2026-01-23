@@ -22,6 +22,7 @@
       --accent: #00d1b2;
       --accent-soft: rgba(0, 209, 178, 0.15);
       --danger: #ff3860;
+      --card-bg: rgba(10, 10, 10, 0.76);
     }
 
     * {
@@ -59,7 +60,7 @@
     }
 
     header {
-      padding: 0.2rem 1rem 0.5rem;
+      padding: 0.2rem 1rem 0.4rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -71,11 +72,11 @@
       font-weight: 600;
       letter-spacing: 0.03em;
       text-transform: uppercase;
-      opacity: 0.8;
+      opacity: 0.85;
     }
 
     header .status {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       opacity: 0.7;
       text-align: right;
     }
@@ -84,12 +85,13 @@
       flex: 1 1 auto;
       display: flex;
       flex-direction: column;
-      padding: 0 1rem 0.5rem;
-      gap: 0.6rem;
+      padding: 0 1rem 0.4rem;
+      gap: 0.4rem;
+      min-height: 0;
     }
 
     .card {
-      background: rgba(10, 10, 10, 0.7);
+      background: var(--card-bg);
       border-radius: 16px;
       border: 1px solid rgba(255, 255, 255, 0.05);
       padding: 0.6rem 0.7rem;
@@ -166,6 +168,14 @@
       color: var(--danger);
     }
 
+    .btn-ghost {
+      border-color: rgba(255,255,255,0.12);
+      background: transparent;
+      font-size: 0.75rem;
+      padding-inline: 0.6rem;
+      opacity: 0.8;
+    }
+
     .btn:active {
       transform: scale(0.97);
     }
@@ -173,6 +183,27 @@
     .btn[disabled] {
       opacity: 0.4;
       pointer-events: none;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-top: 0.25rem;
+    }
+
+    .chip {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .chip span {
+      opacity: 0.8;
     }
 
     .suggestions {
@@ -217,7 +248,7 @@
 
     .waypoints {
       margin-top: 0.3rem;
-      max-height: 6rem;
+      max-height: 5.5rem;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -353,7 +384,7 @@
       bottom: 7%;
       left: 50%;
       transform: translateX(-50%);
-      width: 80%;
+      width: 82%;
       text-align: center;
       font-size: 0.75rem;
       line-height: 1.4;
@@ -380,7 +411,7 @@
     }
 
     .footer-actions {
-      padding: 0.4rem 1rem 0.6rem;
+      padding: 0.35rem 1rem 0.6rem;
       display: flex;
       gap: 0.5rem;
     }
@@ -415,7 +446,7 @@
   </header>
 
   <main>
-    <!-- Bloc recherche + waypoints -->
+    <!-- Bloc accueil : recherche + lieux populaires/insolites -->
     <div class="card">
       <div class="col">
         <div class="label">Adresse ou lieu (priorité 31 / Toulouse)</div>
@@ -426,18 +457,43 @@
         </div>
         <div id="suggestions" class="suggestions" style="display:none;"></div>
 
-        <div class="row" style="margin-top:0.35rem;">
+        <div class="label" style="margin-top:0.35rem;">Lieux populaires & insolites à Toulouse</div>
+        <div class="chips" id="chipsPopular">
+          <!-- Quelques lieux pré-remplis (coordonnées approximatives Toulouse centre + quartier) -->
+          <div class="chip" data-label="Place du Capitole, Toulouse" data-lat="43.6045" data-lon="1.4440">
+            <span>Capitole</span>
+          </div>
+          <div class="chip" data-label="Jardin Japonais, Compans-Caffarelli, Toulouse" data-lat="43.6107" data-lon="1.4355">
+            <span>Jardin Japonais</span>
+          </div>
+          <div class="chip" data-label="Halle de La Machine, Montaudran, Toulouse" data-lat="43.5712" data-lon="1.4825">
+            <span>Halle de La Machine</span>
+          </div>
+          <div class="chip" data-label="Place de la Trinité, Toulouse" data-lat="43.5992" data-lon="1.4446">
+            <span>Place de la Trinité</span>
+          </div>
+          <div class="chip" data-label="Quai de la Daurade, Toulouse" data-lat="43.5999" data-lon="1.4373">
+            <span>Quai de la Daurade</span>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:0.45rem;">
           <button class="btn" id="btnAddWaypoint" disabled>Ajouter étape</button>
           <button class="btn btn-primary" id="btnSetDestination" disabled>Aller</button>
           <button class="btn btn-danger" id="btnClearWaypoints">Effacer étapes</button>
         </div>
 
-        <div class="label" style="margin-top:0.35rem;">Étapes</div>
+        <div class="row" style="margin-top:0.35rem;">
+          <div class="label grow">Étapes</div>
+          <button class="btn btn-ghost" id="btnUnitToggle">
+            Distances&nbsp;: <span id="unitModeLabel">auto m/km</span>
+          </button>
+        </div>
         <div id="waypoints" class="waypoints"></div>
       </div>
     </div>
 
-    <!-- Bloc boussole -->
+    <!-- Bloc boussole (même page, plein écran) -->
     <div class="compass-wrapper">
       <div class="compass-card">
         <div class="compass-circle" id="compassCircle">
@@ -457,6 +513,9 @@
             <div class="compass-subline" id="targetLabel">
               Aucune destination
             </div>
+            <div class="compass-subline muted" id="hintText">
+              Tenez le téléphone à plat, loin du métal, et faites un 8 pour calibrer.
+            </div>
           </div>
         </div>
       </div>
@@ -465,7 +524,7 @@
   </main>
 
   <div class="footer-actions">
-    <button class="btn" id="btnStartSensors">Activer boussole</button>
+    <button class="btn" id="btnStartSensors">Activer GPS / boussole</button>
     <button class="btn" id="btnToggleNav" disabled>Démarrer itinéraire</button>
   </div>
 </div>
@@ -492,6 +551,9 @@
 
   let navigationActive = false;
 
+  // Mode unité : "auto", "m" ou "km"
+  let unitMode = "auto";
+
   const elSearchInput    = document.getElementById("searchInput");
   const elBtnSearch      = document.getElementById("btnSearch");
   const elSuggestions    = document.getElementById("suggestions");
@@ -499,16 +561,19 @@
   const elBtnSetDest     = document.getElementById("btnSetDestination");
   const elWaypoints      = document.getElementById("waypoints");
   const elBtnClearWp     = document.getElementById("btnClearWaypoints");
+  const elChipsPopular   = document.getElementById("chipsPopular");
 
-  const elCompassCircle  = document.getElementById("compassCircle");
   const elCompassArrow   = document.getElementById("compassArrow");
   const elDistanceValue  = document.getElementById("distanceValue");
   const elDistanceUnit   = document.getElementById("distanceUnit");
   const elTargetLabel    = document.getElementById("targetLabel");
   const elStatus         = document.getElementById("status");
+  const elHintText       = document.getElementById("hintText");
 
   const elBtnStartSensors = document.getElementById("btnStartSensors");
   const elBtnToggleNav    = document.getElementById("btnToggleNav");
+  const elBtnUnitToggle   = document.getElementById("btnUnitToggle");
+  const elUnitModeLabel   = document.getElementById("unitModeLabel");
 
   /* ---------- GÉOCODAGE ---------- */
   async function searchAddress(query) {
@@ -518,7 +583,7 @@
 
     const q = query.trim();
 
-    // Si l’utilisateur n’a pas mis de ville, on aide vers 31 / Toulouse.
+    // Si l’utilisateur ne met pas de ville, aide vers 31 / Toulouse.
     let effectiveQ = q;
     if (!q.match(/\b31\b/) && !/toulouse/i.test(q)) {
       effectiveQ = q + " 31";
@@ -541,7 +606,6 @@
       const data = await res.json();
       const feats = data.features || [];
 
-      // On remonte en priorité les codes postaux 31***
       const items = feats.map(f => ({
         label: f.properties.label,
         city: f.properties.city,
@@ -550,6 +614,7 @@
         lon: f.geometry.coordinates[0]
       }));
 
+      // On remonte en priorité les codes postaux 31***
       items.sort((a, b) => {
         const a31 = (a.postcode || "").startsWith("31") ? 1 : 0;
         const b31 = (b.postcode || "").startsWith("31") ? 1 : 0;
@@ -572,7 +637,7 @@
     }
 
     elSuggestions.innerHTML = "";
-    suggestions.forEach((item, idx) => {
+    suggestions.forEach((item) => {
       const div = document.createElement("div");
       div.className = "suggestion";
       div.innerHTML = `
@@ -591,6 +656,7 @@
         renderSuggestions();
         elBtnAddWaypoint.disabled = false;
         elBtnSetDest.disabled = false;
+        refreshNavButton();
       });
       elSuggestions.appendChild(div);
     });
@@ -612,35 +678,36 @@
       currentIndex = waypoints.length - 1;
     }
     renderWaypoints();
+    refreshNavButton();
   }
 
   function clearWaypoints() {
     waypoints = [];
     currentIndex = -1;
-    currentTarget = null;
+    currentTarget = selectedPlace || null;
     navigationActive = false;
     elBtnToggleNav.textContent = "Démarrer itinéraire";
     renderWaypoints();
     updateTargetDisplay();
+    refreshNavButton();
   }
 
   function startNavigation() {
-    if (!waypoints.length) {
-      if (selectedPlace) {
-        // si pas d'étapes, on prend la destination unique
-        currentTarget = selectedPlace;
-        navigationActive = true;
-        currentIndex = -1;
-        elBtnToggleNav.textContent = "Arrêter itinéraire";
-        updateTargetDisplay();
-      }
+    if (waypoints.length) {
+      navigationActive = true;
+      currentIndex = 0;
+      currentTarget = waypoints[0];
+      elBtnToggleNav.textContent = "Arrêter itinéraire";
+      updateTargetDisplay();
       return;
     }
-    navigationActive = true;
-    currentIndex = 0;
-    currentTarget = waypoints[0];
-    elBtnToggleNav.textContent = "Arrêter itinéraire";
-    updateTargetDisplay();
+    if (selectedPlace) {
+      navigationActive = true;
+      currentIndex = -1;
+      currentTarget = selectedPlace;
+      elBtnToggleNav.textContent = "Arrêter itinéraire";
+      updateTargetDisplay();
+    }
   }
 
   function stopNavigation() {
@@ -660,7 +727,6 @@
       currentIndex++;
       currentTarget = waypoints[currentIndex];
     } else {
-      // dernière étape atteinte
       triggerArrivalFeedback(true);
       stopNavigation();
     }
@@ -691,7 +757,7 @@
     if (!currentTarget) {
       elTargetLabel.textContent = "Aucune destination";
       elDistanceValue.textContent = "—";
-      elDistanceUnit.textContent = "m";
+      elDistanceUnit.textContent = unitMode === "km" ? "km" : "m";
       return;
     }
 
@@ -734,10 +800,25 @@
     return (brng + 360) % 360;
   }
 
+  function formatDistance(distMeters) {
+    // Mode auto : < 1000 m -> m, sinon km
+    if (unitMode === "m") {
+      return { value: Math.round(distMeters), unit: "m" };
+    }
+    if (unitMode === "km") {
+      return { value: (distMeters / 1000).toFixed(2), unit: "km" };
+    }
+
+    if (distMeters < 1000) {
+      return { value: Math.round(distMeters), unit: "m" };
+    }
+    return { value: (distMeters / 1000).toFixed(2), unit: "km" };
+  }
+
   function updateCompass() {
     if (!currentTarget || !userPosition || compassHeading == null) {
       elDistanceValue.textContent = "—";
-      elDistanceUnit.textContent = "m";
+      elDistanceUnit.textContent = unitMode === "km" ? "km" : "m";
       elCompassArrow.style.transform = "translate(-50%, -50%) rotate(0deg)";
       return;
     }
@@ -747,18 +828,12 @@
       currentTarget.lat, currentTarget.lon
     );
 
-    let value, unit;
-    if (dist < 1000) {
-      value = Math.round(dist);
-      unit = "m";
-    } else {
-      value = (dist / 1000).toFixed(2);
-      unit = "km";
-    }
+    const { value, unit } = formatDistance(dist);
     elDistanceValue.textContent = value;
     elDistanceUnit.textContent = unit;
 
-    if (dist < 20) {
+    // Arrivée : seuil plus serré (15 m) pour être moins sensible aux sauts GPS
+    if (dist < 15) {
       triggerArrivalFeedback(false);
       nextWaypoint();
     }
@@ -770,21 +845,27 @@
 
     // angle à tourner par rapport au Nord du téléphone
     const diff = (brng - compassHeading + 360) % 360;
+    // Lissage léger : interpolation vers le nouvel angle
+    const currentTransform = elCompassArrow.style.transform;
+    const match = currentTransform.match(/rotate\\(([-0-9.]+)deg\\)/);
+    let currentDeg = match ? parseFloat(match[1]) : 0;
+    const alpha = 0.25; // 0.25 -> lissage léger
+    const smoothed = currentDeg + alpha * (diff - currentDeg);
+
     elCompassArrow.style.transform =
-      `translate(-50%, -50%) rotate(${diff}deg)`;
+      `translate(-50%, -50%) rotate(${smoothed}deg)`;
   }
 
   function triggerArrivalFeedback(last) {
     if ("vibrate" in navigator) {
       navigator.vibrate(last ? [100, 80, 100, 80, 160] : [80, 80, 80]);
     }
-    // petit message dans le sous-texte
     elTargetLabel.textContent = last
       ? "Itinéraire terminé"
       : "Étape atteinte";
   }
 
-  /* ---------- GPS & DeviceOrientation ---------- */
+  /* ---------- GPS & DeviceOrientation (précision) ---------- */
 
   function initGeolocation() {
     if (!("geolocation" in navigator)) {
@@ -810,7 +891,7 @@
       },
       {
         enableHighAccuracy: true,
-        maximumAge: 1000,
+        maximumAge: 800,
         timeout: 15000
       }
     );
@@ -822,8 +903,10 @@
     function handler(e) {
       let heading;
       if (typeof e.webkitCompassHeading === "number") {
+        // iOS : déjà corrigé par le système
         heading = e.webkitCompassHeading;
       } else if (typeof e.alpha === "number") {
+        // Android / autres : alpha = rotation par rapport au Nord
         heading = 360 - e.alpha;
       }
       if (heading != null) {
@@ -847,7 +930,12 @@
           alert("Boussole non supportée.");
         });
     } else {
-      window.addEventListener("deviceorientationabsolute", handler, true);
+      // Utilise deviceorientationabsolute si dispo, sinon fallback
+      if ("ondeviceorientationabsolute" in window) {
+        window.addEventListener("deviceorientationabsolute", handler, true);
+      } else {
+        window.addEventListener("deviceorientation", handler, true);
+      }
     }
   }
 
@@ -862,6 +950,8 @@
   }
 
   /* ---------- ÉVÉNEMENTS UI ---------- */
+
+  // Recherche manuelle
   elBtnSearch.addEventListener("click", async () => {
     const q = elSearchInput.value;
     suggestions = await searchAddress(q);
@@ -873,6 +963,8 @@
     selectedPlace = null;
     elBtnAddWaypoint.disabled = true;
     elBtnSetDest.disabled = true;
+    refreshNavButton();
+
     if (q.length < 3) {
       suggestions = [];
       renderSuggestions();
@@ -882,9 +974,28 @@
     renderSuggestions();
   });
 
+  // Lieux populaires & insolites (chips)
+  elChipsPopular.addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+    const label = chip.dataset.label;
+    const lat = parseFloat(chip.dataset.lat);
+    const lon = parseFloat(chip.dataset.lon);
+    if (!isFinite(lat) || !isFinite(lon)) return;
+
+    selectedPlace = { label, lat, lon, city: "Toulouse", postcode: "31000" };
+    elSearchInput.value = label;
+    suggestions = [];
+    renderSuggestions();
+    elBtnAddWaypoint.disabled = false;
+    elBtnSetDest.disabled = false;
+    refreshNavButton();
+  });
+
   elBtnAddWaypoint.addEventListener("click", () => {
     if (!selectedPlace) return;
     addWaypoint(selectedPlace);
+    refreshNavButton();
   });
 
   elBtnSetDest.addEventListener("click", () => {
@@ -894,6 +1005,7 @@
     currentIndex = -1;
     elBtnToggleNav.textContent = "Arrêter itinéraire";
     updateTargetDisplay();
+    refreshNavButton();
   });
 
   elBtnClearWp.addEventListener("click", () => {
@@ -904,7 +1016,7 @@
     initGeolocation();
     initCompass();
     elBtnStartSensors.disabled = true;
-    elBtnStartSensors.textContent = "Boussole active";
+    elBtnStartSensors.textContent = "GPS / boussole actifs";
   });
 
   elBtnToggleNav.addEventListener("click", () => {
@@ -915,16 +1027,27 @@
     }
   });
 
-  // Bouton itinéraire activé si une destination ou des étapes
+  // Changement de mode d’unité
+  elBtnUnitToggle.addEventListener("click", () => {
+    if (unitMode === "auto") unitMode = "m";
+    else if (unitMode === "m") unitMode = "km";
+    else unitMode = "auto";
+
+    if (unitMode === "auto") elUnitModeLabel.textContent = "auto m/km";
+    else if (unitMode === "m") elUnitModeLabel.textContent = "mètre";
+    else elUnitModeLabel.textContent = "kilomètre";
+
+    updateCompass();
+  });
+
   function refreshNavButton() {
     elBtnToggleNav.disabled = !selectedPlace && !waypoints.length;
   }
 
-  // Sur toute modif de waypoints / destination
+  // Sécurité : surveille les changements de waypoints
   const observer = new MutationObserver(refreshNavButton);
   observer.observe(elWaypoints, { childList: true, subtree: true });
-
-  setInterval(refreshNavButton, 500);
+  setInterval(refreshNavButton, 800);
 
 })();
 </script>
