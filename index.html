@@ -4,25 +4,25 @@
   <meta charset="utf-8" />
   <title>Boussole de navigation</title>
 
+  <!-- Plein écran mobile -->
   <meta name="viewport"
         content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+  <!-- Manifest PWA -->
   <link rel="manifest" href="manifest.webmanifest">
 
   <style>
     :root {
       color-scheme: dark;
-      --bg: #0b0c10;
-      --bg-light: #f5f5f7;
+      --bg: #000000;
       --fg: #ffffff;
-      --fg-dark: #111111;
-      --accent: #1a73e8;
-      --accent-soft: rgba(26, 115, 232, 0.12);
-      --danger: #ea4335;
-      --border-soft: rgba(255,255,255,0.08);
+      --accent: #00d1b2;
+      --accent-soft: rgba(0, 209, 178, 0.15);
+      --danger: #ff3860;
+      --card-bg: rgba(10, 10, 10, 0.76);
     }
 
     * {
@@ -35,9 +35,9 @@
       padding: 0;
       height: 100%;
       width: 100%;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
       background: var(--bg);
       color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
       overflow: hidden;
     }
 
@@ -56,82 +56,45 @@
       padding-right: env(safe-area-inset-right);
       display: flex;
       flex-direction: column;
-      background: radial-gradient(circle at top, #20252e 0, #05070a 55%, #000000 100%);
+      background: radial-gradient(circle at top, #20252e 0, #05070a 60%, #000000 100%);
     }
 
     header {
-      padding: 0.4rem 1.0rem 0.2rem;
+      padding: 0.2rem 1rem 0.4rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.75rem;
+      gap: 0.5rem;
+      font-size: 0.85rem;
     }
 
-    .app-title {
-      font-size: 1.0rem;
+    header .title {
       font-weight: 600;
       letter-spacing: 0.03em;
       text-transform: uppercase;
-      opacity: 0.9;
+      opacity: 0.85;
     }
 
-    .status {
-      font-size: 0.75rem;
-      opacity: 0.72;
+    header .status {
+      font-size: 0.72rem;
+      opacity: 0.7;
       text-align: right;
-    }
-
-    nav {
-      display: flex;
-      padding: 0.2rem 0.8rem 0.6rem;
-      gap: 0.6rem;
-    }
-
-    .tab {
-      flex: 1 1 0;
-      border-radius: 999px;
-      padding: 0.45rem 0.7rem;
-      text-align: center;
-      font-size: 0.95rem;
-      font-weight: 500;
-      border: 1px solid transparent;
-      color: rgba(255,255,255,0.72);
-      background: transparent;
-      cursor: pointer;
-    }
-
-    .tab.active {
-      background: rgba(255,255,255,0.1);
-      border-color: rgba(255,255,255,0.24);
-      color: #fff;
     }
 
     main {
       flex: 1 1 auto;
-      min-height: 0;
       display: flex;
       flex-direction: column;
-      padding: 0 0.9rem 0.4rem;
-      gap: 0.5rem;
-    }
-
-    .view {
-      flex: 1 1 auto;
-      display: none;
+      padding: 0 1rem 0.4rem;
+      gap: 0.4rem;
       min-height: 0;
-    }
-
-    .view.active {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
     }
 
     .card {
-      background: rgba(12, 13, 20, 0.9);
+      background: var(--card-bg);
       border-radius: 16px;
-      border: 1px solid var(--border-soft);
-      padding: 0.7rem 0.8rem;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 0.6rem 0.7rem;
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
     }
@@ -140,13 +103,13 @@
       display: flex;
       flex-direction: row;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.4rem;
     }
 
     .col {
       display: flex;
       flex-direction: column;
-      gap: 0.35rem;
+      gap: 0.3rem;
     }
 
     .grow {
@@ -154,49 +117,49 @@
     }
 
     .label {
-      font-size: 0.85rem;
-      opacity: 0.8;
+      font-size: 0.75rem;
+      opacity: 0.7;
     }
 
     input[type="text"] {
       width: 100%;
-      font-size: 1.0rem;
-      padding: 0.55rem 0.8rem;
+      font-size: 0.9rem;
+      padding: 0.45rem 0.55rem;
       border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      background: rgba(0, 0, 0, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(0, 0, 0, 0.7);
       color: var(--fg);
       outline: none;
     }
 
     input[type="text"]::placeholder {
-      color: rgba(255, 255, 255, 0.4);
+      color: rgba(255, 255, 255, 0.35);
     }
 
     input[type="text"]:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(26, 115, 232, 0.5);
+      box-shadow: 0 0 0 1px rgba(0, 209, 178, 0.4);
     }
 
     .btn {
       border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.03);
       color: var(--fg);
-      font-size: 0.95rem;
-      padding: 0.5rem 0.8rem;
+      font-size: 0.8rem;
+      padding: 0.4rem 0.7rem;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.3rem;
+      gap: 0.25rem;
       cursor: pointer;
       white-space: nowrap;
     }
 
     .btn-primary {
       border-color: var(--accent);
-      background: linear-gradient(135deg, #1a73e8, #4dabf7);
-      color: #ffffff;
+      background: linear-gradient(135deg, #00d1b2, #00e0ff);
+      color: #000;
       font-weight: 600;
     }
 
@@ -208,8 +171,8 @@
     .btn-ghost {
       border-color: rgba(255,255,255,0.12);
       background: transparent;
-      font-size: 0.85rem;
-      padding-inline: 0.7rem;
+      font-size: 0.75rem;
+      padding-inline: 0.6rem;
       opacity: 0.8;
     }
 
@@ -218,51 +181,51 @@
     }
 
     .btn[disabled] {
-      opacity: 0.35;
+      opacity: 0.4;
       pointer-events: none;
     }
 
     .chips {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.35rem;
-      margin-top: 0.15rem;
+      gap: 0.3rem;
+      margin-top: 0.25rem;
     }
 
     .chip {
-      font-size: 0.85rem;
-      padding: 0.25rem 0.65rem;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.55rem;
       border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.03);
       cursor: pointer;
       white-space: nowrap;
     }
 
     .chip span {
-      opacity: 0.9;
+      opacity: 0.8;
     }
 
     .suggestions {
-      margin-top: 0.4rem;
-      max-height: 7rem;
+      margin-top: 0.3rem;
+      max-height: 6.5rem;
       overflow-y: auto;
       border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(0, 0, 0, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.85);
     }
 
     .suggestion {
-      padding: 0.45rem 0.7rem;
-      font-size: 0.9rem;
+      padding: 0.35rem 0.6rem;
+      font-size: 0.8rem;
       display: flex;
       flex-direction: column;
-      gap: 0.18rem;
+      gap: 0.15rem;
       cursor: pointer;
     }
 
     .suggestion:hover {
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
     }
 
     .suggestion-title {
@@ -270,49 +233,49 @@
     }
 
     .suggestion-sub {
-      font-size: 0.8rem;
-      opacity: 0.75;
+      font-size: 0.7rem;
+      opacity: 0.7;
     }
 
     .badge {
-      font-size: 0.7rem;
-      padding: 0.1rem 0.5rem;
+      font-size: 0.65rem;
+      padding: 0.06rem 0.4rem;
       border-radius: 999px;
       background: var(--accent-soft);
       color: var(--accent);
-      margin-left: 0.3rem;
+      margin-left: 0.25rem;
     }
 
     .waypoints {
-      margin-top: 0.25rem;
+      margin-top: 0.3rem;
       max-height: 5.5rem;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
+      gap: 0.2rem;
     }
 
     .waypoint {
-      padding: 0.35rem 0.7rem;
+      padding: 0.3rem 0.55rem;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.05);
-      font-size: 0.9rem;
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 0.8rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.4rem;
+      gap: 0.3rem;
     }
 
     .waypoint-index {
-      width: 1.6rem;
-      height: 1.6rem;
+      width: 1.4rem;
+      height: 1.4rem;
       border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.35);
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.8rem;
-      margin-right: 0.4rem;
+      font-size: 0.7rem;
+      margin-right: 0.3rem;
     }
 
     .waypoint-label {
@@ -323,15 +286,134 @@
     }
 
     .waypoint-remove {
-      font-size: 1.1rem;
+      font-size: 1rem;
       opacity: 0.6;
       cursor: pointer;
     }
 
-    .footer-actions {
-      padding: 0.4rem 0.9rem 0.7rem;
+    .compass-wrapper {
+      flex: 1 1 auto;
       display: flex;
-      gap: 0.6rem;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+
+    .compass-card {
+      width: 100%;
+      max-width: 420px;
+      aspect-ratio: 1 / 1;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      background: radial-gradient(circle at 20% 20%, #283442 0, #05070a 55%, #000000 100%);
+      position: relative;
+      overflow: hidden;
+      box-shadow:
+        0 18px 45px rgba(0,0,0,0.9),
+        0 0 0 1px rgba(255,255,255,0.06);
+    }
+
+    .compass-circle {
+      position: absolute;
+      inset: 10%;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .compass-ring {
+      position: absolute;
+      inset: 22%;
+      border-radius: 999px;
+      border: 1px dashed rgba(255, 255, 255, 0.12);
+    }
+
+    .compass-arrow {
+      position: absolute;
+      width: 40%;
+      height: 40%;
+      transform-origin: 50% 85%;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .compass-arrow-shape {
+      width: 0;
+      height: 0;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-bottom: 60px solid #ffdd57;
+      filter: drop-shadow(0 0 12px rgba(255, 221, 87, 0.9));
+    }
+
+    .compass-center {
+      position: absolute;
+      width: 16%;
+      height: 16%;
+      border-radius: 999px;
+      background: radial-gradient(circle, #ffffff 0, #d9fef6 40%, #00d1b2 100%);
+      box-shadow:
+        0 0 0 6px rgba(0,0,0,0.72),
+        0 0 20px rgba(0, 209, 178, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 600;
+      color: #000;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .compass-north {
+      position: absolute;
+      top: 7%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      opacity: 0.8;
+    }
+
+    .compass-info {
+      position: absolute;
+      bottom: 7%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 82%;
+      text-align: center;
+      font-size: 0.75rem;
+      line-height: 1.4;
+      opacity: 0.86;
+    }
+
+    .compass-distance {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .compass-unit {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      opacity: 0.75;
+      margin-left: 0.2rem;
+    }
+
+    .compass-subline {
+      font-size: 0.75rem;
+      opacity: 0.75;
+      margin-top: 0.2rem;
+    }
+
+    .footer-actions {
+      padding: 0.35rem 1rem 0.6rem;
+      display: flex;
+      gap: 0.5rem;
     }
 
     .footer-actions .btn {
@@ -340,11 +422,7 @@
     }
 
     .small {
-      font-size: 0.85rem;
-    }
-
-    .muted {
-      opacity: 0.7;
+      font-size: 0.75rem;
     }
 
     .accent {
@@ -355,369 +433,160 @@
       color: var(--danger);
     }
 
-    /* ---------- PAGE BOUSSOLE MINIMALISTE ---------- */
-
-    .compass-view {
-      flex: 1 1 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 0.7rem;
-    }
-
-    .compass-card {
-      flex: 1 1 auto;
-      border-radius: 18px;
-      background: var(--bg-light);
-      color: var(--fg-dark);
-      display: flex;
-      flex-direction: column;
-      padding: 1.0rem;
-      box-shadow: 0 16px 35px rgba(0,0,0,0.6);
-    }
-
-    .compass-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.95rem;
-      margin-bottom: 0.6rem;
-    }
-
-    .compass-header-title {
-      font-weight: 600;
-    }
-
-    .compass-header-sub {
-      font-size: 0.85rem;
-      opacity: 0.75;
-      text-align: right;
-    }
-
-    .compass-circle-wrap {
-      flex: 1 1 auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 0;
-    }
-
-    .compass-circle {
-      width: 100%;
-      max-width: 420px;
-      aspect-ratio: 1 / 1;
-      border-radius: 999px;
-      background: #ffffff;
-      border: 1px solid rgba(0,0,0,0.08);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .compass-ring {
-      position: absolute;
-      inset: 14%;
-      border-radius: 999px;
-      border: 1px solid rgba(0,0,0,0.08);
-    }
-
-    .compass-ticks {
-      position: absolute;
-      inset: 22%;
-      border-radius: 999px;
-      border: 1px dashed rgba(0,0,0,0.08);
-    }
-
-    .compass-arrow {
-      position: absolute;
-      width: 36%;
-      height: 36%;
-      transform-origin: 50% 85%;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-    }
-
-    .compass-arrow-head {
-      width: 0;
-      height: 0;
-      border-left: 11px solid transparent;
-      border-right: 11px solid transparent;
-      border-bottom: 56px solid #1a73e8;
-      filter: drop-shadow(0 0 10px rgba(26, 115, 232, 0.7));
-    }
-
-    .compass-center-dot {
-      position: absolute;
-      width: 18%;
-      height: 18%;
-      border-radius: 999px;
-      background: #ffffff;
-      box-shadow: 0 0 0 4px rgba(0,0,0,0.08);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #1a73e8;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
-    .compass-north-label {
-      position: absolute;
-      top: 8%;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 0.85rem;
-      font-weight: 500;
-      letter-spacing: 0.32em;
-    }
-
-    .compass-info {
-      position: absolute;
-      bottom: 9%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 86%;
-      text-align: center;
-    }
-
-    .compass-distance {
-      font-size: 2.1rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-    }
-
-    .compass-distance-unit {
-      font-size: 1.0rem;
-      opacity: 0.8;
-      margin-left: 0.25rem;
-      text-transform: uppercase;
-    }
-
-    .compass-destination {
-      font-size: 0.98rem;
-      margin-top: 0.25rem;
-      opacity: 0.88;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .compass-hint {
-      font-size: 0.9rem;
-      margin-top: 0.2rem;
-      opacity: 0.7;
-    }
-
-    .compass-footer {
-      padding-top: 0.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.9rem;
+    .muted {
+      opacity: 0.6;
     }
   </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <div class="app-title">Boussole de navigation</div>
+    <div class="title">Boussole de navigation</div>
     <div class="status" id="status">GPS: — | Boussole: —</div>
   </header>
 
-  <nav>
-    <button class="tab active" id="tabHome">Accueil</button>
-    <button class="tab" id="tabCompass">Boussole</button>
-  </nav>
-
   <main>
-    <!-- PAGE ACCUEIL -->
-    <section class="view active" id="viewHome">
-      <div class="card">
-        <div class="col">
-          <div class="label">Adresse ou lieu (priorité 31 / Toulouse)</div>
-          <div class="row">
-            <input id="searchInput" type="text" placeholder="Ex: 10 rue Alsace Lorraine"
-                   autocomplete="off">
-            <button class="btn" id="btnSearch">OK</button>
-          </div>
-          <div id="suggestions" class="suggestions" style="display:none;"></div>
-
-          <div class="label" style="margin-top:0.3rem;">
-            Lieux populaires & insolites à Toulouse
-          </div>
-          <div class="chips" id="chipsPopular">
-            <div class="chip" data-label="Place du Capitole, Toulouse" data-lat="43.6045" data-lon="1.4440">
-              <span>Capitole</span>
-            </div>
-            <div class="chip" data-label="Jardin Japonais, Compans-Caffarelli, Toulouse" data-lat="43.6107" data-lon="1.4355">
-              <span>Jardin Japonais</span>
-            </div>
-            <div class="chip" data-label="Halle de La Machine, Montaudran, Toulouse" data-lat="43.5712" data-lon="1.4825">
-              <span>Halle de La Machine</span>
-            </div>
-            <div class="chip" data-label="Place de la Trinité, Toulouse" data-lat="43.5992" data-lon="1.4446">
-              <span>Place de la Trinité</span>
-            </div>
-            <div class="chip" data-label="Quai de la Daurade, Toulouse" data-lat="43.5999" data-lon="1.4373">
-              <span>Quai de la Daurade</span>
-            </div>
-          </div>
-
-          <div class="row" style="margin-top:0.5rem;">
-            <button class="btn" id="btnAddWaypoint" disabled>Ajouter étape</button>
-            <button class="btn btn-primary" id="btnSetDestination" disabled>Aller</button>
-            <button class="btn btn-danger" id="btnClearWaypoints">Effacer étapes</button>
-          </div>
-
-          <div class="row" style="margin-top:0.35rem;">
-            <div class="label grow">Étapes</div>
-            <button class="btn btn-ghost" id="btnUnitToggle">
-              Distances&nbsp;: <span id="unitModeLabel">auto m/km</span>
-            </button>
-          </div>
-          <div id="waypoints" class="waypoints"></div>
+    <!-- Bloc accueil : recherche + lieux populaires/insolites -->
+    <div class="card">
+      <div class="col">
+        <div class="label">Adresse ou lieu (priorité 31 / Toulouse)</div>
+        <div class="row">
+          <input id="searchInput" type="text" placeholder="Ex: 10 rue Alsace Lorraine"
+                 autocomplete="off">
+          <button class="btn" id="btnSearch">OK</button>
         </div>
-      </div>
+        <div id="suggestions" class="suggestions" style="display:none;"></div>
 
-      <div class="card small">
-        <div class="label">
-          1) Choisis une adresse ou un lieu. 2) Ajoute des étapes si besoin. 3) Va sur l’onglet
-          <span class="accent">Boussole</span> pour suivre la flèche.
+        <div class="label" style="margin-top:0.35rem;">Lieux populaires & insolites à Toulouse</div>
+        <div class="chips" id="chipsPopular">
+          <!-- Quelques lieux pré-remplis (coordonnées approximatives Toulouse centre + quartier) -->
+          <div class="chip" data-label="Place du Capitole, Toulouse" data-lat="43.6045" data-lon="1.4440">
+            <span>Capitole</span>
+          </div>
+          <div class="chip" data-label="Jardin Japonais, Compans-Caffarelli, Toulouse" data-lat="43.6107" data-lon="1.4355">
+            <span>Jardin Japonais</span>
+          </div>
+          <div class="chip" data-label="Halle de La Machine, Montaudran, Toulouse" data-lat="43.5712" data-lon="1.4825">
+            <span>Halle de La Machine</span>
+          </div>
+          <div class="chip" data-label="Place de la Trinité, Toulouse" data-lat="43.5992" data-lon="1.4446">
+            <span>Place de la Trinité</span>
+          </div>
+          <div class="chip" data-label="Quai de la Daurade, Toulouse" data-lat="43.5999" data-lon="1.4373">
+            <span>Quai de la Daurade</span>
+          </div>
         </div>
-      </div>
-    </section>
 
-    <!-- PAGE BOUSSOLE (plein écran minimaliste) -->
-    <section class="view" id="viewCompass">
-      <div class="compass-view">
-        <div class="compass-card">
-          <div class="compass-header">
-            <div class="compass-header-title">Boussole</div>
-            <div class="compass-header-sub" id="compassHeaderSub">
+        <div class="row" style="margin-top:0.45rem;">
+          <button class="btn" id="btnAddWaypoint" disabled>Ajouter étape</button>
+          <button class="btn btn-primary" id="btnSetDestination" disabled>Aller</button>
+          <button class="btn btn-danger" id="btnClearWaypoints">Effacer étapes</button>
+        </div>
+
+        <div class="row" style="margin-top:0.35rem;">
+          <div class="label grow">Étapes</div>
+          <button class="btn btn-ghost" id="btnUnitToggle">
+            Distances&nbsp;: <span id="unitModeLabel">auto m/km</span>
+          </button>
+        </div>
+        <div id="waypoints" class="waypoints"></div>
+      </div>
+    </div>
+
+    <!-- Bloc boussole (même page, plein écran) -->
+    <div class="compass-wrapper">
+      <div class="compass-card">
+        <div class="compass-circle" id="compassCircle">
+          <div class="compass-ring"></div>
+          <div class="compass-arrow" id="compassArrow">
+            <div class="compass-arrow-shape"></div>
+          </div>
+          <div class="compass-center">
+            NAV
+          </div>
+          <div class="compass-north">N</div>
+          <div class="compass-info">
+            <div class="compass-distance">
+              <span id="distanceValue">—</span>
+              <span class="compass-unit" id="distanceUnit">m</span>
+            </div>
+            <div class="compass-subline" id="targetLabel">
               Aucune destination
             </div>
-          </div>
-
-          <div class="compass-circle-wrap">
-            <div class="compass-circle">
-              <div class="compass-ring"></div>
-              <div class="compass-ticks"></div>
-
-              <div class="compass-arrow" id="compassArrow">
-                <div class="compass-arrow-head"></div>
-              </div>
-
-              <div class="compass-center-dot">NAV</div>
-              <div class="compass-north-label">N</div>
-
-              <div class="compass-info">
-                <div class="compass-distance">
-                  <span id="distanceValue">—</span>
-                  <span class="compass-distance-unit" id="distanceUnit">m</span>
-                </div>
-                <div class="compass-destination" id="targetLabel">
-                  Aucune destination
-                </div>
-                <div class="compass-hint" id="hintText">
-                  Tenez le téléphone à plat, loin du métal, et faites un 8 pour calibrer.
-                </div>
-              </div>
+            <div class="compass-subline muted" id="hintText">
+              Tenez le téléphone à plat, loin du métal, et faites un 8 pour calibrer.
             </div>
           </div>
-
-          <div class="compass-footer">
-            <div id="compassNavInfo" class="muted">
-              Itinéraire inactif
-            </div>
-            <button class="btn btn-ghost" id="btnStartSensors">
-              Activer GPS / boussole
-            </button>
-          </div>
-        </div>
-
-        <div class="footer-actions">
-          <button class="btn" id="btnToggleNav" disabled>Démarrer itinéraire</button>
         </div>
       </div>
-    </section>
+    </div>
+
   </main>
+
+  <div class="footer-actions">
+    <button class="btn" id="btnStartSensors">Activer GPS / boussole</button>
+    <button class="btn" id="btnToggleNav" disabled>Démarrer itinéraire</button>
+  </div>
 </div>
 
 <script>
 (function() {
+  /* ---------- CONFIG GÉOCODAGE BAN (IGN) ---------- */
   const BAN_ENDPOINT = "https://data.geopf.fr/geocodage/search/";
-  const BAN_CENTER_LAT = 43.6045;
+  const BAN_CENTER_LAT = 43.6045;  // Toulouse
   const BAN_CENTER_LON = 1.4440;
-  const BAN_RADIUS_M = 30000;
+  const BAN_RADIUS_M = 30000;      // ~30 km
 
+  /* ---------- ÉTAT GLOBAL ---------- */
   let suggestions = [];
   let selectedPlace = null;
-  let waypoints = [];
+
+  let waypoints = [];         // {label, lat, lon}
   let currentIndex = -1;
   let currentTarget = null;
 
   let watchId = null;
-  let userPosition = null;
-  let compassHeading = null;
-  let navigationActive = false;
-  let unitMode = "auto"; // "auto" | "m" | "km"
+  let userPosition = null;    // {lat, lon, acc}
+  let compassHeading = null;  // en degrés (0–360, 0 = Nord)
 
-  const elStatus         = document.getElementById("status");
-  const elTabHome        = document.getElementById("tabHome");
-  const elTabCompass     = document.getElementById("tabCompass");
-  const elViewHome       = document.getElementById("viewHome");
-  const elViewCompass    = document.getElementById("viewCompass");
+  let navigationActive = false;
+
+  // Mode unité : "auto", "m" ou "km"
+  let unitMode = "auto";
 
   const elSearchInput    = document.getElementById("searchInput");
   const elBtnSearch      = document.getElementById("btnSearch");
   const elSuggestions    = document.getElementById("suggestions");
-  const elChipsPopular   = document.getElementById("chipsPopular");
-
   const elBtnAddWaypoint = document.getElementById("btnAddWaypoint");
   const elBtnSetDest     = document.getElementById("btnSetDestination");
-  const elBtnClearWp     = document.getElementById("btnClearWaypoints");
   const elWaypoints      = document.getElementById("waypoints");
-
-  const elBtnUnitToggle  = document.getElementById("btnUnitToggle");
-  const elUnitModeLabel  = document.getElementById("unitModeLabel");
-
-  const elBtnStartSensors = document.getElementById("btnStartSensors");
-  const elBtnToggleNav    = document.getElementById("btnToggleNav");
+  const elBtnClearWp     = document.getElementById("btnClearWaypoints");
+  const elChipsPopular   = document.getElementById("chipsPopular");
 
   const elCompassArrow   = document.getElementById("compassArrow");
   const elDistanceValue  = document.getElementById("distanceValue");
   const elDistanceUnit   = document.getElementById("distanceUnit");
   const elTargetLabel    = document.getElementById("targetLabel");
+  const elStatus         = document.getElementById("status");
   const elHintText       = document.getElementById("hintText");
-  const elCompassNavInfo = document.getElementById("compassNavInfo");
-  const elCompassHeaderSub = document.getElementById("compassHeaderSub");
 
-  /* ---- Navigation entre pages ---- */
-  function showView(name) {
-    if (name === "home") {
-      elViewHome.classList.add("active");
-      elViewCompass.classList.remove("active");
-      elTabHome.classList.add("active");
-      elTabCompass.classList.remove("active");
-    } else {
-      elViewHome.classList.remove("active");
-      elViewCompass.classList.add("active");
-      elTabHome.classList.remove("active");
-      elTabCompass.classList.add("active");
+  const elBtnStartSensors = document.getElementById("btnStartSensors");
+  const elBtnToggleNav    = document.getElementById("btnToggleNav");
+  const elBtnUnitToggle   = document.getElementById("btnUnitToggle");
+  const elUnitModeLabel   = document.getElementById("unitModeLabel");
+
+  /* ---------- GÉOCODAGE ---------- */
+  async function searchAddress(query) {
+    if (!query || query.length < 3) {
+      return [];
     }
-  }
 
-  elTabHome.addEventListener("click", () => showView("home"));
-  elTabCompass.addEventListener("click", () => showView("compass"));
+    const q = query.trim();
 
-  /* ---- Geocodage ---- */
-  async function searchAddress(q) {
-    if (!q || q.length < 3) return [];
-    const query = q.trim();
-    let effectiveQ = query;
-    if (!query.match(/\b31\b/) && !/toulouse/i.test(query)) {
-      effectiveQ = query + " 31";
+    // Si l’utilisateur ne met pas de ville, aide vers 31 / Toulouse.
+    let effectiveQ = q;
+    if (!q.match(/\b31\b/) && !/toulouse/i.test(q)) {
+      effectiveQ = q + " 31";
     }
 
     const params = new URLSearchParams({
@@ -729,8 +598,10 @@
       radius: String(BAN_RADIUS_M)
     });
 
+    const url = BAN_ENDPOINT + "?" + params.toString();
+
     try {
-      const res = await fetch(BAN_ENDPOINT + "?" + params.toString());
+      const res = await fetch(url);
       if (!res.ok) return [];
       const data = await res.json();
       const feats = data.features || [];
@@ -743,15 +614,16 @@
         lon: f.geometry.coordinates[0]
       }));
 
-      items.sort((a,b) => {
+      // On remonte en priorité les codes postaux 31***
+      items.sort((a, b) => {
         const a31 = (a.postcode || "").startsWith("31") ? 1 : 0;
         const b31 = (b.postcode || "").startsWith("31") ? 1 : 0;
         return b31 - a31;
       });
 
       return items;
-    } catch(e) {
-      console.error(e);
+    } catch (e) {
+      console.error("Erreur geocodage", e);
       return [];
     }
   }
@@ -761,19 +633,19 @@
       elSuggestions.style.display = "none";
       elBtnAddWaypoint.disabled = !selectedPlace;
       elBtnSetDest.disabled = !selectedPlace;
-      refreshNavButton();
       return;
     }
 
     elSuggestions.innerHTML = "";
-    suggestions.forEach(item => {
+    suggestions.forEach((item) => {
       const div = document.createElement("div");
       div.className = "suggestion";
       div.innerHTML = `
         <div class="suggestion-title">
           ${item.label}
           ${String(item.postcode || "").startsWith("31")
-            ? '<span class="badge">31</span>' : ""}
+            ? '<span class="badge">31</span>'
+            : ""}
         </div>
         <div class="suggestion-sub">${item.postcode || ""} ${item.city || ""}</div>
       `;
@@ -788,41 +660,25 @@
       });
       elSuggestions.appendChild(div);
     });
+
     elSuggestions.style.display = "block";
   }
 
-  /* ---- Waypoints ---- */
+  /* ---------- WAYPOINTS / ITINÉRAIRE ---------- */
   function addWaypoint(place) {
     if (!place) return;
     waypoints.push(place);
     renderWaypoints();
   }
 
-  function removeWaypoint(i) {
-    if (i < 0 || i >= waypoints.length) return;
-    waypoints.splice(i,1);
-    if (currentIndex >= waypoints.length) currentIndex = waypoints.length - 1;
+  function removeWaypoint(index) {
+    if (index < 0 || index >= waypoints.length) return;
+    waypoints.splice(index, 1);
+    if (currentIndex >= waypoints.length) {
+      currentIndex = waypoints.length - 1;
+    }
     renderWaypoints();
     refreshNavButton();
-  }
-
-  function renderWaypoints() {
-    elWaypoints.innerHTML = "";
-    waypoints.forEach((wp,i) => {
-      const row = document.createElement("div");
-      row.className = "waypoint";
-      row.innerHTML = `
-        <div class="row" style="flex:1 1 auto; gap:0.3rem;">
-          <div class="waypoint-index">${i+1}</div>
-          <div class="waypoint-label">${wp.label}</div>
-        </div>
-        <div class="waypoint-remove">&times;</div>
-      `;
-      row.querySelector(".waypoint-remove").addEventListener("click", () => {
-        removeWaypoint(i);
-      });
-      elWaypoints.appendChild(row);
-    });
   }
 
   function clearWaypoints() {
@@ -834,7 +690,6 @@
     renderWaypoints();
     updateTargetDisplay();
     refreshNavButton();
-    elCompassNavInfo.textContent = "Itinéraire inactif";
   }
 
   function startNavigation() {
@@ -842,16 +697,17 @@
       navigationActive = true;
       currentIndex = 0;
       currentTarget = waypoints[0];
-    } else if (selectedPlace) {
+      elBtnToggleNav.textContent = "Arrêter itinéraire";
+      updateTargetDisplay();
+      return;
+    }
+    if (selectedPlace) {
       navigationActive = true;
       currentIndex = -1;
       currentTarget = selectedPlace;
-    } else {
-      return;
+      elBtnToggleNav.textContent = "Arrêter itinéraire";
+      updateTargetDisplay();
     }
-    elBtnToggleNav.textContent = "Arrêter itinéraire";
-    elCompassNavInfo.textContent = "Itinéraire en cours";
-    updateTargetDisplay();
   }
 
   function stopNavigation() {
@@ -859,7 +715,6 @@
     currentTarget = null;
     currentIndex = -1;
     elBtnToggleNav.textContent = "Démarrer itinéraire";
-    elCompassNavInfo.textContent = "Itinéraire inactif";
     updateTargetDisplay();
   }
 
@@ -878,52 +733,86 @@
     updateTargetDisplay();
   }
 
+  function renderWaypoints() {
+    elWaypoints.innerHTML = "";
+
+    waypoints.forEach((wp, i) => {
+      const row = document.createElement("div");
+      row.className = "waypoint";
+      row.innerHTML = `
+        <div class="row" style="flex:1 1 auto; gap:0.2rem;">
+          <div class="waypoint-index">${i+1}</div>
+          <div class="waypoint-label">${wp.label}</div>
+        </div>
+        <div class="waypoint-remove" data-idx="${i}">&times;</div>
+      `;
+      row.querySelector(".waypoint-remove").addEventListener("click", () => {
+        removeWaypoint(i);
+      });
+      elWaypoints.appendChild(row);
+    });
+  }
+
   function updateTargetDisplay() {
     if (!currentTarget) {
       elTargetLabel.textContent = "Aucune destination";
-      elCompassHeaderSub.textContent = "Aucune destination";
       elDistanceValue.textContent = "—";
       elDistanceUnit.textContent = unitMode === "km" ? "km" : "m";
       return;
     }
-    let label = currentTarget.label;
+
     if (currentIndex >= 0 && currentIndex < waypoints.length) {
-      label += ` (étape ${currentIndex+1}/${waypoints.length})`;
+      elTargetLabel.textContent = `${currentTarget.label} (étape ${currentIndex+1}/${waypoints.length})`;
+    } else {
+      elTargetLabel.textContent = currentTarget.label;
     }
-    elTargetLabel.textContent = label;
-    elCompassHeaderSub.textContent = label;
   }
 
-  /* ---- Distance / boussole ---- */
+  /* ---------- Boussole & distance ---------- */
+
   function haversineDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371000;
+    const R = 6371000; // mètres
     const toRad = v => v * Math.PI / 180;
-    const dLat = toRad(lat2-lat1);
-    const dLon = toRad(lon2-lon1);
+
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
     const a =
-      Math.sin(dLat/2)**2 +
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
       Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-      Math.sin(dLon/2)**2;
-    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
   }
 
   function bearingTo(lat1, lon1, lat2, lon2) {
     const toRad = v => v * Math.PI / 180;
     const toDeg = v => v * 180 / Math.PI;
+
     const phi1 = toRad(lat1);
     const phi2 = toRad(lat2);
-    const dLon = toRad(lon2-lon1);
-    const y = Math.sin(dLon)*Math.cos(phi2);
-    const x = Math.cos(phi1)*Math.sin(phi2) -
-              Math.sin(phi1)*Math.cos(phi2)*Math.cos(dLon);
-    return (toDeg(Math.atan2(y,x)) + 360) % 360;
+    const dLon = toRad(lon2 - lon1);
+
+    const y = Math.sin(dLon) * Math.cos(phi2);
+    const x = Math.cos(phi1) * Math.sin(phi2) -
+              Math.sin(phi1) * Math.cos(phi2) * Math.cos(dLon);
+    let brng = toDeg(Math.atan2(y, x));
+    return (brng + 360) % 360;
   }
 
-  function formatDistance(m) {
-    if (unitMode === "m") return { value: Math.round(m), unit: "m" };
-    if (unitMode === "km") return { value: (m/1000).toFixed(2), unit: "km" };
-    if (m < 1000) return { value: Math.round(m), unit: "m" };
-    return { value: (m/1000).toFixed(2), unit: "km" };
+  function formatDistance(distMeters) {
+    // Mode auto : < 1000 m -> m, sinon km
+    if (unitMode === "m") {
+      return { value: Math.round(distMeters), unit: "m" };
+    }
+    if (unitMode === "km") {
+      return { value: (distMeters / 1000).toFixed(2), unit: "km" };
+    }
+
+    if (distMeters < 1000) {
+      return { value: Math.round(distMeters), unit: "m" };
+    }
+    return { value: (distMeters / 1000).toFixed(2), unit: "km" };
   }
 
   function updateCompass() {
@@ -943,6 +832,7 @@
     elDistanceValue.textContent = value;
     elDistanceUnit.textContent = unit;
 
+    // Arrivée : seuil plus serré (15 m) pour être moins sensible aux sauts GPS
     if (dist < 15) {
       triggerArrivalFeedback(false);
       nextWaypoint();
@@ -952,12 +842,14 @@
       userPosition.lat, userPosition.lon,
       currentTarget.lat, currentTarget.lon
     );
-    const diff = (brng - compassHeading + 360) % 360;
 
+    // angle à tourner par rapport au Nord du téléphone
+    const diff = (brng - compassHeading + 360) % 360;
+    // Lissage léger : interpolation vers le nouvel angle
     const currentTransform = elCompassArrow.style.transform;
     const match = currentTransform.match(/rotate\\(([-0-9.]+)deg\\)/);
     let currentDeg = match ? parseFloat(match[1]) : 0;
-    const alpha = 0.25;
+    const alpha = 0.25; // 0.25 -> lissage léger
     const smoothed = currentDeg + alpha * (diff - currentDeg);
 
     elCompassArrow.style.transform =
@@ -966,19 +858,22 @@
 
   function triggerArrivalFeedback(last) {
     if ("vibrate" in navigator) {
-      navigator.vibrate(last ? [120,90,120,90,200] : [90,90,90]);
+      navigator.vibrate(last ? [100, 80, 100, 80, 160] : [80, 80, 80]);
     }
-    elTargetLabel.textContent = last ? "Itinéraire terminé" : "Étape atteinte";
-    elCompassHeaderSub.textContent = elTargetLabel.textContent;
+    elTargetLabel.textContent = last
+      ? "Itinéraire terminé"
+      : "Étape atteinte";
   }
 
-  /* ---- GPS & orientation ---- */
+  /* ---------- GPS & DeviceOrientation (précision) ---------- */
+
   function initGeolocation() {
     if (!("geolocation" in navigator)) {
       elStatus.textContent = "GPS non dispo";
       return;
     }
-    if (watchId != null) return;
+
+    if (watchId != null) return; // déjà actif
 
     watchId = navigator.geolocation.watchPosition(
       (pos) => {
@@ -991,7 +886,7 @@
         updateCompass();
       },
       (err) => {
-        console.error(err);
+        console.error("Erreur GPS", err);
         elStatus.textContent = "GPS: erreur";
       },
       {
@@ -1008,8 +903,10 @@
     function handler(e) {
       let heading;
       if (typeof e.webkitCompassHeading === "number") {
+        // iOS : déjà corrigé par le système
         heading = e.webkitCompassHeading;
       } else if (typeof e.alpha === "number") {
+        // Android / autres : alpha = rotation par rapport au Nord
         heading = 360 - e.alpha;
       }
       if (heading != null) {
@@ -1029,8 +926,11 @@
             alert("Accès à la boussole refusé.");
           }
         })
-        .catch(() => alert("Boussole non supportée."));
+        .catch(() => {
+          alert("Boussole non supportée.");
+        });
     } else {
+      // Utilise deviceorientationabsolute si dispo, sinon fallback
       if ("ondeviceorientationabsolute" in window) {
         window.addEventListener("deviceorientationabsolute", handler, true);
       } else {
@@ -1049,9 +949,12 @@
     elStatus.textContent = `${gps} | ${b}`;
   }
 
-  /* ---- UI events ---- */
+  /* ---------- ÉVÉNEMENTS UI ---------- */
+
+  // Recherche manuelle
   elBtnSearch.addEventListener("click", async () => {
-    suggestions = await searchAddress(elSearchInput.value);
+    const q = elSearchInput.value;
+    suggestions = await searchAddress(q);
     renderSuggestions();
   });
 
@@ -1060,6 +963,8 @@
     selectedPlace = null;
     elBtnAddWaypoint.disabled = true;
     elBtnSetDest.disabled = true;
+    refreshNavButton();
+
     if (q.length < 3) {
       suggestions = [];
       renderSuggestions();
@@ -1069,12 +974,15 @@
     renderSuggestions();
   });
 
+  // Lieux populaires & insolites (chips)
   elChipsPopular.addEventListener("click", (e) => {
     const chip = e.target.closest(".chip");
     if (!chip) return;
     const label = chip.dataset.label;
     const lat = parseFloat(chip.dataset.lat);
     const lon = parseFloat(chip.dataset.lon);
+    if (!isFinite(lat) || !isFinite(lon)) return;
+
     selectedPlace = { label, lat, lon, city: "Toulouse", postcode: "31000" };
     elSearchInput.value = label;
     suggestions = [];
@@ -1096,14 +1004,30 @@
     navigationActive = true;
     currentIndex = -1;
     elBtnToggleNav.textContent = "Arrêter itinéraire";
-    elCompassNavInfo.textContent = "Itinéraire en cours";
     updateTargetDisplay();
     refreshNavButton();
-    showView("compass");
   });
 
-  elBtnClearWp.addEventListener("click", clearWaypoints);
+  elBtnClearWp.addEventListener("click", () => {
+    clearWaypoints();
+  });
 
+  elBtnStartSensors.addEventListener("click", () => {
+    initGeolocation();
+    initCompass();
+    elBtnStartSensors.disabled = true;
+    elBtnStartSensors.textContent = "GPS / boussole actifs";
+  });
+
+  elBtnToggleNav.addEventListener("click", () => {
+    if (!navigationActive) {
+      startNavigation();
+    } else {
+      stopNavigation();
+    }
+  });
+
+  // Changement de mode d’unité
   elBtnUnitToggle.addEventListener("click", () => {
     if (unitMode === "auto") unitMode = "m";
     else if (unitMode === "m") unitMode = "km";
@@ -1116,25 +1040,15 @@
     updateCompass();
   });
 
-  elBtnStartSensors.addEventListener("click", () => {
-    initGeolocation();
-    initCompass();
-    elBtnStartSensors.disabled = true;
-    elBtnStartSensors.textContent = "GPS / boussole actifs";
-  });
-
-  elBtnToggleNav.addEventListener("click", () => {
-    if (!navigationActive) startNavigation();
-    else stopNavigation();
-  });
-
   function refreshNavButton() {
     elBtnToggleNav.disabled = !selectedPlace && !waypoints.length;
   }
 
+  // Sécurité : surveille les changements de waypoints
   const observer = new MutationObserver(refreshNavButton);
   observer.observe(elWaypoints, { childList: true, subtree: true });
   setInterval(refreshNavButton, 800);
+
 })();
 </script>
 </body>
