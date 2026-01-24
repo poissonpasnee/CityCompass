@@ -3,177 +3,306 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="theme-color" content="#000000" />
+  <meta name="theme-color" content="#ffffff" />
   <title>City Compass</title>
 
-  <!-- IMPORTANT : UNE SEULE FOIS ICI -->
+  <!-- SUPABASE JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    /* DESIGN COMPLET (identique à votre version précédente) */
+    /* =========================
+       DESIGN SYSTEM (Apple/Google Style)
+    ========================== */
     :root{
-      --bg-body: #000000; --bg-surface: #1C1C1E; --accent: #0A84FF; --text-primary: #FFFFFF; --text-sec: #8E8E93;
-      --danger: #FF453A; --success: #32D74B; --r: 16px;
+      /* Dark Mode (Base) */
+      --bg-body: #000000;
+      --bg-surface: #1C1C1E;
+      --stroke: rgba(255,255,255,0.12);
+      --text-primary: #FFFFFF;
+      --text-secondary: #8E8E93;
+      --accent: #0A84FF;
+      --accent-soft: rgba(10, 132, 255, 0.15);
+      --danger: #FF453A;
+      --nav-bg: rgba(29, 29, 29, 0.85);
+      --shadow: 0 4px 12px rgba(0,0,0,0.2);
+      --r-btn: 12px;
+      --r-card: 16px;
     }
+
     [data-theme="light"]{
-      --bg-body: #F2F2F7; --bg-surface: #FFFFFF; --text-primary: #000000; --accent: #007AFF;
+      /* Light Mode */
+      --bg-body: #FFFFFF;
+      --bg-surface: #F2F2F7;
+      --stroke: rgba(0,0,0,0.08);
+      --text-primary: #000000;
+      --text-secondary: #8E8E93;
+      --accent: #007AFF;
+      --accent-soft: rgba(0, 122, 255, 0.12);
+      --danger: #FF3B30;
+      --nav-bg: rgba(255, 255, 255, 0.85);
+      --shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
-    body{ margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg-body); color: var(--text-primary); height:100dvh; overflow:hidden; user-select:none; }
-    .app{ display:flex; flex-direction:column; height:100%; }
+
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    html, body{ height:100%; margin:0; padding:0; overflow: hidden; }
     
-    .topbar{ padding: 14px 20px; display:flex; justify-content:space-between; align-items:center; background:var(--bg-body); }
-    .title{ font-size:20px; font-weight:800; margin:0; }
-    .main{ flex:1; overflow-y:auto; padding:20px; padding-bottom:100px; }
-    .view{ display:none; animation:fadeIn 0.3s; }
+    body{
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 17px;
+      line-height: 1.4;
+      color: var(--text-primary);
+      background-color: var(--bg-body);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .app{ display: flex; flex-direction: column; height: 100dvh; width: 100%; position: relative; }
+
+    /* Top Bar */
+    .topbar{
+      flex: 0 0 auto;
+      padding: calc(env(safe-area-inset-top) + 12px) 20px 12px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg-body); z-index: 10;
+    }
+    .brand h1{ margin:0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+    .brand p{ margin:2px 0 0; font-size: 13px; color: var(--text-secondary); }
+
+    .iconBtn{
+      background: var(--bg-surface); border: none; color: var(--text-primary);
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; cursor: pointer; transition: transform 0.1s;
+    }
+    .iconBtn:active{ transform: scale(0.92); }
+
+    /* Main Content */
+    .main{
+      flex: 1; overflow-y: auto; overflow-x: hidden;
+      -webkit-overflow-scrolling: touch; position: relative;
+      padding-bottom: calc(80px + env(safe-area-inset-bottom)); 
+    }
+    .section{ padding: 0 20px 20px 20px; }
+    .view{ display:none; animation: fadeIn 0.3s ease; }
     .view.active{ display:block; }
-    @keyframes fadeIn{ from{opacity:0;transform:translateY(5px);} to{opacity:1;transform:translateY(0);} }
-    
-    input, textarea{ width:100%; padding:14px; background:var(--bg-surface); border:none; border-radius:12px; color:var(--text-primary); font-size:16px; margin-bottom:10px; outline:none; }
-    button{ width:100%; padding:14px; background:var(--bg-surface); color:var(--accent); border:none; border-radius:12px; font-weight:700; font-size:16px; margin-bottom:10px; cursor:pointer; transition:opacity 0.2s; }
-    button:active{ opacity:0.7; }
-    button:disabled{ opacity:0.5; cursor:not-allowed; }
-    button.primary{ background:var(--accent); color:#fff; }
-    button.danger{ color:var(--danger); }
-    
-    .accountCard{ background: linear-gradient(135deg, #0A84FF, #5E5CE6); padding:20px; border-radius:20px; color:white; margin-bottom:20px; text-align:center; box-shadow:0 10px 30px rgba(10,132,255,0.3); }
-    .bigCode{ font-family: monospace; font-size:22px; letter-spacing:2px; font-weight:700; margin:10px 0; background:rgba(0,0,0,0.2); padding:10px; border-radius:10px; user-select:all; }
-    .pointsBadge{ background:rgba(255,255,255,0.2); padding:5px 15px; border-radius:20px; font-size:14px; font-weight:600; display:inline-block; margin-top:5px; }
+    @keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
 
-    .row{ display:flex; align-items:center; background:var(--bg-surface); padding:15px; border-radius:16px; margin-bottom:10px; gap:10px; }
-    .row .info{ flex:1; }
-    .row .meta{ font-size:13px; color:var(--text-sec); }
+    /* UI Elements */
+    .label{ font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; color: var(--text-secondary); margin: 24px 0 8px 0; }
     
-    .bottomNav{ position:fixed; bottom:0; width:100%; background:var(--bg-surface); padding:10px; display:flex; justify-content:space-around; border-top:1px solid rgba(255,255,255,0.1); backdrop-filter:blur(20px); }
-    .tab{ background:none; color:var(--text-sec); font-size:11px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:5px; margin:0; width:auto; }
-    .tab.active{ color:var(--accent); }
-    .tab span{ font-size:22px; }
+    input, textarea{
+      width: 100%; padding: 16px; border-radius: var(--r-btn);
+      border: 1px solid transparent; background: var(--bg-surface);
+      color: var(--text-primary); font-size: 17px; outline: none; transition: all 0.2s;
+      font-family: inherit;
+    }
+    input:focus{ background: var(--bg-body); border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
 
-    .compassWrap{ display:flex; justify-content:center; margin:40px 0; }
-    .ring{ width:260px; height:260px; border:4px solid rgba(255,255,255,0.1); border-radius:50%; position:relative; display:flex; justify-content:center; align-items:center; }
-    .arrow{ font-size:60px; transition:transform 0.2s; }
-    .stats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:center; }
-    .statBox{ background:var(--bg-surface); padding:15px; border-radius:15px; }
-    .statVal{ font-size:20px; font-weight:800; color:var(--accent); }
+    .btn{
+      width: 100%; padding: 16px; border-radius: var(--r-btn); border: none;
+      background: var(--bg-surface); color: var(--accent); font-weight: 600; font-size: 17px;
+      cursor: pointer; text-align: center; transition: opacity 0.2s;
+    }
+    .btn:active{ opacity: 0.7; }
+    .btn:disabled{ opacity: 0.5; cursor: not-allowed; }
+    .btnPrimary{ background: var(--accent); color: #FFFFFF; box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
+    .btnAlert{ background: var(--danger); color: #FFFFFF; box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3); }
 
-    #viewLogin{ text-align:center; padding-top:40px; }
-    .loginInput{ text-align:center; font-family:monospace; font-size:18px; letter-spacing:3px; }
+    /* Cards */
+    .placeCard{ background: var(--bg-surface); border-radius: var(--r-card); padding: 16px; display: flex; align-items: center; gap: 16px; margin-bottom: 10px; cursor:pointer; }
+    .placeCard:active{ opacity: 0.8; }
+    .badge{ width: 42px; height: 42px; border-radius: 10px; background: var(--bg-body); display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: var(--shadow); }
+    .placeName{ font-weight: 600; font-size: 17px; }
+    .placeMeta{ color: var(--text-secondary); font-size: 14px; margin-top: 2px; }
+
+    /* Account & Login */
+    .login-screen{ text-align: center; padding-top: 40px; }
+    .account-gradient{
+      background: linear-gradient(135deg, #0A84FF, #5E5CE6);
+      padding: 24px; border-radius: 24px; color: white;
+      text-align: center; margin-bottom: 24px;
+      box-shadow: 0 8px 24px rgba(10, 132, 255, 0.4);
+    }
+    .big-code{
+      font-family: monospace; font-size: 26px; letter-spacing: 2px; font-weight: 700;
+      margin: 16px 0; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 12px;
+      user-select: all;
+    }
+    .points-pill{ background: rgba(255,255,255,0.25); padding: 6px 16px; border-radius: 20px; font-weight: 600; display: inline-block; font-size: 15px; }
+
+    /* Compass UI */
+    .compassWrap{ margin: 40px 0; display: flex; justify-content: center; align-items: center; }
+    .ringWrap{ width: min(80vw, 320px); aspect-ratio: 1/1; position: relative; }
+    .ringSvg circle{ stroke: var(--stroke); }
+    .ringSvg #ringProg{ stroke: var(--accent); transition: stroke-dashoffset 0.3s linear; }
+    .arrowSvg {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      transform-origin: 50% 50%; pointer-events: none;
+      transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    .arrowSvg path{ fill: var(--text-primary); }
+
+    .metrics{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: center; }
+    .metric{ background: var(--bg-surface); padding: 16px; border-radius: var(--r-card); }
+    .metric .k{ font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; }
+    .metric .v{ font-size: 24px; font-weight: 700; margin-top: 4px; color: var(--accent); }
+
+    /* Bottom Nav */
+    .bottomNav{
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--stroke);
+      padding: 10px 20px calc(10px + env(safe-area-inset-bottom)) 20px;
+      display: flex; justify-content: space-around; z-index: 50;
+    }
+    .navTab{ background: transparent; border: none; color: var(--text-secondary); font-size: 11px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+    .navTab.active{ color: var(--accent); }
+    .navTab span{ font-size: 24px; margin-bottom: 2px; }
+    
+    /* Login Input Special */
+    .input-code { font-family: monospace; letter-spacing: 3px; text-align: center; font-size: 20px; }
   </style>
 </head>
+
 <body>
-
-<div class="app">
-  <div class="topbar">
-    <div class="title">City Compass</div>
-    <div style="font-size:20px; cursor:pointer;" id="themeBtn">◑</div>
-  </div>
-
-  <!-- LOGIN VIEW -->
-  <div class="view active" id="viewLogin">
-    <h1>Bienvenue 👋</h1>
-    <p style="color:var(--text-sec); margin-bottom:30px;">Entre ton code unique ou crée un nouveau compte.</p>
+  <div class="app" id="app" data-theme="light">
     
-    <div class="accountCard">
-      <div>Nouveau ici ?</div>
-      <button class="primary" id="btnCreateAccount" style="margin-top:10px; background:white; color:#0A84FF;">Créer un compte</button>
-    </div>
-
-    <div style="margin:40px 0; border-top:1px solid var(--text-sec); position:relative;">
-      <span style="position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:var(--bg-body); padding:0 10px; color:var(--text-sec);">OU</span>
-    </div>
-
-    <h3>J'ai déjà un code</h3>
-    <input id="inputLoginCode" class="loginInput" placeholder="0000 0000 0000 0000" maxlength="19" />
-    <button class="primary" id="btnLogin">Connexion</button>
-    <p id="loginError" style="color:var(--danger); font-size:13px;"></p>
-  </div>
-
-  <div class="main">
-    <!-- DISCOVER VIEW -->
-    <div class="view" id="viewDiscover">
-      <input id="addrInput" placeholder="🔍 Rechercher un lieu..." />
-      <div id="suggestList"></div>
-      <h3>Favoris & Lieux</h3>
-      <div id="placesList"></div>
-    </div>
-
-    <!-- NAV VIEW -->
-    <div class="view" id="viewNav">
-      <div class="row" style="background:transparent; padding:0;">
-        <button id="btnStopNav" class="danger" style="width:auto; padding:5px 15px;">Quitter</button>
-        <div style="flex:1; text-align:center; font-weight:bold;" id="navDestName">Destination</div>
+    <!-- Top Bar -->
+    <div class="topbar">
+      <div class="brand">
+        <h1>City Compass</h1>
+        <p>Exploration connectée</p>
       </div>
+      <button class="iconBtn" id="themeBtn" type="button">◑</button>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="main">
       
-      <div class="compassWrap">
-        <div class="ring">
-          <div class="arrow" id="arrow">⬆️</div>
+      <!-- VIEW: LOGIN (Premier écran) -->
+      <div class="view active section login-screen" id="viewLogin">
+        <h2 style="font-size: 28px; margin-bottom: 10px;">Bienvenue 👋</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 40px;">Accède à tes favoris et gagne des points.</p>
+        
+        <div class="account-gradient">
+          <div style="font-size: 18px; font-weight: 600;">Nouveau compte</div>
+          <p style="font-size: 14px; opacity: 0.9; margin: 8px 0 16px 0;">Crée un accès anonyme en 1 clic.</p>
+          <button class="btn" id="btnCreateAccount" style="background: white; color: #0A84FF;">Créer un compte</button>
         </div>
+
+        <div class="label" style="text-align: center; margin: 30px 0;">OU J'AI DÉJÀ UN CODE</div>
+        
+        <input id="inputLoginCode" class="input-code" placeholder="0000 0000 0000 0000" maxlength="19" inputmode="numeric" />
+        <button class="btn btnPrimary" id="btnLogin" style="margin-top: 16px;">Connexion</button>
+        <p id="loginError" style="color: var(--danger); font-size: 14px; margin-top: 16px;"></p>
       </div>
 
-      <div class="stats">
-        <div class="statBox">
-          <div style="font-size:12px; color:var(--text-sec);">DISTANCE</div>
-          <div class="statVal" id="distVal">-</div>
+      <!-- VIEW: DISCOVER (Accueil) -->
+      <div class="view section" id="viewDiscover">
+        
+        <!-- Bouton permission GPS -->
+        <div id="gpsPermissionBlock" style="background: var(--bg-surface); padding: 16px; border-radius: 16px; margin-bottom: 20px; display:none;">
+           <div style="font-weight:600; margin-bottom:8px;">⚠️ GPS requis</div>
+           <p style="font-size:14px; color:var(--text-secondary); margin:0 0 12px 0;">Pour te guider, nous avons besoin de ta position.</p>
+           <button class="btn btnPrimary" id="btnGrantGPS">Activer la localisation</button>
         </div>
-        <div class="statBox">
-          <div style="font-size:12px; color:var(--text-sec);">CAP</div>
-          <div class="statVal" id="capVal">-</div>
+
+        <div class="label">Recherche</div>
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+          <input id="addrInput" placeholder="Rechercher une adresse..." />
+          <button class="iconBtn" id="btnSearch">🔍</button>
         </div>
+
+        <div class="label">Mes Favoris</div>
+        <div id="placesList"></div>
       </div>
-      <p style="text-align:center; color:var(--text-sec); font-size:13px; margin-top:20px;">
-        Gagne 10 pts tous les km parcourus !
-      </p>
+
+      <!-- VIEW: NAV (Boussole) -->
+      <div class="view section" id="viewNav" style="text-align: center;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+          <button class="iconBtn" id="btnBackNav">✕</button>
+          <div style="font-weight: 600; font-size: 18px;" id="navDestName">Destination</div>
+          <div style="width: 40px;"></div>
+        </div>
+
+        <div class="compassWrap">
+          <div class="ringWrap">
+            <!-- Cercle de fond -->
+            <svg class="ringSvg" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="45" fill="none" stroke-width="2" style="opacity:0.3"></circle>
+              <!-- Cercle de progression (distance) -->
+              <circle id="ringProg" cx="50" cy="50" r="45" fill="none"
+                      stroke-width="4" stroke-linecap="round" 
+                      transform="rotate(-90 50 50)"
+                      stroke-dasharray="282.7" stroke-dashoffset="282.7"></circle>
+            </svg>
+            
+            <!-- Flèche centrée -->
+            <svg id="arrow" class="arrowSvg" viewBox="0 0 100 100">
+               <path d="M50 15 L75 80 L50 70 L25 80 Z" fill="currentColor"></path>
+            </svg>
+          </div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric">
+            <div class="k">Distance</div>
+            <div class="v" id="distVal">—</div>
+          </div>
+          <div class="metric">
+            <div class="k">Cap</div>
+            <div class="v" id="capVal">—</div>
+          </div>
+        </div>
+
+        <p style="margin-top: 30px; font-size: 14px; color: var(--text-secondary);">
+          🏆 Gagne 10 points tous les km parcourus !
+        </p>
+      </div>
+
+      <!-- VIEW: ACCOUNT (Profil) -->
+      <div class="view section" id="viewAccount">
+        <div class="account-gradient">
+          <div class="points-pill">🏆 <span id="displayPoints">0</span> Points</div>
+          <div style="margin-top: 20px; font-size: 14px; opacity: 0.8;">TON CODE UNIQUE</div>
+          <div class="big-code" id="displayCode">...</div>
+          <p style="font-size: 13px; opacity: 0.7;">Note-le précieusement pour te reconnecter.</p>
+        </div>
+
+        <div class="label">Paramètres</div>
+        <div class="placeCard" style="cursor: default;">
+           <div class="badge" style="font-size: 18px;">☁️</div>
+           <div>
+             <div class="placeName">Cloud Sync</div>
+             <div class="placeMeta" style="color: var(--success);">Actif • Sauvegardé</div>
+           </div>
+        </div>
+
+        <button class="btn btnAlert" id="btnLogout" style="margin-top: 40px;">Déconnexion</button>
+      </div>
+
     </div>
 
-    <!-- ACCOUNT VIEW -->
-    <div class="view" id="viewAccount">
-      <div class="accountCard">
-        <div>Mon Code Unique</div>
-        <div class="bigCode" id="displayCode">...</div>
-        <div style="font-size:12px; opacity:0.8;">Note-le bien, c'est ta seule clé d'accès !</div>
-        <div class="pointsBadge">🏆 <span id="displayPoints">0</span> Points</div>
-      </div>
-
-      <h3>Paramètres</h3>
-      <div class="row">
-        <div class="info">Vibration arrivée</div>
-        <button style="width:auto;" id="toggleVibrate">On</button>
-      </div>
-      <div class="row">
-        <div class="info">Écran allumé</div>
-        <button style="width:auto;" id="toggleWake">On</button>
-      </div>
-
-      <h3 style="margin-top:30px;">Synchronisation</h3>
-      <div class="row">
-        <div class="info">
-          <div>Sauvegarde Cloud</div>
-          <div class="meta">Tes favoris sont synchronisés.</div>
-        </div>
-        <div style="color:var(--success);">✅ Actif</div>
-      </div>
-
-      <button class="danger" id="btnLogout" style="margin-top:40px;">Déconnexion</button>
+    <!-- Bottom Nav -->
+    <div class="bottomNav" id="navBar" style="display:none;">
+      <button class="navTab active" onclick="show('viewDiscover')"><span>🗺️</span>Découvrir</button>
+      <button class="navTab" onclick="show('viewNav')"><span>🧭</span>Boussole</button>
+      <button class="navTab" onclick="show('viewAccount')"><span>👤</span>Compte</button>
     </div>
-  </div>
 
-  <div class="bottomNav" id="navBar" style="display:none;">
-    <button class="tab active" onclick="show('viewDiscover')"><span>🗺️</span>Découvrir</button>
-    <button class="tab" onclick="show('viewNav')"><span>🧭</span>Boussole</button>
-    <button class="tab" onclick="show('viewAccount')"><span>👤</span>Compte</button>
   </div>
-</div>
 
 <script>
-// --- INITIALISATION UNIQUE ---
+/* =========================================
+   1. INIT SUPABASE (Client unique)
+   ========================================= */
 const SUPABASE_URL = 'https://vjlfbcwnfwyrxstfvefq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGZiY3duZnd5cnhzdGZ2ZWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMDc2MjcsImV4cCI6MjA4NDc4MzYyN30.WTuWbxB-8isJOp2lNnq73njQmifDjxTNEWngMgKtmv4';
-
-// On renomme pour éviter le conflit "Identifier 'supabase' has already been declared"
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// --- VARIABLES & DOM ---
+/* =========================================
+   2. VARIABLES ET DOM
+   ========================================= */
 const $ = id => document.getElementById(id);
 let userCode = localStorage.getItem('cc_user_code');
 let places = [];
@@ -182,7 +311,9 @@ let currentDest = null;
 let lastPos = null;
 let totalDistTraveled = 0;
 
-// --- FONCTIONS LOGIQUES ---
+/* =========================================
+   3. LOGIQUE COMPTE (Auth 16 chiffres)
+   ========================================= */
 function generateCode() {
   let code = '';
   for(let i=0; i<16; i++) code += Math.floor(Math.random()*10);
@@ -202,28 +333,22 @@ async function createAccount() {
 
   try {
     const newCode = generateCode();
-    console.log("Tentative création:", newCode);
-
-    // On utilise supabaseClient ici
+    // Insertion + select pour confirmer
     const { data, error } = await supabaseClient
       .from('users')
       .insert([{ id: newCode, points: 0 }])
       .select();
 
-    if (error) {
-      console.error(error);
-      alert("Erreur Supabase: " + error.message);
-      return;
-    }
+    if (error) throw error;
 
-    alert("Compte créé avec succès !");
+    alert("Compte créé !");
     userCode = newCode;
     userPoints = 0;
     saveLocal();
     initApp();
 
   } catch (err) {
-    alert("Erreur JS: " + err.message);
+    alert("Erreur: " + err.message);
   } finally {
     btn.textContent = oldTxt;
     btn.disabled = false;
@@ -267,6 +392,9 @@ async function login(code) {
   }
 }
 
+/* =========================================
+   4. DATA SYNC (Points & Favoris)
+   ========================================= */
 async function loadFavorites() {
   if(!userCode) return;
   const { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode);
@@ -289,11 +417,10 @@ async function deleteFavorite(index) {
   places.splice(index, 1);
   renderPlaces();
   if(userCode && p) {
-    // Suppression approximative par nom
     await supabaseClient.from('user_favorites')
       .delete()
       .match({ user_id: userCode })
-      .filter('place_data->>name', 'eq', p.name);
+      .filter('place_data->>name', 'eq', p.name); // Suppression par nom
   }
 }
 
@@ -308,7 +435,9 @@ async function updatePoints(km) {
   }
 }
 
-// --- NAVIGATION & UI ---
+/* =========================================
+   5. INTERFACE UTILISATEUR
+   ========================================= */
 function initApp() {
   $('viewLogin').classList.remove('active');
   $('viewDiscover').classList.add('active');
@@ -317,55 +446,122 @@ function initApp() {
   $('displayCode').textContent = formatCode(userCode);
   $('displayPoints').textContent = userPoints;
   renderPlaces();
+  
+  // Demande permission GPS au lancement si pas déjà fait
+  checkGPS();
 }
 
 function renderPlaces() {
   const list = $('placesList');
   if(places.length === 0) {
-    list.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-sec)">Aucun favori.</div>`;
+    list.innerHTML = `<div style="text-align:center; padding:40px 20px; color:var(--text-secondary)">
+      <div style="font-size:40px; margin-bottom:10px;">🗺️</div>
+      Aucun favori.<br>Cherche une adresse pour commencer !
+    </div>`;
     return;
   }
   list.innerHTML = places.map((p, i) => `
-    <div class="row">
-      <div class="info" onclick="startNav(${i})">
-        <div style="font-weight:bold;">${escapeHtml(p.name)}</div>
-        <div class="meta">📍 ${escapeHtml(p.type || 'Lieu')}</div>
+    <div class="placeCard" onclick="startNav(${i})">
+      <div class="badge">📍</div>
+      <div style="flex:1">
+        <div class="placeName">${escapeHtml(p.name)}</div>
+        <div class="placeMeta">${escapeHtml(p.type || 'Lieu')}</div>
       </div>
-      <button class="danger" style="width:40px; margin:0;" onclick="deleteFavorite(${i})">×</button>
+      <div style="display:flex; gap:10px;">
+        <button class="btn" style="padding:8px 12px; width:auto; font-size:14px; background:var(--bg-body);" onclick="event.stopPropagation(); deleteFavorite(${i})">✕</button>
+      </div>
     </div>
   `).join('');
+}
+
+function show(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  $(id).classList.add('active');
+  document.querySelectorAll('.navTab').forEach(t => t.classList.remove('active'));
+  if(id==='viewDiscover') document.querySelectorAll('.navTab')[0].classList.add('active');
+  if(id==='viewNav') document.querySelectorAll('.navTab')[1].classList.add('active');
+  if(id==='viewAccount') document.querySelectorAll('.navTab')[2].classList.add('active');
+}
+
+/* =========================================
+   6. NAVIGATION & GPS
+   ========================================= */
+function checkGPS() {
+  if (navigator.permissions) {
+    navigator.permissions.query({name:'geolocation'}).then(result => {
+      if (result.state === 'granted') {
+        $('gpsPermissionBlock').style.display = 'none';
+        startWatching();
+      } else if (result.state === 'prompt') {
+        $('gpsPermissionBlock').style.display = 'block';
+      }
+    });
+  } else {
+     $('gpsPermissionBlock').style.display = 'block';
+  }
+}
+
+function requestGPS() {
+  navigator.geolocation.getCurrentPosition(
+    (pos) => { 
+      $('gpsPermissionBlock').style.display = 'none';
+      startWatching();
+    },
+    (err) => { alert("Localisation refusée. L'app ne peut pas fonctionner sans GPS."); },
+    { enableHighAccuracy: true }
+  );
+}
+
+function startWatching() {
+  if(navigator.geolocation) {
+    navigator.geolocation.watchPosition(updatePos, console.error, {enableHighAccuracy:true});
+  }
 }
 
 function startNav(i) {
   currentDest = places[i];
   $('navDestName').textContent = currentDest.name;
   show('viewNav');
-  if(navigator.geolocation) navigator.geolocation.watchPosition(updatePos, console.error, {enableHighAccuracy:true});
 }
 
 function updatePos(pos) {
-  if(!currentDest) return;
+  // MAJ Points même hors navigation
   const lat = pos.coords.latitude;
   const lon = pos.coords.longitude;
-  const d = getDist(lat, lon, currentDest.lat, currentDest.lon);
-  $('distVal').textContent = d < 1 ? Math.round(d*1000)+'m' : d.toFixed(1)+'km';
-  
-  const b = getBearing(lat, lon, currentDest.lat, currentDest.lon);
-  const h = pos.coords.heading || 0;
-  $('arrow').style.transform = `rotate(${b - h}deg)`;
-  $('capVal').textContent = Math.round(b)+"°";
   
   if(lastPos) {
     totalDistTraveled += getDist(lastPos.lat, lastPos.lon, lat, lon);
-    if(totalDistTraveled >= 1) {
+    if(totalDistTraveled >= 1) { // 1 KM
       updatePoints(1);
       totalDistTraveled -= 1;
     }
   }
   lastPos = {lat, lon};
+
+  // Logique Boussole
+  if(!currentDest) return;
+  const d = getDist(lat, lon, currentDest.lat, currentDest.lon);
+  $('distVal').textContent = d < 1 ? Math.round(d*1000)+' m' : d.toFixed(1)+' km';
+  
+  const b = getBearing(lat, lon, currentDest.lat, currentDest.lon);
+  const h = pos.coords.heading || 0; // Cap du téléphone
+  
+  // Rotation de la flèche
+  $('arrow').style.transform = `rotate(${b - h}deg)`;
+  $('capVal').textContent = Math.round(b) + "°";
+  
+  // Cercle de progression (plus on est près, plus il se ferme)
+  // On considère 10km comme le "max" pour le cercle
+  const maxDist = 10; 
+  const progress = Math.min(Math.max(d / maxDist, 0), 1); // 0 = arrivé, 1 = loin
+  // Dasharray du cercle SVG est 282.7
+  const dash = 282.7;
+  $('ringProg').style.strokeDashoffset = dash * progress;
 }
 
-// --- UTILS ---
+/* =========================================
+   7. UTILS MATHS
+   ========================================= */
 function getDist(lat1, lon1, lat2, lon2) {
   const R = 6371; 
   const dLat = (lat2-lat1)*Math.PI/180;
@@ -382,44 +578,54 @@ function getBearing(lat1, lon1, lat2, lon2) {
   return (Math.atan2(y, x)*180/Math.PI + 360) % 360;
 }
 function escapeHtml(t) { return t ? t.replace(/&/g, "&amp;").replace(/</g, "&lt;") : ""; }
-function show(id) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  $(id).classList.add('active');
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  if(id==='viewDiscover') document.querySelectorAll('.tab')[0].classList.add('active');
-  if(id==='viewNav') document.querySelectorAll('.tab')[1].classList.add('active');
-  if(id==='viewAccount') document.querySelectorAll('.tab')[2].classList.add('active');
-}
 function saveLocal() { localStorage.setItem('cc_user_code', userCode); }
 
-// --- EVENTS ---
+/* =========================================
+   8. EVENTS LISTENERS
+   ========================================= */
 $('btnCreateAccount').onclick = createAccount;
 $('btnLogin').onclick = () => login($('inputLoginCode').value);
-$('btnStopNav').onclick = () => show('viewDiscover');
+$('btnBackNav').onclick = () => show('viewDiscover');
 $('btnLogout').onclick = () => { localStorage.removeItem('cc_user_code'); location.reload(); };
+$('btnGrantGPS').onclick = requestGPS;
+
+// Input Code Auto-Format
 $('inputLoginCode').addEventListener('input', e => {
   let v = e.target.value.replace(/\D/g,'').slice(0,16);
   e.target.value = v.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
 });
-$('addrInput').onkeydown = async e => {
-  if(e.key === 'Enter') {
-    const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(e.target.value)}&limit=1`);
+
+// Recherche Adresse
+async function doSearch() {
+  const q = $('addrInput').value;
+  if(!q) return;
+  try {
+    const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=1`);
     const data = await res.json();
     if(data.features?.length) {
-      addFavorite({ name: data.features[0].properties.label, lat: data.features[0].geometry.coordinates[1], lon: data.features[0].geometry.coordinates[0], type: 'Adresse' });
-      e.target.value = '';
-    }
-  }
-};
+      const f = data.features[0];
+      addFavorite({ 
+        name: f.properties.label, 
+        lat: f.geometry.coordinates[1], 
+        lon: f.geometry.coordinates[0], 
+        type: 'Adresse' 
+      });
+      $('addrInput').value = '';
+    } else { alert("Aucune adresse trouvée."); }
+  } catch(e) { alert("Erreur recherche"); }
+}
+$('btnSearch').onclick = doSearch;
+$('addrInput').onkeydown = e => { if(e.key === 'Enter') doSearch(); };
+
+// Theme Toggle
 $('themeBtn').onclick = () => {
   const isDark = document.body.getAttribute('data-theme') === 'dark';
   document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
 };
 
-// --- AUTO START ---
-if(userCode) {
-  login(userCode);
-}
+// AUTO START
+if(userCode) login(userCode);
+
 </script>
 </body>
 </html>
