@@ -3,14 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#000000" />
-  <title>City Compass — Connecté</title>
+  <title>City Compass</title>
 
-  <!-- 1. IMPORT SUPABASE -->
+  <!-- IMPORTANT : UNE SEULE FOIS ICI -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
+    /* DESIGN COMPLET (identique à votre version précédente) */
     :root{
       --bg-body: #000000; --bg-surface: #1C1C1E; --accent: #0A84FF; --text-primary: #FFFFFF; --text-sec: #8E8E93;
       --danger: #FF453A; --success: #32D74B; --r: 16px;
@@ -18,10 +20,9 @@
     [data-theme="light"]{
       --bg-body: #F2F2F7; --bg-surface: #FFFFFF; --text-primary: #000000; --accent: #007AFF;
     }
-    body{ margin:0; font-family: -apple-system, sans-serif; background: var(--bg-body); color: var(--text-primary); height:100dvh; overflow:hidden; user-select:none; }
+    body{ margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg-body); color: var(--text-primary); height:100dvh; overflow:hidden; user-select:none; }
     .app{ display:flex; flex-direction:column; height:100%; }
     
-    /* UI Elements */
     .topbar{ padding: 14px 20px; display:flex; justify-content:space-between; align-items:center; background:var(--bg-body); }
     .title{ font-size:20px; font-weight:800; margin:0; }
     .main{ flex:1; overflow-y:auto; padding:20px; padding-bottom:100px; }
@@ -36,23 +37,19 @@
     button.primary{ background:var(--accent); color:#fff; }
     button.danger{ color:var(--danger); }
     
-    /* ACCOUNT CARD */
     .accountCard{ background: linear-gradient(135deg, #0A84FF, #5E5CE6); padding:20px; border-radius:20px; color:white; margin-bottom:20px; text-align:center; box-shadow:0 10px 30px rgba(10,132,255,0.3); }
     .bigCode{ font-family: monospace; font-size:22px; letter-spacing:2px; font-weight:700; margin:10px 0; background:rgba(0,0,0,0.2); padding:10px; border-radius:10px; user-select:all; }
     .pointsBadge{ background:rgba(255,255,255,0.2); padding:5px 15px; border-radius:20px; font-size:14px; font-weight:600; display:inline-block; margin-top:5px; }
 
-    /* LISTS */
     .row{ display:flex; align-items:center; background:var(--bg-surface); padding:15px; border-radius:16px; margin-bottom:10px; gap:10px; }
     .row .info{ flex:1; }
     .row .meta{ font-size:13px; color:var(--text-sec); }
     
-    /* NAV */
     .bottomNav{ position:fixed; bottom:0; width:100%; background:var(--bg-surface); padding:10px; display:flex; justify-content:space-around; border-top:1px solid rgba(255,255,255,0.1); backdrop-filter:blur(20px); }
     .tab{ background:none; color:var(--text-sec); font-size:11px; display:flex; flex-direction:column; align-items:center; gap:4px; padding:5px; margin:0; width:auto; }
     .tab.active{ color:var(--accent); }
     .tab span{ font-size:22px; }
 
-    /* COMPASS */
     .compassWrap{ display:flex; justify-content:center; margin:40px 0; }
     .ring{ width:260px; height:260px; border:4px solid rgba(255,255,255,0.1); border-radius:50%; position:relative; display:flex; justify-content:center; align-items:center; }
     .arrow{ font-size:60px; transition:transform 0.2s; }
@@ -60,7 +57,6 @@
     .statBox{ background:var(--bg-surface); padding:15px; border-radius:15px; }
     .statVal{ font-size:20px; font-weight:800; color:var(--accent); }
 
-    /* LOGIN SCREEN */
     #viewLogin{ text-align:center; padding-top:40px; }
     .loginInput{ text-align:center; font-family:monospace; font-size:18px; letter-spacing:3px; }
   </style>
@@ -76,7 +72,7 @@
   <!-- LOGIN VIEW -->
   <div class="view active" id="viewLogin">
     <h1>Bienvenue 👋</h1>
-    <p style="color:var(--text-sec); margin-bottom:30px;">Entre ton code unique ou crée un nouveau compte anonyme.</p>
+    <p style="color:var(--text-sec); margin-bottom:30px;">Entre ton code unique ou crée un nouveau compte.</p>
     
     <div class="accountCard">
       <div>Nouveau ici ?</div>
@@ -170,12 +166,15 @@
 </div>
 
 <script>
-// 1. CONFIGURATION SUPABASE
+// --- INITIALISATION UNIQUE ---
 const SUPABASE_URL = 'https://vjlfbcwnfwyrxstfvefq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGZiY3duZnd5cnhzdGZ2ZWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMDc2MjcsImV4cCI6MjA4NDc4MzYyN30.WTuWbxB-8isJOp2lNnq73njQmifDjxTNEWngMgKtmv4';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 2. STATE & VARIABLES
+// On renomme pour éviter le conflit "Identifier 'supabase' has already been declared"
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// --- VARIABLES & DOM ---
+const $ = id => document.getElementById(id);
 let userCode = localStorage.getItem('cc_user_code');
 let places = [];
 let userPoints = 0;
@@ -183,110 +182,94 @@ let currentDest = null;
 let lastPos = null;
 let totalDistTraveled = 0;
 
-// DOM Helper
-const $ = id => document.getElementById(id);
-
-// 3. UTILS (Génération Code 16 chiffres)
+// --- FONCTIONS LOGIQUES ---
 function generateCode() {
   let code = '';
-  // Génère 16 chiffres
   for(let i=0; i<16; i++) code += Math.floor(Math.random()*10);
   return code;
 }
 
 function formatCode(c) {
   if(!c) return "";
-  return c.replace(/(\d{4})(?=\d)/g, '$1 '); // Espace tous les 4 chiffres
+  return c.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
 }
 
-// 4. CREATION DE COMPTE (Correction Robustesse)
 async function createAccount() {
   const btn = $('btnCreateAccount');
-  const originalText = btn.textContent;
-  
-  btn.textContent = "Création en cours...";
+  const oldTxt = btn.textContent;
+  btn.textContent = "Création...";
   btn.disabled = true;
 
   try {
     const newCode = generateCode();
-    console.log("Tentative création avec code:", newCode);
+    console.log("Tentative création:", newCode);
 
-    // Insertion explicite + .select() pour forcer le retour
-    const { data, error } = await supabase
+    // On utilise supabaseClient ici
+    const { data, error } = await supabaseClient
       .from('users')
       .insert([{ id: newCode, points: 0 }])
       .select();
 
     if (error) {
-      console.error("Erreur Supabase:", error);
-      alert("Erreur Supabase: " + error.message + "\n(Vérifiez que le RLS est désactivé ou configuré pour 'anon')");
-      // Retour à l'état initial pour réessayer
-      btn.textContent = originalText;
-      btn.disabled = false;
+      console.error(error);
+      alert("Erreur Supabase: " + error.message);
       return;
     }
 
-    // Succès
-    console.log("Compte créé:", data);
     alert("Compte créé avec succès !");
-
     userCode = newCode;
     userPoints = 0;
     saveLocal();
     initApp();
 
   } catch (err) {
-    console.error("Erreur JS:", err);
-    alert("Erreur inattendue : " + err.message);
-    btn.textContent = originalText;
+    alert("Erreur JS: " + err.message);
+  } finally {
+    btn.textContent = oldTxt;
     btn.disabled = false;
   }
 }
 
-// 5. CONNEXION (Authentification)
 async function login(code) {
-  const cleanCode = code.replace(/\s/g, ''); // Enlever espaces
-  if(cleanCode.length !== 16) return { error: "Code invalide (doit faire 16 chiffres)" };
+  const cleanCode = code.replace(/\s/g, '');
+  if(cleanCode.length !== 16) {
+    $('loginError').textContent = "Le code doit faire 16 chiffres.";
+    return;
+  }
 
   const btn = $('btnLogin');
-  const originalText = btn.textContent;
-  btn.textContent = "Connexion...";
+  const oldTxt = btn.textContent;
+  btn.textContent = "Chargement...";
   btn.disabled = true;
 
   try {
-    // Vérification existence
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('users')
       .select('*')
-      .eq('id', cleanCode); // .single() peut parfois planter si 0 résultat, on gère le tableau
+      .eq('id', cleanCode);
 
     if (error) throw error;
 
     if (data && data.length > 0) {
-      // User trouvé
-      const user = data[0];
       userCode = cleanCode;
-      userPoints = user.points || 0;
+      userPoints = data[0].points;
       saveLocal();
-      await loadFavorites(); // Charger ses lieux
+      await loadFavorites();
       initApp();
-      return { success: true };
     } else {
-      return { error: "Code introuvable. Crée un compte d'abord." };
+      $('loginError').textContent = "Compte introuvable.";
     }
-  } catch(e) {
-    console.error(e);
-    return { error: "Erreur connexion : " + e.message };
+  } catch (e) {
+    $('loginError').textContent = "Erreur réseau: " + e.message;
   } finally {
-    btn.textContent = originalText;
+    btn.textContent = oldTxt;
     btn.disabled = false;
   }
 }
 
-// 6. FAVORIS & DATA (Sync Cloud)
 async function loadFavorites() {
   if(!userCode) return;
-  const { data } = await supabase.from('user_favorites').select('place_data').eq('user_id', userCode);
+  const { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode);
   if(data) {
     places = data.map(d => d.place_data);
     renderPlaces();
@@ -297,10 +280,7 @@ async function addFavorite(place) {
   places.push(place);
   renderPlaces();
   if(userCode) {
-    // Sauvegarde asynchrone (pas bloquant)
-    supabase.from('user_favorites').insert([{ user_id: userCode, place_data: place }]).then(res => {
-        if(res.error) console.error("Erreur save favori", res.error);
-    });
+    await supabaseClient.from('user_favorites').insert([{ user_id: userCode, place_data: place }]);
   }
 }
 
@@ -308,30 +288,27 @@ async function deleteFavorite(index) {
   const p = places[index];
   places.splice(index, 1);
   renderPlaces();
-  
   if(userCode && p) {
-    // Suppression basée sur user_id et nom du lieu
-    // Note: Pour une prod parfaite, il faudrait un ID unique par favori.
-    // Ici on fait simple.
-    await supabase.from('user_favorites')
+    // Suppression approximative par nom
+    await supabaseClient.from('user_favorites')
       .delete()
       .match({ user_id: userCode })
       .filter('place_data->>name', 'eq', p.name);
   }
 }
 
-async function updatePoints(kmToAdd) {
-  const pts = Math.floor(kmToAdd * 10);
+async function updatePoints(km) {
+  const pts = Math.floor(km * 10);
   if(pts > 0) {
     userPoints += pts;
     $('displayPoints').textContent = userPoints;
     if(userCode) {
-      await supabase.from('users').update({ points: userPoints }).eq('id', userCode);
+      await supabaseClient.from('users').update({ points: userPoints }).eq('id', userCode);
     }
   }
 }
 
-// 7. GESTION UI
+// --- NAVIGATION & UI ---
 function initApp() {
   $('viewLogin').classList.remove('active');
   $('viewDiscover').classList.add('active');
@@ -339,17 +316,15 @@ function initApp() {
   
   $('displayCode').textContent = formatCode(userCode);
   $('displayPoints').textContent = userPoints;
-  
   renderPlaces();
 }
 
 function renderPlaces() {
   const list = $('placesList');
   if(places.length === 0) {
-    list.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-sec)">Aucun favori. Cherche une adresse ci-dessus !</div>`;
+    list.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-sec)">Aucun favori.</div>`;
     return;
   }
-  
   list.innerHTML = places.map((p, i) => `
     <div class="row">
       <div class="info" onclick="startNav(${i})">
@@ -361,46 +336,36 @@ function renderPlaces() {
   `).join('');
 }
 
-// 8. NAVIGATION & GPS
-function startNav(index) {
-  currentDest = places[index];
+function startNav(i) {
+  currentDest = places[i];
   $('navDestName').textContent = currentDest.name;
   show('viewNav');
-  
-  if(navigator.geolocation) {
-    navigator.geolocation.watchPosition(updatePos, console.error, { enableHighAccuracy: true });
-  }
+  if(navigator.geolocation) navigator.geolocation.watchPosition(updatePos, console.error, {enableHighAccuracy:true});
 }
 
 function updatePos(pos) {
   if(!currentDest) return;
-  
   const lat = pos.coords.latitude;
   const lon = pos.coords.longitude;
-  
-  // Distance
   const d = getDist(lat, lon, currentDest.lat, currentDest.lon);
-  $('distVal').textContent = d < 1 ? Math.round(d*1000)+' m' : d.toFixed(1)+' km';
+  $('distVal').textContent = d < 1 ? Math.round(d*1000)+'m' : d.toFixed(1)+'km';
   
-  // Cap
   const b = getBearing(lat, lon, currentDest.lat, currentDest.lon);
   const h = pos.coords.heading || 0;
-  $('arrow').style.transform = `rotate(${b - h}deg)`; // Rotation relative
-  $('capVal').textContent = Math.round(b) + "°";
-
-  // Points (tous les 1km)
+  $('arrow').style.transform = `rotate(${b - h}deg)`;
+  $('capVal').textContent = Math.round(b)+"°";
+  
   if(lastPos) {
-    const step = getDist(lastPos.lat, lastPos.lon, lat, lon);
-    totalDistTraveled += step;
-    if(totalDistTraveled >= 1) { // 1 km
-      updatePoints(1); // +10 pts
-      totalDistTraveled -= 1; // reset partiel
+    totalDistTraveled += getDist(lastPos.lat, lastPos.lon, lat, lon);
+    if(totalDistTraveled >= 1) {
+      updatePoints(1);
+      totalDistTraveled -= 1;
     }
   }
-  lastPos = { lat, lon };
+  lastPos = {lat, lon};
 }
 
-// 9. UTILS MATHS & UI
+// --- UTILS ---
 function getDist(lat1, lon1, lat2, lon2) {
   const R = 6371; 
   const dLat = (lat2-lat1)*Math.PI/180;
@@ -416,63 +381,45 @@ function getBearing(lat1, lon1, lat2, lon2) {
   const x = Math.cos(l1)*Math.sin(l2) - Math.sin(l1)*Math.cos(l2)*Math.cos(dL);
   return (Math.atan2(y, x)*180/Math.PI + 360) % 360;
 }
-function escapeHtml(text) { return text ? text.replace(/&/g, "&amp;").replace(/</g, "&lt;") : ""; }
+function escapeHtml(t) { return t ? t.replace(/&/g, "&amp;").replace(/</g, "&lt;") : ""; }
 function show(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   $(id).classList.add('active');
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  
-  if(id === 'viewDiscover') document.querySelectorAll('.tab')[0].classList.add('active');
-  if(id === 'viewNav') document.querySelectorAll('.tab')[1].classList.add('active');
-  if(id === 'viewAccount') document.querySelectorAll('.tab')[2].classList.add('active');
+  if(id==='viewDiscover') document.querySelectorAll('.tab')[0].classList.add('active');
+  if(id==='viewNav') document.querySelectorAll('.tab')[1].classList.add('active');
+  if(id==='viewAccount') document.querySelectorAll('.tab')[2].classList.add('active');
 }
 function saveLocal() { localStorage.setItem('cc_user_code', userCode); }
 
-// 10. EVENTS
+// --- EVENTS ---
 $('btnCreateAccount').onclick = createAccount;
-$('btnLogin').onclick = async () => {
-  const res = await login($('inputLoginCode').value);
-  if(res.error) $('loginError').textContent = res.error;
-};
+$('btnLogin').onclick = () => login($('inputLoginCode').value);
 $('btnStopNav').onclick = () => show('viewDiscover');
 $('btnLogout').onclick = () => { localStorage.removeItem('cc_user_code'); location.reload(); };
 $('inputLoginCode').addEventListener('input', e => {
   let v = e.target.value.replace(/\D/g,'').slice(0,16);
   e.target.value = v.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
 });
-
-// Recherche Adresse
 $('addrInput').onkeydown = async e => {
   if(e.key === 'Enter') {
-    const q = e.target.value;
-    if(!q) return;
-    try {
-      const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=1`);
-      const data = await res.json();
-      if(data.features?.length) {
-        const p = { name: data.features[0].properties.label, lat: data.features[0].geometry.coordinates[1], lon: data.features[0].geometry.coordinates[0], type: 'Adresse' };
-        addFavorite(p);
-        e.target.value = '';
-      } else { alert("Adresse introuvable."); }
-    } catch(err) { alert("Erreur recherche"); }
+    const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(e.target.value)}&limit=1`);
+    const data = await res.json();
+    if(data.features?.length) {
+      addFavorite({ name: data.features[0].properties.label, lat: data.features[0].geometry.coordinates[1], lon: data.features[0].geometry.coordinates[0], type: 'Adresse' });
+      e.target.value = '';
+    }
   }
 };
-
-// Theme Toggle
 $('themeBtn').onclick = () => {
   const isDark = document.body.getAttribute('data-theme') === 'dark';
   document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
 };
 
-// AUTO START (Si déjà connecté)
+// --- AUTO START ---
 if(userCode) {
-    // On lance login en fond pour vérifier/sync les points
-    login(userCode); 
-    // On affiche l'app tout de suite pour fluidité
-    initApp();
-    loadFavorites();
+  login(userCode);
 }
-
 </script>
 </body>
 </html>
