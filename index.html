@@ -13,10 +13,9 @@
 
   <style>
     /* =========================
-       1. VARIABLES & THEME SYSTEM
+       1. VARIABLES & THEME
        ========================== */
     :root {
-      /* Palette IOS System */
       --bg-body: #F2F2F7;
       --bg-card: #FFFFFF;
       --bg-input: #E5E5EA;
@@ -24,13 +23,12 @@
       --text-secondary: #8E8E93;
       --separator: rgba(60, 60, 67, 0.12);
       
-      /* Brand */
       --accent: #007AFF;
       --accent-gradient: linear-gradient(135deg, #007AFF, #00C7BE);
       --danger: #FF3B30;
       --success: #34C759;
+      --gold: #FFD700;
       
-      /* UI Specs */
       --radius-l: 20px;
       --radius-m: 14px;
       --shadow: 0 4px 20px rgba(0,0,0,0.06);
@@ -50,43 +48,38 @@
       --shadow: 0 4px 20px rgba(0,0,0,0.4);
     }
 
-    /* RESET & BASE */
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
     
     body {
       margin: 0; padding: 0; height: 100dvh; overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg-body); color: var(--text-primary);
-      transition: background-color 0.3s ease, color 0.3s ease;
+      transition: background-color 0.3s ease;
       font-size: 17px; letter-spacing: -0.01em;
     }
 
     .app { display: flex; flex-direction: column; height: 100%; position: relative; }
 
     /* =========================
-       2. COMPONENTS
+       2. UI COMPONENTS
        ========================== */
     
-    /* Top Bar */
     .topbar {
       flex: 0 0 auto;
       padding: max(12px, var(--safe-top)) 24px 12px 24px;
       display: flex; align-items: center; justify-content: space-between;
-      background: transparent; z-index: 10;
+      z-index: 10;
     }
     .brand h1 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
-    .brand p { margin: 0; font-size: 13px; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* Main Area */
     .main {
       flex: 1; overflow-y: auto; overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
-      padding: 10px 20px 120px 20px; /* Padding bottom pour la nav */
+      padding: 10px 20px 120px 20px;
     }
     .view { display: none; opacity: 0; transform: translateY(10px); transition: opacity 0.3s ease, transform 0.3s ease; }
     .view.active { display: block; opacity: 1; transform: translateY(0); }
 
-    /* Inputs & Buttons */
     .label {
       font-size: 13px; text-transform: uppercase; letter-spacing: 0.8px;
       color: var(--text-secondary); font-weight: 600; margin: 24px 0 8px 4px;
@@ -102,9 +95,8 @@
       color: var(--text-primary); font-size: 17px; border-radius: var(--radius-l);
       font-family: inherit;
     }
-    input::placeholder { color: var(--text-secondary); opacity: 0.7; }
 
-    /* Suggestions List */
+    /* Suggestions */
     .suggestions-box {
       position: absolute; top: 110%; left: 0; right: 0;
       background: var(--bg-card); border-radius: var(--radius-l);
@@ -116,9 +108,7 @@
       padding: 14px 16px; border-bottom: 1px solid var(--separator);
       display: flex; gap: 12px; align-items: center; cursor: pointer;
     }
-    .suggestion-item:last-child { border-bottom: none; }
     .suggestion-item:active { background: var(--bg-input); }
-    .s-icon { font-size: 18px; opacity: 0.5; }
     .s-main { font-weight: 600; font-size: 15px; }
     .s-sub { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
 
@@ -126,13 +116,12 @@
       width: 100%; padding: 16px; border-radius: var(--radius-l); border: none;
       font-weight: 700; font-size: 17px; cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: 8px;
-      transition: transform 0.1s, opacity 0.2s;
     }
     .btn:active { transform: scale(0.97); opacity: 0.9; }
     .btn-primary { background: var(--accent); color: #FFF; box-shadow: 0 4px 15px rgba(10, 132, 255, 0.3); }
     .btn-danger { background: rgba(255, 59, 48, 0.1); color: var(--danger); }
     
-    /* Toggle Switch (iOS Style) */
+    /* Settings */
     .settings-row {
       display: flex; justify-content: space-between; align-items: center;
       background: var(--bg-card); padding: 16px; margin-bottom: 1px;
@@ -140,9 +129,7 @@
     .settings-row:first-child { border-top-left-radius: var(--radius-l); border-top-right-radius: var(--radius-l); }
     .settings-row:last-child { border-bottom-left-radius: var(--radius-l); border-bottom-right-radius: var(--radius-l); margin-bottom: 10px; }
     
-    .switch {
-      position: relative; display: inline-block; width: 50px; height: 30px;
-    }
+    .switch { position: relative; display: inline-block; width: 50px; height: 30px; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider {
       position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
@@ -155,7 +142,6 @@
     }
     input:checked + .slider { background-color: var(--success); }
     input:checked + .slider:before { transform: translateX(20px); }
-
 
     /* Cards */
     .placeCard {
@@ -193,21 +179,40 @@
       font-size: 14px; display: inline-flex; align-items: center; gap: 6px;
     }
 
-    /* Compass */
+    /* COMPASS (Vraie rotation) */
     .compass-container {
-      position: relative; width: 260px; height: 260px; margin: 40px auto;
+      position: relative; width: 280px; height: 280px; margin: 40px auto;
+    }
+    /* Le cadran qui tourne avec le téléphone (Nord) */
+    .compass-dial {
+      position: absolute; width: 100%; height: 100%;
+      transition: transform 0.1s linear; /* Smooth mais rapide */
     }
     .compass-bg {
       width: 100%; height: 100%; border-radius: 50%;
       background: var(--bg-card); border: 1px solid var(--separator);
       display: flex; align-items: center; justify-content: center;
       box-shadow: inset 0 0 30px rgba(0,0,0,0.05);
+      position: relative;
+    }
+    /* Indicateur Nord sur le cadran */
+    .north-mark {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      font-weight: 800; color: var(--danger); font-size: 14px;
+    }
+    
+    /* La flèche de destination (Relative au Nord) */
+    .dest-arrow {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      transition: transform 0.3s ease;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
     }
     .arrow-svg {
       width: 60%; height: 60%;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
-      transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
     }
+    
     .progress-ring {
       position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px;
       transform: rotate(-90deg); pointer-events: none;
@@ -221,7 +226,7 @@
     .metric-val { font-size: 22px; font-weight: 800; color: var(--accent); }
     .metric-lbl { font-size: 11px; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; margin-bottom: 4px; }
 
-    /* Bottom Nav (Glassmorphism) */
+    /* Bottom Nav */
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0;
       height: var(--nav-height);
@@ -240,8 +245,16 @@
       transition: color 0.2s;
     }
     .nav-tab.active { color: var(--accent); }
-    .nav-icon { font-size: 24px; margin-bottom: 4px; transition: transform 0.2s; }
-    .nav-tab.active .nav-icon { transform: translateY(-2px); }
+    .nav-icon { font-size: 24px; margin-bottom: 4px; }
+
+    /* Historique Points */
+    .history-row {
+      display: flex; justify-content: space-between; padding: 12px 0;
+      border-bottom: 1px solid var(--separator); font-size: 14px;
+    }
+    .history-row:last-child { border: none; }
+    .hist-pts { font-weight: 700; color: var(--success); }
+    .hist-neg { color: var(--danger); }
 
     .input-code { font-family: monospace; letter-spacing: 3px; text-align: center; font-size: 20px; }
   </style>
@@ -250,30 +263,26 @@
 <body>
   <div class="app">
     
-    <!-- Top Bar -->
     <div class="topbar">
       <div class="brand">
         <h1>City Compass</h1>
         <p>Navigation Intelligente</p>
       </div>
-      <!-- Le bouton thème est aussi dans les paramètres maintenant -->
-      <div style="width:40px;"></div>
     </div>
 
-    <!-- MAIN CONTAINER -->
     <div class="main">
       
-      <!-- VIEW: LOGIN -->
+      <!-- LOGIN -->
       <div class="view active" id="viewLogin">
         <div style="height: 40px;"></div>
         <h2 style="text-align: center; font-size: 28px; margin-bottom: 10px;">Bienvenue</h2>
         <p style="text-align: center; color: var(--text-secondary); margin-bottom: 40px; padding: 0 20px;">
-          Explore Toulouse et gagne des points<br>en découvrant la ville.
+          Explore Toulouse et gagne des points.
         </p>
         
-        <div class="account-hero" style="margin-bottom: 40px; box-shadow: 0 15px 40px -10px rgba(0,122,255,0.4);">
+        <div class="account-hero">
           <div style="font-size: 18px; font-weight: 700;">Nouveau ici ?</div>
-          <p style="opacity: 0.9; font-size: 14px; margin: 8px 0 20px 0;">Crée un accès anonyme en 1 clic.</p>
+          <p style="opacity: 0.9; font-size: 14px; margin: 8px 0 20px 0;">Crée un accès anonyme.</p>
           <button class="btn" id="btnCreateAccount" style="background: white; color: var(--accent); margin-top: 10px;">
             ✨ Créer un compte
           </button>
@@ -292,22 +301,18 @@
         <p id="loginError" style="color: var(--danger); font-size: 13px; text-align: center; margin-top: 16px; min-height: 20px;"></p>
       </div>
 
-
-      <!-- VIEW: DISCOVER -->
+      <!-- DISCOVER -->
       <div class="view" id="viewDiscover">
-        
         <div id="gpsPermissionBlock" style="background: var(--bg-card); padding: 20px; border-radius: var(--radius-l); margin-bottom: 24px; display:none; border: 1px solid var(--accent);">
-           <div style="font-weight:700; margin-bottom:5px; font-size: 16px;">⚠️ GPS requis</div>
+           <div style="font-weight:700; margin-bottom:5px; font-size: 16px;">⚠️ GPS & Boussole</div>
            <p style="font-size:14px; color:var(--text-secondary); margin:0 0 15px 0;">Nécessaire pour le guidage.</p>
-           <button class="btn btn-primary" id="btnGrantGPS" style="padding: 10px;">Activer la localisation</button>
+           <button class="btn btn-primary" id="btnGrantGPS" style="padding: 10px;">Tout Autoriser</button>
         </div>
 
-        <div class="label">Recherche Locale (Toulouse)</div>
+        <div class="label">Recherche Locale</div>
         <div class="input-group">
           <div style="padding-left: 16px; font-size: 18px;">🔍</div>
           <input id="addrInput" placeholder="Rechercher une adresse..." autocomplete="off" />
-          
-          <!-- Suggestions Dropdown -->
           <div id="suggestions" class="suggestions-box"></div>
         </div>
 
@@ -315,8 +320,7 @@
         <div id="placesList"></div>
       </div>
 
-
-      <!-- VIEW: NAV -->
+      <!-- NAV -->
       <div class="view" id="viewNav">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
           <button class="btn" style="width:40px; height:40px; padding:0; background:var(--bg-card); color:var(--text-primary);" id="btnBackNav">✕</button>
@@ -324,7 +328,23 @@
           <div style="width: 40px;"></div>
         </div>
 
+        <!-- COMPASS -->
         <div class="compass-container">
+          <!-- Ce div tourne avec le téléphone (capteur physique) -->
+          <div class="compass-dial" id="compassDial">
+             <div class="compass-bg">
+                <div class="north-mark">N</div>
+             </div>
+          </div>
+
+          <!-- Ce div tourne vers la destination (calculé) -->
+          <div class="dest-arrow" id="destArrow">
+             <svg id="arrow" class="arrow-svg" viewBox="0 0 24 24">
+               <path fill="currentColor" d="M12 2L4.5 20.29C4.24 21.06 5.12 21.73 5.8 21.31L12 17.5L18.2 21.31C18.88 21.73 19.76 21.06 19.5 20.29L12 2Z"></path>
+             </svg>
+          </div>
+
+          <!-- Cercle de progression (Distance) -->
           <svg class="progress-ring" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="48" fill="none" stroke="var(--separator)" stroke-width="2"></circle>
             <circle id="ringProg" cx="50" cy="50" r="48" fill="none"
@@ -332,11 +352,6 @@
                     stroke-dasharray="301" stroke-dashoffset="301"
                     style="transition: stroke-dashoffset 0.5s ease;"></circle>
           </svg>
-          <div class="compass-bg">
-            <svg id="arrow" class="arrow-svg" viewBox="0 0 24 24">
-               <path fill="currentColor" d="M12 2L4.5 20.29C4.24 21.06 5.12 21.73 5.8 21.31L12 17.5L18.2 21.31C18.88 21.73 19.76 21.06 19.5 20.29L12 2Z"></path>
-            </svg>
-          </div>
         </div>
 
         <div class="metrics-grid">
@@ -345,14 +360,16 @@
             <div class="metric-val" id="distVal">—</div>
           </div>
           <div class="metric-box">
-            <div class="metric-lbl">Cap</div>
-            <div class="metric-val" id="capVal">—</div>
+            <div class="metric-lbl">Précision</div>
+            <div class="metric-val" id="accVal">--m</div>
           </div>
         </div>
+        <p style="text-align: center; font-size: 13px; color: var(--text-secondary); margin-top: 20px; opacity:0.8;">
+           💡 Pointe le haut du téléphone vers l'avant.
+        </p>
       </div>
 
-
-      <!-- VIEW: ACCOUNT & SETTINGS -->
+      <!-- ACCOUNT -->
       <div class="view" id="viewAccount">
         <div class="account-hero">
           <div class="points-badge">🏆 <span id="displayPoints">0</span> Points</div>
@@ -360,290 +377,230 @@
           <div class="big-code" id="displayCode">...</div>
         </div>
 
-        <div class="label">Paramètres</div>
-        
-        <div class="settings-row">
-          <div style="font-weight:600;">Mode Sombre 🌙</div>
-          <label class="switch">
-            <input type="checkbox" id="toggleTheme">
-            <span class="slider"></span>
-          </label>
+        <!-- MENU TABS -->
+        <div style="display:flex; margin-bottom:20px; background:var(--bg-card); padding:4px; border-radius:var(--radius-m);">
+          <button class="btn" id="tabSettings" style="font-size:14px; padding:10px; background:var(--bg-input);">Paramètres</button>
+          <button class="btn" id="tabShop" style="font-size:14px; padding:10px; background:transparent; color:var(--text-secondary);">Boutique (Test)</button>
         </div>
 
-        <div class="settings-row">
-          <div style="font-weight:600;">Vibrations</div>
-          <label class="switch">
-            <input type="checkbox" id="toggleVib" checked>
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="settings-row">
-          <div style="font-weight:600;">Garder l'écran allumé</div>
-          <label class="switch">
-            <input type="checkbox" id="toggleWake">
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="label">Données</div>
-        <div class="placeCard" style="cursor: default;">
-           <div class="card-icon" style="color: var(--success); background: rgba(52, 199, 89, 0.1);">☁️</div>
-           <div>
-             <div class="placeName">Synchronisation</div>
-             <div class="placeMeta" style="color: var(--success);">Sauvegarde Active</div>
+        <!-- SECTION SETTINGS -->
+        <div id="sectionSettings">
+           <div class="label">Préférences</div>
+           <div class="settings-row">
+             <div style="font-weight:600;">Mode Sombre 🌙</div>
+             <label class="switch"><input type="checkbox" id="toggleTheme"><span class="slider"></span></label>
            </div>
+           <div class="settings-row">
+             <div style="font-weight:600;">Vibrations</div>
+             <label class="switch"><input type="checkbox" id="toggleVib" checked><span class="slider"></span></label>
+           </div>
+           <div class="settings-row">
+             <div style="font-weight:600;">Garder écran allumé</div>
+             <label class="switch"><input type="checkbox" id="toggleWake"><span class="slider"></span></label>
+           </div>
+           
+           <div class="label">Historique Points</div>
+           <div class="placeCard" style="display:block; max-height:150px; overflow-y:auto;" id="historyList">
+             <div style="text-align:center; padding:10px; color:var(--text-secondary);">Vide</div>
+           </div>
+
+           <button class="btn btn-danger" id="btnLogout" style="margin-top: 30px;">Déconnexion</button>
         </div>
 
-        <button class="btn btn-danger" id="btnLogout" style="margin-top: 40px;">Déconnexion</button>
+        <!-- SECTION SHOP (TEST) -->
+        <div id="sectionShop" style="display:none;">
+           <div class="placeCard">
+              <div class="card-icon" style="background:var(--gold);">👑</div>
+              <div style="flex:1;">
+                 <div class="placeName">Titre "Explorateur"</div>
+                 <div class="placeMeta">Coût: 500 pts</div>
+              </div>
+              <button class="btn" style="width:auto; padding:8px 16px; font-size:13px;" onclick="buyItem(500)">Acheter</button>
+           </div>
+           <div class="placeCard">
+              <div class="card-icon" style="background:#FF2D55; color:white;">☕</div>
+              <div style="flex:1;">
+                 <div class="placeName">Café Virtuel</div>
+                 <div class="placeMeta">Coût: 50 pts</div>
+              </div>
+              <button class="btn" style="width:auto; padding:8px 16px; font-size:13px;" onclick="buyItem(50)">Offrir</button>
+           </div>
+           <p style="text-align:center; font-size:13px; color:var(--text-secondary); margin-top:20px;">
+             🚧 Boutique en version Beta. Les achats sont fictifs.
+           </p>
+        </div>
+
       </div>
 
-    </div> <!-- End Main -->
+    </div>
 
-    <!-- Bottom Nav -->
     <div class="bottom-nav" id="navBar" style="display:none;">
-      <button class="nav-tab active" onclick="show('viewDiscover')">
-        <div class="nav-icon">🗺️</div>
-        <span>Carte</span>
-      </button>
-      <button class="nav-tab" onclick="show('viewNav')">
-        <div class="nav-icon">🧭</div>
-        <span>Boussole</span>
-      </button>
-      <button class="nav-tab" onclick="show('viewAccount')">
-        <div class="nav-icon">👤</div>
-        <span>Profil</span>
-      </button>
+      <button class="nav-tab active" onclick="show('viewDiscover')"><div class="nav-icon">🗺️</div><span>Carte</span></button>
+      <button class="nav-tab" onclick="show('viewNav')"><div class="nav-icon">🧭</div><span>Boussole</span></button>
+      <button class="nav-tab" onclick="show('viewAccount')"><div class="nav-icon">👤</div><span>Profil</span></button>
     </div>
 
   </div>
 
 <script>
 /* =========================================
-   LOGIQUE APPLICATIVE
+   LOGIQUE PRINCIPALE
    ========================================= */
 const SUPABASE_URL = 'https://vjlfbcwnfwyrxstfvefq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGZiY3duZnd5cnhzdGZ2ZWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMDc2MjcsImV4cCI6MjA4NDc4MzYyN30.WTuWbxB-8isJOp2lNnq73njQmifDjxTNEWngMgKtmv4';
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const $ = id => document.getElementById(id);
 let userCode = localStorage.getItem('cc_user_code');
 let places = [];
 let userPoints = 0;
+let pointHistory = JSON.parse(localStorage.getItem('cc_history') || "[]");
+
+// Nav
 let currentDest = null;
 let lastPos = null;
-let debounceTimer = null;
+let deviceHeading = 0; // Cap magnétique du téléphone (0 = Nord)
+let targetBearing = 0; // Cap à suivre pour la destination
+
 let settings = {
   theme: localStorage.getItem('cc_theme') || 'light',
-  vib: localStorage.getItem('cc_vib') !== 'false', // def true
+  vib: localStorage.getItem('cc_vib') !== 'false',
   wake: localStorage.getItem('cc_wake') === 'true'
 };
 
-/* --- INIT & THEME --- */
+/* --- INIT --- */
 function applySettings() {
   document.body.setAttribute('data-theme', settings.theme);
   $('toggleTheme').checked = settings.theme === 'dark';
   $('toggleVib').checked = settings.vib;
   $('toggleWake').checked = settings.wake;
 }
-applySettings(); // Apply immediately
+applySettings();
 
 /* --- COMPTE --- */
-function generateCode() { let c='';for(let i=0;i<16;i++)c+=Math.floor(Math.random()*10); return c; }
-function formatCode(c) { return c ? c.replace(/(\d{4})(?=\d)/g, '$1 ').trim() : ""; }
-
 async function createAccount() {
-  const btn = $('btnCreateAccount'); const old=btn.innerHTML;
-  btn.textContent = "Patientez..."; btn.disabled = true;
-  try {
-    const newCode = generateCode();
-    const { error } = await supabaseClient.from('users').insert([{ id: newCode, points: 0 }]).select();
-    if (error) throw error;
-    alert("Bienvenue !");
-    userCode = newCode; userPoints = 0;
-    saveLocal(); initApp();
-  } catch (err) { alert("Erreur: " + err.message); } 
-  finally { btn.innerHTML = old; btn.disabled = false; }
+  const code = Array(16).fill(0).map(()=>Math.floor(Math.random()*10)).join('');
+  const {error} = await supabase.from('users').insert([{id:code, points:0}]);
+  if(!error) { userCode=code; userPoints=0; saveLocal(); initApp(); alert("Bienvenue !"); }
+  else alert("Erreur création");
 }
-
-async function login(code) {
-  const clean = code.replace(/\s/g, '');
-  if(clean.length !== 16) { $('loginError').textContent="Code invalide"; return; }
-  const btn = $('btnLogin'); const old=btn.textContent; btn.textContent="..."; btn.disabled=true;
-  try {
-    const { data, error } = await supabaseClient.from('users').select('*').eq('id', clean);
-    if (error) throw error;
-    if (data.length) { userCode=clean; userPoints=data[0].points; saveLocal(); await loadFavorites(); initApp(); }
-    else $('loginError').textContent="Inconnu";
-  } catch(e){ $('loginError').textContent="Erreur réseau"; }
-  finally { btn.textContent=old; btn.disabled=false; }
+async function login(c) {
+  c = c.replace(/\s/g, ''); if(c.length!==16) return;
+  const {data} = await supabase.from('users').select('*').eq('id', c);
+  if(data?.length) { userCode=c; userPoints=data[0].points; saveLocal(); loadData(); initApp(); }
+  else alert("Inconnu");
 }
+function saveLocal() { localStorage.setItem('cc_user_code', userCode); }
 
-/* --- DATA --- */
-async function loadFavorites() {
+/* --- DATA & POINTS --- */
+async function loadData() {
   if(!userCode) return;
-  const { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode);
-  if(data) { places = data.map(d => d.place_data); renderPlaces(); }
+  const {data} = await supabase.from('user_favorites').select('place_data').eq('user_id', userCode);
+  if(data) { places = data.map(d=>d.place_data); renderPlaces(); }
+  renderHistory();
 }
-async function addFavorite(place) {
-  places.push(place); renderPlaces();
-  if(userCode) await supabaseClient.from('user_favorites').insert([{ user_id: userCode, place_data: place }]);
+function addHistory(label, pts) {
+  pointHistory.unshift({date: new Date().toLocaleDateString(), label, pts});
+  if(pointHistory.length > 20) pointHistory.pop();
+  localStorage.setItem('cc_history', JSON.stringify(pointHistory));
+  renderHistory();
 }
-async function deleteFavorite(i) {
-  const p = places[i]; places.splice(i, 1); renderPlaces();
-  if(userCode && p) await supabaseClient.from('user_favorites').delete().match({ user_id: userCode }).filter('place_data->>name', 'eq', p.name);
+function renderHistory() {
+  const list = $('historyList');
+  if(!pointHistory.length) { list.innerHTML='<div style="text-align:center; padding:10px; opacity:0.6;">Aucun historique</div>'; return; }
+  list.innerHTML = pointHistory.map(h => `
+    <div class="history-row">
+      <span>${h.date} - ${h.label}</span>
+      <span class="${h.pts>0?'hist-pts':'hist-neg'}">${h.pts>0?'+':''}${h.pts}</span>
+    </div>
+  `).join('');
 }
-
-/* --- UI --- */
-function initApp() {
-  $('viewLogin').classList.remove('active');
-  $('viewDiscover').classList.add('active');
-  $('navBar').style.display = 'flex';
-  $('displayCode').textContent = formatCode(userCode);
-  $('displayPoints').textContent = userPoints;
-  renderPlaces();
-  checkGPS();
-}
-
-function renderPlaces() {
-  const list = $('placesList');
-  if(!places.length) { list.innerHTML = `<div style="text-align:center; padding:30px; opacity:0.5;">Vide. Ajoute une adresse !</div>`; return; }
-  list.innerHTML = places.map((p, i) => `
-    <div class="placeCard" onclick="startNav(${i})">
-      <div class="card-icon">📍</div>
-      <div style="flex:1">
-        <div class="placeName">${escapeHtml(p.name)}</div>
-        <div class="placeMeta">${escapeHtml(p.fullAddress || p.type)}</div>
-      </div>
-      <button class="btn" style="width:30px; height:30px; padding:0; background:transparent; color:#888;" onclick="event.stopPropagation(); deleteFavorite(${i})">✕</button>
-    </div>`).join('');
+function buyItem(cost) {
+  if(userPoints >= cost) {
+    if(confirm("Confirmer l'achat pour " + cost + " points ?")) {
+      userPoints -= cost; updatePoints(0); // Sync
+      addHistory("Achat Boutique", -cost);
+      alert("Achat effectué ! (Simulation)");
+    }
+  } else alert("Pas assez de points !");
 }
 
-function show(id) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  $(id).classList.add('active');
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  if(id==='viewDiscover') document.querySelectorAll('.nav-tab')[0].classList.add('active');
-  if(id==='viewNav') document.querySelectorAll('.nav-tab')[1].classList.add('active');
-  if(id==='viewAccount') document.querySelectorAll('.nav-tab')[2].classList.add('active');
-}
-
-/* --- SUGGESTIONS (TOULOUSE PRIORITY) --- */
-$('addrInput').addEventListener('input', (e) => {
-  const q = e.target.value.trim();
-  if(debounceTimer) clearTimeout(debounceTimer);
-  if(q.length < 3) { $('suggestions').style.display = 'none'; return; }
-  debounceTimer = setTimeout(() => fetchSuggestions(q), 300);
-});
-
-async function fetchSuggestions(query) {
-  // Priority to Toulouse (43.6045, 1.4442)
-  let url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5&autocomplete=1&lat=43.6045&lon=1.4442`;
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    const box = $('suggestions');
-    box.innerHTML = '';
-    
-    if(!data.features.length) { box.style.display='none'; return; }
-    
-    data.features.forEach(f => {
-      const div = document.createElement('div');
-      div.className = 'suggestion-item';
-      div.innerHTML = `
-        <div class="s-icon">📍</div>
-        <div>
-           <div class="s-main">${f.properties.name}</div>
-           <div class="s-sub">${f.properties.context}</div>
-        </div>
-      `;
-      div.onclick = () => {
-        addFavorite({ 
-            name: f.properties.name, 
-            fullAddress: f.properties.label,
-            lat: f.geometry.coordinates[1], 
-            lon: f.geometry.coordinates[0], 
-            type: 'Adresse' 
-        });
-        $('addrInput').value = '';
-        box.style.display = 'none';
-      };
-      box.appendChild(div);
-    });
-    box.style.display = 'block';
-  } catch(e) {}
-}
-// Hide on outside click
-document.addEventListener('click', e => {
-    if(!e.target.closest('#addrInput') && !e.target.closest('#suggestions')) $('suggestions').style.display='none';
-});
-
-/* --- SETTINGS HANDLERS --- */
-$('toggleTheme').onchange = (e) => {
-  settings.theme = e.target.checked ? 'dark' : 'light';
-  localStorage.setItem('cc_theme', settings.theme);
-  document.body.setAttribute('data-theme', settings.theme);
-};
-$('toggleVib').onchange = (e) => {
-  settings.vib = e.target.checked;
-  localStorage.setItem('cc_vib', settings.vib);
-};
-$('toggleWake').onchange = (e) => {
-  settings.wake = e.target.checked;
-  localStorage.setItem('cc_wake', settings.wake);
-  if(settings.wake && navigator.wakeLock) requestWakeLock();
-};
-
-let wakeLock = null;
-async function requestWakeLock() {
-  try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){}
-}
-
-/* --- NAV --- */
-function checkGPS() {
-  if (navigator.permissions) {
-    navigator.permissions.query({name:'geolocation'}).then(r => {
-      if (r.state === 'granted') { $('gpsPermissionBlock').style.display='none'; startWatching(); } 
-      else $('gpsPermissionBlock').style.display='block';
-    });
-  } else $('gpsPermissionBlock').style.display='block';
-}
-function requestGPS() {
-  navigator.geolocation.getCurrentPosition(()=>{ $('gpsPermissionBlock').style.display='none'; startWatching(); },
-  ()=>{ alert("GPS requis"); }, { enableHighAccuracy: true });
-}
-function startWatching() {
-  navigator.geolocation.watchPosition(updatePos, console.error, {enableHighAccuracy:true});
-}
+/* --- GPS & COMPASS LOGIC --- */
 function startNav(i) {
-  currentDest = places[i]; $('navDestName').textContent = currentDest.name; show('viewNav');
-  if(settings.vib && navigator.vibrate) navigator.vibrate(50);
+  currentDest = places[i]; $('navDestName').textContent = currentDest.name; 
+  show('viewNav');
+  requestDeviceOrientation(); // Demander l'accès boussole (iOS)
 }
+
+// 1. Gestion de la position (Distance)
 function updatePos(pos) {
   const lat = pos.coords.latitude; const lon = pos.coords.longitude;
+  const acc = pos.coords.accuracy;
+  
+  $('accVal').textContent = Math.round(acc) + "m";
+
+  // Gain de points (Distance parcourue)
   if(lastPos) {
-    totalDistTraveled += getDist(lastPos.lat, lastPos.lon, lat, lon);
-    if(totalDistTraveled >= 1) { 
-        userPoints += 10; $('displayPoints').textContent = userPoints;
-        supabaseClient.from('users').update({points: userPoints}).eq('id', userCode).then(()=>{});
-        totalDistTraveled -= 1; 
+    const dMoved = getDist(lastPos.lat, lastPos.lon, lat, lon);
+    if(dMoved >= 1) { // 1 km
+       userPoints += 10; updatePointsDB(userPoints);
+       addHistory("Marche 1km", 10);
     }
   }
   lastPos = {lat, lon};
-  if(!currentDest) return;
-  
-  const d = getDist(lat, lon, currentDest.lat, currentDest.lon);
-  $('distVal').textContent = d<1 ? Math.round(d*1000)+'m' : d.toFixed(1)+'km';
-  const b = getBearing(lat, lon, currentDest.lat, currentDest.lon);
-  const h = pos.coords.heading || 0;
-  $('arrow').style.transform = `rotate(${b - h}deg)`;
-  $('capVal').textContent = Math.round(b)+"°";
-  $('ringProg').style.strokeDashoffset = 301 * Math.min(Math.max(d/10, 0), 1);
-  
-  if(d < 0.02 && settings.vib && navigator.vibrate) navigator.vibrate([100, 50, 100]); // Arrived
+
+  // Calcul Nav
+  if(currentDest) {
+    const d = getDist(lat, lon, currentDest.lat, currentDest.lon);
+    $('distVal').textContent = d<1 ? Math.round(d*1000)+'m' : d.toFixed(1)+'km';
+    
+    // Bearing (Cap théorique vers la cible)
+    targetBearing = getBearing(lat, lon, currentDest.lat, currentDest.lon);
+    
+    // UI Compass update
+    updateCompassUI();
+    
+    // Cercle progression
+    const prog = Math.min(Math.max(d/5, 0), 1); // 5km max
+    $('ringProg').style.strokeDashoffset = 301 * prog;
+  }
 }
 
-/* UTILS */
+// 2. Gestion de l'orientation (Boussole)
+function requestDeviceOrientation() {
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(response => {
+        if (response === 'granted') window.addEventListener('deviceorientation', handleOrientation);
+      })
+      .catch(console.error);
+  } else {
+    window.addEventListener('deviceorientation', handleOrientation);
+  }
+}
+
+function handleOrientation(e) {
+  if(e.webkitCompassHeading) {
+    // iOS
+    deviceHeading = e.webkitCompassHeading;
+  } else if(e.alpha) {
+    // Android (Approximation, alpha est relatif parfois, absolute est mieux si dispo)
+    deviceHeading = 360 - e.alpha; 
+  }
+  updateCompassUI();
+}
+
+function updateCompassUI() {
+  // Le cadran tourne à l'inverse du téléphone pour que "N" reste au Nord
+  $('compassDial').style.transform = `rotate(${-deviceHeading}deg)`;
+  
+  // La flèche pointe vers la destination par rapport au Nord
+  // Si le cadran est tourné de -H, et la cible est à T
+  // La flèche doit être placée à T sur le cadran
+  $('destArrow').style.transform = `rotate(${targetBearing}deg)`;
+}
+
+/* --- UTILS --- */
 function getDist(lat1, lon1, lat2, lon2) {
   const R=6371; const dLat=(lat2-lat1)*Math.PI/180; const dLon=(lon2-lon1)*Math.PI/180;
   const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
@@ -654,19 +611,75 @@ function getBearing(lat1, lon1, lat2, lon2) {
   const y=Math.sin(dL)*Math.cos(l2); const x=Math.cos(l1)*Math.sin(l2)-Math.sin(l1)*Math.cos(l2)*Math.cos(dL);
   return (Math.atan2(y,x)*180/Math.PI+360)%360;
 }
-function escapeHtml(t) { return t ? t.replace(/&/g, "&amp;").replace(/</g, "&lt;") : ""; }
-function saveLocal() { localStorage.setItem('cc_user_code', userCode); }
+async function updatePointsDB(pts) {
+  $('displayPoints').textContent = pts;
+  if(userCode) await supabase.from('users').update({points:pts}).eq('id', userCode);
+}
+function formatCode(c) { return c ? c.replace(/(\d{4})(?=\d)/g, '$1 ').trim() : ""; }
 
-/* EVENTS */
+/* --- EVENTS & UI --- */
+function initApp() {
+  $('viewLogin').classList.remove('active'); $('viewDiscover').classList.add('active'); $('navBar').style.display='flex';
+  $('displayCode').textContent=formatCode(userCode); $('displayPoints').textContent=userPoints;
+  loadData(); checkGPS();
+}
+function show(id) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); $(id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  if(id==='viewDiscover') document.querySelectorAll('.nav-tab')[0].classList.add('active');
+  if(id==='viewNav') document.querySelectorAll('.nav-tab')[1].classList.add('active');
+  if(id==='viewAccount') document.querySelectorAll('.nav-tab')[2].classList.add('active');
+}
 $('btnCreateAccount').onclick = createAccount;
 $('btnLogin').onclick = () => login($('inputLoginCode').value);
 $('btnBackNav').onclick = () => show('viewDiscover');
 $('btnLogout').onclick = () => { localStorage.removeItem('cc_user_code'); location.reload(); };
-$('btnGrantGPS').onclick = requestGPS;
+$('btnGrantGPS').onclick = () => {
+    navigator.geolocation.getCurrentPosition(()=>{ $('gpsPermissionBlock').style.display='none'; 
+    navigator.geolocation.watchPosition(updatePos, console.error, {enableHighAccuracy:true}); }, 
+    alert, {enableHighAccuracy:true});
+    requestDeviceOrientation();
+};
+// Tabs Settings/Shop
+$('tabSettings').onclick = () => { $('sectionSettings').style.display='block'; $('sectionShop').style.display='none'; $('tabSettings').style.background='var(--bg-input)'; $('tabSettings').style.color='var(--text-primary)'; $('tabShop').style.background='transparent'; $('tabShop').style.color='var(--text-secondary)'; };
+$('tabShop').onclick = () => { $('sectionSettings').style.display='none'; $('sectionShop').style.display='block'; $('tabShop').style.background='var(--bg-input)'; $('tabShop').style.color='var(--text-primary)'; $('tabSettings').style.background='transparent'; $('tabSettings').style.color='var(--text-secondary)'; };
+// Settings Toggles
+$('toggleTheme').onchange=e=>{settings.theme=e.target.checked?'dark':'light'; localStorage.setItem('cc_theme',settings.theme); document.body.setAttribute('data-theme',settings.theme);};
+$('toggleVib').onchange=e=>{settings.vib=e.target.checked; localStorage.setItem('cc_vib',settings.vib);};
+$('toggleWake').onchange=e=>{settings.wake=e.target.checked; localStorage.setItem('cc_wake',settings.wake); if(settings.wake && navigator.wakeLock) navigator.wakeLock.request('screen');};
+
+// Input Formatting
 $('inputLoginCode').addEventListener('input', e => {
   let v = e.target.value.replace(/\D/g,'').slice(0,16);
   e.target.value = v.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
 });
+// Suggestions
+$('addrInput').addEventListener('input', (e) => {
+  const q = e.target.value.trim();
+  if(q.length<3){ $('suggestions').style.display='none'; return; }
+  setTimeout(async ()=>{
+    try {
+      const res=await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5&lat=43.6045&lon=1.4442`);
+      const d=await res.json();
+      $('suggestions').innerHTML = d.features.map(f=>`<div class="suggestion-item" onclick="addFav('${escape(f.properties.name)}','${escape(f.properties.label)}',${f.geometry.coordinates[1]},${f.geometry.coordinates[0]})"><div style='font-size:18px'>📍</div><div><div class='s-main'>${f.properties.name}</div><div class='s-sub'>${f.properties.context}</div></div></div>`).join('');
+      $('suggestions').style.display='block';
+    } catch(e){}
+  }, 300);
+});
+// Helper global pour le onclick HTML
+window.addFav = async (n, l, lat, lon) => {
+    const p = {name:unescape(n), fullAddress:unescape(l), lat, lon, type:'Adresse'};
+    places.push(p); renderPlaces(); $('suggestions').style.display='none'; $('addrInput').value='';
+    if(userCode) await supabase.from('user_favorites').insert([{user_id:userCode, place_data:p}]);
+};
+function renderPlaces() {
+    $('placesList').innerHTML = places.map((p,i)=>`<div class="placeCard" onclick="startNav(${i})"><div class="card-icon">📍</div><div style="flex:1"><div class="placeName">${p.name}</div><div class="placeMeta">${p.fullAddress||'Lieu'}</div></div><button class="btn" style="width:30px;padding:0;background:transparent;color:#888;" onclick="event.stopPropagation();delFav(${i})">✕</button></div>`).join('');
+}
+window.delFav = async (i) => {
+    const p = places[i]; places.splice(i,1); renderPlaces();
+    if(userCode) await supabase.from('user_favorites').delete().match({user_id:userCode}).filter('place_data->>name','eq',p.name);
+};
+function checkGPS(){ if(userCode) navigator.geolocation.watchPosition(updatePos,()=>{}, {enableHighAccuracy:true}); }
 
 if(userCode) login(userCode);
 </script>
