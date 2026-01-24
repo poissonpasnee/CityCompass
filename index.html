@@ -237,42 +237,57 @@ async function login(code) {
 async function createAccount() {
   const btn = $('btnCreateAccount');
   const originalText = btn.textContent;
-  btn.textContent = "Création...";
+  
+  // Feedback visuel immédiat
+  btn.textContent = "Création en cours...";
+  btn.style.opacity = "0.7";
   btn.disabled = true;
 
   try {
     const newCode = generateCode();
-    console.log("Tentative création pour:", newCode);
+    console.log("Tentative de création avec le code :", newCode);
 
-    // Insertion explicite
+    // Insertion avec retour explicite des données (.select())
     const { data, error } = await supabase
       .from('users')
       .insert([{ id: newCode, points: 0 }])
-      .select()
-      .single();
+      .select();
+
+    // Gestion des erreurs
+    if (error) {
+      console.error("Erreur Supabase détaillée :", error);
       
-    if(error) {
-      console.error("Supabase Error:", error);
-      // Si clé dupliquée (très rare), on réessaie
-      if(error.code === '23505') {
-        createAccount(); 
+      // Cas spécifique : violation de contrainte (code déjà pris, très rare)
+      if (error.code === '23505') {
+        console.warn("Code déjà existant, nouvelle tentative...");
+        createAccount(); // Récursion pour réessayer
         return;
       }
-      alert("Erreur: " + error.message + "\n(Vérifiez que les Policies RLS permettent l'insertion anon)");
+      
+      alert("Erreur lors de la création : " + error.message + "\nCode erreur: " + error.code);
       return;
     }
 
     // Succès
-    userCode = newCode;
-    userPoints = 0;
-    saveLocal();
-    initApp();
+    if (data && data.length > 0) {
+      console.log("Compte créé avec succès :", data);
+      userCode = newCode;
+      userPoints = 0;
+      saveLocal();
+      initApp();
+      alert("Compte créé ! Ton code unique est : " + formatCode(newCode));
+    } else {
+      console.warn("Aucune donnée renvoyée. Vérifiez les politiques RLS.");
+      alert("Erreur : Le compte semble créé mais aucune confirmation reçue.");
+    }
 
   } catch (err) {
-    console.error(err);
-    alert("Erreur réseau ou inconnue.");
+    console.error("Erreur inattendue :", err);
+    alert("Erreur réseau ou inconnue : " + err.message);
   } finally {
+    // Rétablissement du bouton
     btn.textContent = originalText;
+    btn.style.opacity = "1";
     btn.disabled = false;
   }
 }
