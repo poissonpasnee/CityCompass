@@ -115,7 +115,27 @@
     .placeName{ font-weight: 600; font-size: 17px; }
     .placeMeta{ color: var(--text-secondary); font-size: 14px; margin-top: 2px; }
 
-    /* Account & Login */
+    /* Auto-Complete List */
+    .suggestions-list {
+      background: var(--bg-surface);
+      border-radius: var(--r-card);
+      margin-top: 8px;
+      overflow: hidden;
+      display: none; /* Caché par défaut */
+      box-shadow: var(--shadow);
+      position: absolute; width: calc(100% - 40px); z-index: 100;
+    }
+    .suggestion-item {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--stroke);
+      cursor: pointer;
+    }
+    .suggestion-item:last-child { border-bottom: none; }
+    .suggestion-item:active { background: var(--bg-body); }
+    .s-main { font-weight: 600; font-size: 16px; }
+    .s-sub { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+    /* Login & Account */
     .login-screen{ text-align: center; padding-top: 40px; }
     .account-gradient{
       background: linear-gradient(135deg, #0A84FF, #5E5CE6);
@@ -130,7 +150,7 @@
     }
     .points-pill{ background: rgba(255,255,255,0.25); padding: 6px 16px; border-radius: 20px; font-weight: 600; display: inline-block; font-size: 15px; }
 
-    /* Compass UI */
+    /* Compass */
     .compassWrap{ margin: 40px 0; display: flex; justify-content: center; align-items: center; }
     .ringWrap{ width: min(80vw, 320px); aspect-ratio: 1/1; position: relative; }
     .ringSvg circle{ stroke: var(--stroke); }
@@ -159,7 +179,6 @@
     .navTab.active{ color: var(--accent); }
     .navTab span{ font-size: 24px; margin-bottom: 2px; }
     
-    /* Login Input Special */
     .input-code { font-family: monospace; letter-spacing: 3px; text-align: center; font-size: 20px; }
   </style>
 </head>
@@ -176,10 +195,10 @@
       <button class="iconBtn" id="themeBtn" type="button">◑</button>
     </div>
 
-    <!-- MAIN CONTAINER -->
+    <!-- MAIN -->
     <div class="main">
       
-      <!-- VIEW: LOGIN (Premier écran) -->
+      <!-- VIEW: LOGIN -->
       <div class="view active section login-screen" id="viewLogin">
         <h2 style="font-size: 28px; margin-bottom: 10px;">Bienvenue 👋</h2>
         <p style="color: var(--text-secondary); margin-bottom: 40px;">Accède à tes favoris et gagne des points.</p>
@@ -197,10 +216,10 @@
         <p id="loginError" style="color: var(--danger); font-size: 14px; margin-top: 16px;"></p>
       </div>
 
-      <!-- VIEW: DISCOVER (Accueil) -->
+      <!-- VIEW: DISCOVER -->
       <div class="view section" id="viewDiscover">
         
-        <!-- Bouton permission GPS -->
+        <!-- GPS Permission -->
         <div id="gpsPermissionBlock" style="background: var(--bg-surface); padding: 16px; border-radius: 16px; margin-bottom: 20px; display:none;">
            <div style="font-weight:600; margin-bottom:8px;">⚠️ GPS requis</div>
            <p style="font-size:14px; color:var(--text-secondary); margin:0 0 12px 0;">Pour te guider, nous avons besoin de ta position.</p>
@@ -208,16 +227,17 @@
         </div>
 
         <div class="label">Recherche</div>
-        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-          <input id="addrInput" placeholder="Rechercher une adresse..." />
-          <button class="iconBtn" id="btnSearch">🔍</button>
+        <div style="position: relative;">
+          <input id="addrInput" placeholder="Tape une adresse (ex: Capitole...)" autocomplete="off" />
+          <!-- Suggestions -->
+          <div id="suggestions" class="suggestions-list"></div>
         </div>
 
         <div class="label">Mes Favoris</div>
         <div id="placesList"></div>
       </div>
 
-      <!-- VIEW: NAV (Boussole) -->
+      <!-- VIEW: NAV -->
       <div class="view section" id="viewNav" style="text-align: center;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
           <button class="iconBtn" id="btnBackNav">✕</button>
@@ -227,17 +247,13 @@
 
         <div class="compassWrap">
           <div class="ringWrap">
-            <!-- Cercle de fond -->
             <svg class="ringSvg" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="45" fill="none" stroke-width="2" style="opacity:0.3"></circle>
-              <!-- Cercle de progression (distance) -->
               <circle id="ringProg" cx="50" cy="50" r="45" fill="none"
                       stroke-width="4" stroke-linecap="round" 
                       transform="rotate(-90 50 50)"
                       stroke-dasharray="282.7" stroke-dashoffset="282.7"></circle>
             </svg>
-            
-            <!-- Flèche centrée -->
             <svg id="arrow" class="arrowSvg" viewBox="0 0 100 100">
                <path d="M50 15 L75 80 L50 70 L25 80 Z" fill="currentColor"></path>
             </svg>
@@ -254,22 +270,19 @@
             <div class="v" id="capVal">—</div>
           </div>
         </div>
-
-        <p style="margin-top: 30px; font-size: 14px; color: var(--text-secondary);">
-          🏆 Gagne 10 points tous les km parcourus !
-        </p>
+        <p style="margin-top: 30px; font-size: 14px; color: var(--text-secondary);">🏆 Gagne 10 points tous les km parcourus !</p>
       </div>
 
-      <!-- VIEW: ACCOUNT (Profil) -->
+      <!-- VIEW: ACCOUNT -->
       <div class="view section" id="viewAccount">
         <div class="account-gradient">
           <div class="points-pill">🏆 <span id="displayPoints">0</span> Points</div>
           <div style="margin-top: 20px; font-size: 14px; opacity: 0.8;">TON CODE UNIQUE</div>
           <div class="big-code" id="displayCode">...</div>
-          <p style="font-size: 13px; opacity: 0.7;">Note-le précieusement pour te reconnecter.</p>
+          <p style="font-size: 13px; opacity: 0.7;">Note-le précieusement.</p>
         </div>
 
-        <div class="label">Paramètres</div>
+        <div class="label">Statut</div>
         <div class="placeCard" style="cursor: default;">
            <div class="badge" style="font-size: 18px;">☁️</div>
            <div>
@@ -277,10 +290,8 @@
              <div class="placeMeta" style="color: var(--success);">Actif • Sauvegardé</div>
            </div>
         </div>
-
         <button class="btn btnAlert" id="btnLogout" style="margin-top: 40px;">Déconnexion</button>
       </div>
-
     </div>
 
     <!-- Bottom Nav -->
@@ -293,16 +304,12 @@
   </div>
 
 <script>
-/* =========================================
-   1. INIT SUPABASE (Client unique)
-   ========================================= */
+/* 1. SUPABASE INIT */
 const SUPABASE_URL = 'https://vjlfbcwnfwyrxstfvefq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGZiY3duZnd5cnhzdGZ2ZWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMDc2MjcsImV4cCI6MjA4NDc4MzYyN30.WTuWbxB-8isJOp2lNnq73njQmifDjxTNEWngMgKtmv4';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* =========================================
-   2. VARIABLES ET DOM
-   ========================================= */
+/* 2. VARIABLES */
 const $ = id => document.getElementById(id);
 let userCode = localStorage.getItem('cc_user_code');
 let places = [];
@@ -310,166 +317,182 @@ let userPoints = 0;
 let currentDest = null;
 let lastPos = null;
 let totalDistTraveled = 0;
+let debounceTimer = null; // Pour éviter trop d'appels API
 
-/* =========================================
-   3. LOGIQUE COMPTE (Auth 16 chiffres)
-   ========================================= */
+/* 3. LOGIQUE COMPTE */
 function generateCode() {
-  let code = '';
-  for(let i=0; i<16; i++) code += Math.floor(Math.random()*10);
-  return code;
+  let c = ''; for(let i=0;i<16;i++) c+=Math.floor(Math.random()*10);
+  return c;
 }
-
-function formatCode(c) {
-  if(!c) return "";
-  return c.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
-}
+function formatCode(c) { return c ? c.replace(/(\d{4})(?=\d)/g, '$1 ').trim() : ""; }
 
 async function createAccount() {
   const btn = $('btnCreateAccount');
-  const oldTxt = btn.textContent;
+  const old = btn.textContent;
   btn.textContent = "Création...";
   btn.disabled = true;
 
   try {
     const newCode = generateCode();
-    // Insertion + select pour confirmer
-    const { data, error } = await supabaseClient
-      .from('users')
-      .insert([{ id: newCode, points: 0 }])
-      .select();
-
-    if (error) throw error;
-
+    const { error } = await supabaseClient.from('users').insert([{ id: newCode, points: 0 }]).select();
+    if(error) throw error;
     alert("Compte créé !");
     userCode = newCode;
     userPoints = 0;
     saveLocal();
     initApp();
-
-  } catch (err) {
-    alert("Erreur: " + err.message);
-  } finally {
-    btn.textContent = oldTxt;
-    btn.disabled = false;
-  }
+  } catch(e) { alert("Erreur: "+e.message); } 
+  finally { btn.textContent = old; btn.disabled = false; }
 }
 
 async function login(code) {
-  const cleanCode = code.replace(/\s/g, '');
-  if(cleanCode.length !== 16) {
-    $('loginError').textContent = "Le code doit faire 16 chiffres.";
-    return;
-  }
-
+  const clean = code.replace(/\s/g, '');
+  if(clean.length !== 16) { $('loginError').textContent = "16 chiffres requis."; return; }
+  
   const btn = $('btnLogin');
-  const oldTxt = btn.textContent;
+  const old = btn.textContent;
   btn.textContent = "Chargement...";
   btn.disabled = true;
 
   try {
-    const { data, error } = await supabaseClient
-      .from('users')
-      .select('*')
-      .eq('id', cleanCode);
-
-    if (error) throw error;
-
-    if (data && data.length > 0) {
-      userCode = cleanCode;
+    const { data, error } = await supabaseClient.from('users').select('*').eq('id', clean);
+    if(error) throw error;
+    if(data.length) {
+      userCode = clean;
       userPoints = data[0].points;
       saveLocal();
       await loadFavorites();
       initApp();
-    } else {
-      $('loginError').textContent = "Compte introuvable.";
-    }
-  } catch (e) {
-    $('loginError').textContent = "Erreur réseau: " + e.message;
-  } finally {
-    btn.textContent = oldTxt;
-    btn.disabled = false;
-  }
+    } else { $('loginError').textContent = "Inconnu."; }
+  } catch(e) { $('loginError').textContent = "Erreur: "+e.message; }
+  finally { btn.textContent = old; btn.disabled = false; }
 }
 
-/* =========================================
-   4. DATA SYNC (Points & Favoris)
-   ========================================= */
+/* 4. SYNC & POINTS */
 async function loadFavorites() {
   if(!userCode) return;
   const { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode);
-  if(data) {
-    places = data.map(d => d.place_data);
-    renderPlaces();
-  }
+  if(data) { places = data.map(d => d.place_data); renderPlaces(); }
 }
-
 async function addFavorite(place) {
-  places.push(place);
-  renderPlaces();
-  if(userCode) {
-    await supabaseClient.from('user_favorites').insert([{ user_id: userCode, place_data: place }]);
-  }
+  places.push(place); renderPlaces();
+  if(userCode) await supabaseClient.from('user_favorites').insert([{ user_id: userCode, place_data: place }]);
 }
-
-async function deleteFavorite(index) {
-  const p = places[index];
-  places.splice(index, 1);
-  renderPlaces();
-  if(userCode && p) {
-    await supabaseClient.from('user_favorites')
-      .delete()
-      .match({ user_id: userCode })
-      .filter('place_data->>name', 'eq', p.name); // Suppression par nom
-  }
+async function deleteFavorite(i) {
+  const p = places[i]; places.splice(i, 1); renderPlaces();
+  if(userCode && p) await supabaseClient.from('user_favorites').delete().match({user_id: userCode}).filter('place_data->>name', 'eq', p.name);
 }
-
 async function updatePoints(km) {
   const pts = Math.floor(km * 10);
   if(pts > 0) {
-    userPoints += pts;
-    $('displayPoints').textContent = userPoints;
-    if(userCode) {
-      await supabaseClient.from('users').update({ points: userPoints }).eq('id', userCode);
-    }
+    userPoints += pts; $('displayPoints').textContent = userPoints;
+    if(userCode) await supabaseClient.from('users').update({ points: userPoints }).eq('id', userCode);
   }
 }
 
-/* =========================================
-   5. INTERFACE UTILISATEUR
-   ========================================= */
+/* 5. UI & RECHERCHE AVANCEE */
 function initApp() {
   $('viewLogin').classList.remove('active');
   $('viewDiscover').classList.add('active');
   $('navBar').style.display = 'flex';
-  
   $('displayCode').textContent = formatCode(userCode);
   $('displayPoints').textContent = userPoints;
   renderPlaces();
-  
-  // Demande permission GPS au lancement si pas déjà fait
   checkGPS();
 }
 
-function renderPlaces() {
-  const list = $('placesList');
-  if(places.length === 0) {
-    list.innerHTML = `<div style="text-align:center; padding:40px 20px; color:var(--text-secondary)">
-      <div style="font-size:40px; margin-bottom:10px;">🗺️</div>
-      Aucun favori.<br>Cherche une adresse pour commencer !
-    </div>`;
+// === MOTEUR DE RECHERCHE AVEC SUGGESTIONS ===
+$('addrInput').addEventListener('input', (e) => {
+  const q = e.target.value.trim();
+  if(debounceTimer) clearTimeout(debounceTimer);
+  if(q.length < 3) { $('suggestions').style.display = 'none'; return; }
+
+  // Temporisation 300ms
+  debounceTimer = setTimeout(() => fetchSuggestions(q), 300);
+});
+
+async function fetchSuggestions(query) {
+  // On priorise le département 31 (Haute-Garonne) via lat/lon centre Toulouse (environ)
+  // Ou mieux : on envoie un paramètre de priorité
+  // API Adresse supporte 'lat' et 'lon' pour booster la pertinence
+  
+  let url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5&autocomplete=1`;
+  
+  // Si on a la position GPS, on l'utilise pour la pertinence
+  if(lastPos) {
+    url += `&lat=${lastPos.lat}&lon=${lastPos.lon}`;
+  } else {
+    // Sinon, on centre par défaut sur Toulouse (31) pour "tricher" un peu
+    url += `&lat=43.6047&lon=1.4442`; 
+  }
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    renderSuggestions(data.features);
+  } catch(err) { console.error(err); }
+}
+
+function renderSuggestions(list) {
+  const container = $('suggestions');
+  container.innerHTML = '';
+  
+  if(!list || list.length === 0) {
+    container.style.display = 'none';
     return;
   }
+
+  list.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'suggestion-item';
+    // Mise en forme
+    const label = item.properties.label;
+    const context = item.properties.context; // ex: "31, Haute-Garonne, Occitanie"
+    
+    div.innerHTML = `
+      <div class="s-main">${label}</div>
+      <div class="s-sub">${context}</div>
+    `;
+    
+    div.onclick = () => {
+      // Au clic : on ajoute et on vide
+      const p = {
+        name: item.properties.name, // Juste le nom du lieu
+        fullAddress: item.properties.label,
+        lat: item.geometry.coordinates[1],
+        lon: item.geometry.coordinates[0],
+        type: item.properties.type === 'municipality' ? 'Ville' : 'Adresse'
+      };
+      addFavorite(p);
+      $('addrInput').value = '';
+      container.style.display = 'none';
+    };
+    
+    container.appendChild(div);
+  });
+  
+  container.style.display = 'block';
+}
+
+// Cacher suggestions si on clique ailleurs
+document.addEventListener('click', (e) => {
+  if(!e.target.closest('#addrInput') && !e.target.closest('#suggestions')) {
+    $('suggestions').style.display = 'none';
+  }
+});
+
+
+function renderPlaces() {
+  const list = $('placesList');
+  if(!places.length) { list.innerHTML = `<div style="text-align:center; padding:20px; color:#888;">Aucun favori.</div>`; return; }
   list.innerHTML = places.map((p, i) => `
     <div class="placeCard" onclick="startNav(${i})">
       <div class="badge">📍</div>
       <div style="flex:1">
         <div class="placeName">${escapeHtml(p.name)}</div>
-        <div class="placeMeta">${escapeHtml(p.type || 'Lieu')}</div>
+        <div class="placeMeta">${escapeHtml(p.fullAddress || p.type || 'Lieu')}</div>
       </div>
-      <div style="display:flex; gap:10px;">
-        <button class="btn" style="padding:8px 12px; width:auto; font-size:14px; background:var(--bg-body);" onclick="event.stopPropagation(); deleteFavorite(${i})">✕</button>
-      </div>
+      <button class="btn" style="width:auto; padding:8px 12px; background:transparent; color:#888;" onclick="event.stopPropagation(); deleteFavorite(${i})">✕</button>
     </div>
   `).join('');
 }
@@ -477,91 +500,51 @@ function renderPlaces() {
 function show(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   $(id).classList.add('active');
-  document.querySelectorAll('.navTab').forEach(t => t.classList.remove('active'));
-  if(id==='viewDiscover') document.querySelectorAll('.navTab')[0].classList.add('active');
-  if(id==='viewNav') document.querySelectorAll('.navTab')[1].classList.add('active');
-  if(id==='viewAccount') document.querySelectorAll('.navTab')[2].classList.add('active');
+  const tabs = document.querySelectorAll('.navTab');
+  tabs.forEach(t => t.classList.remove('active'));
+  if(id==='viewDiscover') tabs[0].classList.add('active');
+  if(id==='viewNav') tabs[1].classList.add('active');
+  if(id==='viewAccount') tabs[2].classList.add('active');
 }
 
-/* =========================================
-   6. NAVIGATION & GPS
-   ========================================= */
+/* 6. GPS & NAV */
 function checkGPS() {
-  if (navigator.permissions) {
-    navigator.permissions.query({name:'geolocation'}).then(result => {
-      if (result.state === 'granted') {
-        $('gpsPermissionBlock').style.display = 'none';
-        startWatching();
-      } else if (result.state === 'prompt') {
-        $('gpsPermissionBlock').style.display = 'block';
-      }
+  if(navigator.permissions) {
+    navigator.permissions.query({name:'geolocation'}).then(r => {
+      if(r.state === 'granted') { $('gpsPermissionBlock').style.display='none'; startWatching(); }
+      else $('gpsPermissionBlock').style.display='block';
     });
-  } else {
-     $('gpsPermissionBlock').style.display = 'block';
-  }
+  } else $('gpsPermissionBlock').style.display='block';
 }
-
 function requestGPS() {
-  navigator.geolocation.getCurrentPosition(
-    (pos) => { 
-      $('gpsPermissionBlock').style.display = 'none';
-      startWatching();
-    },
-    (err) => { alert("Localisation refusée. L'app ne peut pas fonctionner sans GPS."); },
-    { enableHighAccuracy: true }
-  );
+  navigator.geolocation.getCurrentPosition(()=>{$('gpsPermissionBlock').style.display='none'; startWatching();}, 
+  ()=>{alert("GPS refusé.");}, {enableHighAccuracy:true});
 }
-
 function startWatching() {
-  if(navigator.geolocation) {
-    navigator.geolocation.watchPosition(updatePos, console.error, {enableHighAccuracy:true});
-  }
+  if(navigator.geolocation) navigator.geolocation.watchPosition(updatePos, console.error, {enableHighAccuracy:true});
 }
-
 function startNav(i) {
-  currentDest = places[i];
-  $('navDestName').textContent = currentDest.name;
-  show('viewNav');
+  currentDest = places[i]; $('navDestName').textContent = currentDest.name; show('viewNav');
 }
-
 function updatePos(pos) {
-  // MAJ Points même hors navigation
   const lat = pos.coords.latitude;
   const lon = pos.coords.longitude;
-  
   if(lastPos) {
     totalDistTraveled += getDist(lastPos.lat, lastPos.lon, lat, lon);
-    if(totalDistTraveled >= 1) { // 1 KM
-      updatePoints(1);
-      totalDistTraveled -= 1;
-    }
+    if(totalDistTraveled >= 1) { updatePoints(1); totalDistTraveled -= 1; }
   }
   lastPos = {lat, lon};
-
-  // Logique Boussole
   if(!currentDest) return;
   const d = getDist(lat, lon, currentDest.lat, currentDest.lon);
-  $('distVal').textContent = d < 1 ? Math.round(d*1000)+' m' : d.toFixed(1)+' km';
-  
+  $('distVal').textContent = d<1 ? Math.round(d*1000)+' m' : d.toFixed(1)+' km';
   const b = getBearing(lat, lon, currentDest.lat, currentDest.lon);
-  const h = pos.coords.heading || 0; // Cap du téléphone
-  
-  // Rotation de la flèche
+  const h = pos.coords.heading || 0;
   $('arrow').style.transform = `rotate(${b - h}deg)`;
-  $('capVal').textContent = Math.round(b) + "°";
-  
-  // Cercle de progression (plus on est près, plus il se ferme)
-  // On considère 10km comme le "max" pour le cercle
-  const maxDist = 10; 
-  const progress = Math.min(Math.max(d / maxDist, 0), 1); // 0 = arrivé, 1 = loin
-  // Dasharray du cercle SVG est 282.7
-  const dash = 282.7;
-  $('ringProg').style.strokeDashoffset = dash * progress;
+  $('capVal').textContent = Math.round(b)+"°";
+  $('ringProg').style.strokeDashoffset = 282.7 * Math.min(Math.max(d/10, 0), 1);
 }
 
-/* =========================================
-   7. UTILS MATHS
-   ========================================= */
+/* 7. UTILS */
 function getDist(lat1, lon1, lat2, lon2) {
   const R = 6371; 
   const dLat = (lat2-lat1)*Math.PI/180;
@@ -580,50 +563,21 @@ function getBearing(lat1, lon1, lat2, lon2) {
 function escapeHtml(t) { return t ? t.replace(/&/g, "&amp;").replace(/</g, "&lt;") : ""; }
 function saveLocal() { localStorage.setItem('cc_user_code', userCode); }
 
-/* =========================================
-   8. EVENTS LISTENERS
-   ========================================= */
+/* EVENTS */
 $('btnCreateAccount').onclick = createAccount;
 $('btnLogin').onclick = () => login($('inputLoginCode').value);
 $('btnBackNav').onclick = () => show('viewDiscover');
 $('btnLogout').onclick = () => { localStorage.removeItem('cc_user_code'); location.reload(); };
 $('btnGrantGPS').onclick = requestGPS;
-
-// Input Code Auto-Format
 $('inputLoginCode').addEventListener('input', e => {
   let v = e.target.value.replace(/\D/g,'').slice(0,16);
   e.target.value = v.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
 });
-
-// Recherche Adresse
-async function doSearch() {
-  const q = $('addrInput').value;
-  if(!q) return;
-  try {
-    const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=1`);
-    const data = await res.json();
-    if(data.features?.length) {
-      const f = data.features[0];
-      addFavorite({ 
-        name: f.properties.label, 
-        lat: f.geometry.coordinates[1], 
-        lon: f.geometry.coordinates[0], 
-        type: 'Adresse' 
-      });
-      $('addrInput').value = '';
-    } else { alert("Aucune adresse trouvée."); }
-  } catch(e) { alert("Erreur recherche"); }
-}
-$('btnSearch').onclick = doSearch;
-$('addrInput').onkeydown = e => { if(e.key === 'Enter') doSearch(); };
-
-// Theme Toggle
 $('themeBtn').onclick = () => {
   const isDark = document.body.getAttribute('data-theme') === 'dark';
   document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
 };
 
-// AUTO START
 if(userCode) login(userCode);
 
 </script>
