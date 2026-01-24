@@ -77,16 +77,6 @@
     .brand h1 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
     .brand p { margin: 0; font-size: 13px; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    .theme-btn {
-      width: 40px; height: 40px; border-radius: 50%;
-      background: var(--bg-card); border: none;
-      color: var(--text-primary); font-size: 18px;
-      box-shadow: var(--shadow); cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: transform 0.2s;
-    }
-    .theme-btn:active { transform: scale(0.9); }
-
     /* Main Area */
     .main {
       flex: 1; overflow-y: auto; overflow-x: hidden;
@@ -105,7 +95,7 @@
     .input-group {
       position: relative; display: flex; align-items: center;
       background: var(--bg-card); border-radius: var(--radius-l);
-      padding: 4px; box-shadow: var(--shadow);
+      padding: 4px; box-shadow: var(--shadow); z-index: 20;
     }
     input {
       width: 100%; padding: 14px 16px; border: none; background: transparent;
@@ -114,6 +104,24 @@
     }
     input::placeholder { color: var(--text-secondary); opacity: 0.7; }
 
+    /* Suggestions List */
+    .suggestions-box {
+      position: absolute; top: 110%; left: 0; right: 0;
+      background: var(--bg-card); border-radius: var(--radius-l);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      border: 1px solid var(--separator);
+      z-index: 100; overflow: hidden; display: none;
+    }
+    .suggestion-item {
+      padding: 14px 16px; border-bottom: 1px solid var(--separator);
+      display: flex; gap: 12px; align-items: center; cursor: pointer;
+    }
+    .suggestion-item:last-child { border-bottom: none; }
+    .suggestion-item:active { background: var(--bg-input); }
+    .s-icon { font-size: 18px; opacity: 0.5; }
+    .s-main { font-weight: 600; font-size: 15px; }
+    .s-sub { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
     .btn {
       width: 100%; padding: 16px; border-radius: var(--radius-l); border: none;
       font-weight: 700; font-size: 17px; cursor: pointer;
@@ -121,10 +129,33 @@
       transition: transform 0.1s, opacity 0.2s;
     }
     .btn:active { transform: scale(0.97); opacity: 0.9; }
-    
     .btn-primary { background: var(--accent); color: #FFF; box-shadow: 0 4px 15px rgba(10, 132, 255, 0.3); }
     .btn-danger { background: rgba(255, 59, 48, 0.1); color: var(--danger); }
-    .btn-icon { width: 44px; height: 44px; padding: 0; background: transparent; color: var(--accent); font-size: 20px; }
+    
+    /* Toggle Switch (iOS Style) */
+    .settings-row {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-card); padding: 16px; margin-bottom: 1px;
+    }
+    .settings-row:first-child { border-top-left-radius: var(--radius-l); border-top-right-radius: var(--radius-l); }
+    .settings-row:last-child { border-bottom-left-radius: var(--radius-l); border-bottom-right-radius: var(--radius-l); margin-bottom: 10px; }
+    
+    .switch {
+      position: relative; display: inline-block; width: 50px; height: 30px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--bg-input); transition: .4s; border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 26px; width: 26px;
+      left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    input:checked + .slider { background-color: var(--success); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
 
     /* Cards */
     .placeCard {
@@ -154,7 +185,7 @@
     .big-code {
       font-family: "SF Mono", "Menlo", monospace; font-size: 22px;
       background: rgba(0,0,0,0.2); padding: 12px; border-radius: 12px;
-      margin: 16px 0; letter-spacing: 2px;
+      margin: 16px 0; letter-spacing: 2px; user-select: all;
     }
     .points-badge {
       background: rgba(255,255,255,0.25); backdrop-filter: blur(10px);
@@ -212,7 +243,6 @@
     .nav-icon { font-size: 24px; margin-bottom: 4px; transition: transform 0.2s; }
     .nav-tab.active .nav-icon { transform: translateY(-2px); }
 
-    /* Login Specifics */
     .input-code { font-family: monospace; letter-spacing: 3px; text-align: center; font-size: 20px; }
   </style>
 </head>
@@ -226,7 +256,8 @@
         <h1>City Compass</h1>
         <p>Navigation Intelligente</p>
       </div>
-      <button class="theme-btn" id="themeBtn">◑</button>
+      <!-- Le bouton thème est aussi dans les paramètres maintenant -->
+      <div style="width:40px;"></div>
     </div>
 
     <!-- MAIN CONTAINER -->
@@ -235,9 +266,9 @@
       <!-- VIEW: LOGIN -->
       <div class="view active" id="viewLogin">
         <div style="height: 40px;"></div>
-        <h2 style="text-align: center; font-size: 28px; margin-bottom: 10px;">Explorer</h2>
+        <h2 style="text-align: center; font-size: 28px; margin-bottom: 10px;">Bienvenue</h2>
         <p style="text-align: center; color: var(--text-secondary); margin-bottom: 40px; padding: 0 20px;">
-          Gagne des points en découvrant<br>les lieux cachés de ta ville.
+          Explore Toulouse et gagne des points<br>en découvrant la ville.
         </p>
         
         <div class="account-hero" style="margin-bottom: 40px; box-shadow: 0 15px 40px -10px rgba(0,122,255,0.4);">
@@ -265,18 +296,19 @@
       <!-- VIEW: DISCOVER -->
       <div class="view" id="viewDiscover">
         
-        <!-- GPS Permission -->
         <div id="gpsPermissionBlock" style="background: var(--bg-card); padding: 20px; border-radius: var(--radius-l); margin-bottom: 24px; display:none; border: 1px solid var(--accent);">
            <div style="font-weight:700; margin-bottom:5px; font-size: 16px;">⚠️ GPS requis</div>
-           <p style="font-size:14px; color:var(--text-secondary); margin:0 0 15px 0;">Nécessaire pour le guidage et les points.</p>
+           <p style="font-size:14px; color:var(--text-secondary); margin:0 0 15px 0;">Nécessaire pour le guidage.</p>
            <button class="btn btn-primary" id="btnGrantGPS" style="padding: 10px;">Activer la localisation</button>
         </div>
 
-        <div class="label">Où veux-tu aller ?</div>
+        <div class="label">Recherche Locale (Toulouse)</div>
         <div class="input-group">
           <div style="padding-left: 16px; font-size: 18px;">🔍</div>
-          <input id="addrInput" placeholder="Rechercher une adresse..." />
-          <button class="btn btn-icon" id="btnSearch">➜</button>
+          <input id="addrInput" placeholder="Rechercher une adresse..." autocomplete="off" />
+          
+          <!-- Suggestions Dropdown -->
+          <div id="suggestions" class="suggestions-box"></div>
         </div>
 
         <div class="label">Mes Favoris</div>
@@ -284,16 +316,15 @@
       </div>
 
 
-      <!-- VIEW: NAV (Compass) -->
+      <!-- VIEW: NAV -->
       <div class="view" id="viewNav">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-          <button class="theme-btn" id="btnBackNav">✕</button>
+          <button class="btn" style="width:40px; height:40px; padding:0; background:var(--bg-card); color:var(--text-primary);" id="btnBackNav">✕</button>
           <div style="font-weight: 700; font-size: 18px; text-align: center; line-height: 1.2;" id="navDestName">Destination</div>
           <div style="width: 40px;"></div>
         </div>
 
         <div class="compass-container">
-          <!-- Ring SVG -->
           <svg class="progress-ring" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="48" fill="none" stroke="var(--separator)" stroke-width="2"></circle>
             <circle id="ringProg" cx="50" cy="50" r="48" fill="none"
@@ -301,7 +332,6 @@
                     stroke-dasharray="301" stroke-dashoffset="301"
                     style="transition: stroke-dashoffset 0.5s ease;"></circle>
           </svg>
-          
           <div class="compass-bg">
             <svg id="arrow" class="arrow-svg" viewBox="0 0 24 24">
                <path fill="currentColor" d="M12 2L4.5 20.29C4.24 21.06 5.12 21.73 5.8 21.31L12 17.5L18.2 21.31C18.88 21.73 19.76 21.06 19.5 20.29L12 2Z"></path>
@@ -319,29 +349,49 @@
             <div class="metric-val" id="capVal">—</div>
           </div>
         </div>
-
-        <p style="text-align: center; font-size: 13px; color: var(--text-secondary); margin-top: 30px;">
-          🎯 Marche vers la flèche pour gagner des points !
-        </p>
       </div>
 
 
-      <!-- VIEW: ACCOUNT -->
+      <!-- VIEW: ACCOUNT & SETTINGS -->
       <div class="view" id="viewAccount">
         <div class="account-hero">
           <div class="points-badge">🏆 <span id="displayPoints">0</span> Points</div>
-          
           <div style="margin-top: 24px; font-size: 11px; font-weight: 700; opacity: 0.7; letter-spacing: 1px;">CODE SECRET</div>
           <div class="big-code" id="displayCode">...</div>
-          <p style="font-size: 13px; opacity: 0.8;">Gardez ce code précieusement.</p>
         </div>
 
         <div class="label">Paramètres</div>
+        
+        <div class="settings-row">
+          <div style="font-weight:600;">Mode Sombre 🌙</div>
+          <label class="switch">
+            <input type="checkbox" id="toggleTheme">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-row">
+          <div style="font-weight:600;">Vibrations</div>
+          <label class="switch">
+            <input type="checkbox" id="toggleVib" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-row">
+          <div style="font-weight:600;">Garder l'écran allumé</div>
+          <label class="switch">
+            <input type="checkbox" id="toggleWake">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="label">Données</div>
         <div class="placeCard" style="cursor: default;">
            <div class="card-icon" style="color: var(--success); background: rgba(52, 199, 89, 0.1);">☁️</div>
            <div>
-             <div class="placeName">Cloud Sync</div>
-             <div class="placeMeta" style="color: var(--success);">Actif • Sécurisé</div>
+             <div class="placeName">Synchronisation</div>
+             <div class="placeMeta" style="color: var(--success);">Sauvegarde Active</div>
            </div>
         </div>
 
@@ -370,7 +420,7 @@
 
 <script>
 /* =========================================
-   LOGIQUE JS (FONCTIONNELLE)
+   LOGIQUE APPLICATIVE
    ========================================= */
 const SUPABASE_URL = 'https://vjlfbcwnfwyrxstfvefq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGZiY3duZnd5cnhzdGZ2ZWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMDc2MjcsImV4cCI6MjA4NDc4MzYyN30.WTuWbxB-8isJOp2lNnq73njQmifDjxTNEWngMgKtmv4';
@@ -382,82 +432,73 @@ let places = [];
 let userPoints = 0;
 let currentDest = null;
 let lastPos = null;
-let totalDistTraveled = 0;
+let debounceTimer = null;
+let settings = {
+  theme: localStorage.getItem('cc_theme') || 'light',
+  vib: localStorage.getItem('cc_vib') !== 'false', // def true
+  wake: localStorage.getItem('cc_wake') === 'true'
+};
 
-/* COMPTE */
-function generateCode() {
-  let code = ''; for(let i=0; i<16; i++) code += Math.floor(Math.random()*10);
-  return code;
+/* --- INIT & THEME --- */
+function applySettings() {
+  document.body.setAttribute('data-theme', settings.theme);
+  $('toggleTheme').checked = settings.theme === 'dark';
+  $('toggleVib').checked = settings.vib;
+  $('toggleWake').checked = settings.wake;
 }
+applySettings(); // Apply immediately
+
+/* --- COMPTE --- */
+function generateCode() { let c='';for(let i=0;i<16;i++)c+=Math.floor(Math.random()*10); return c; }
 function formatCode(c) { return c ? c.replace(/(\d{4})(?=\d)/g, '$1 ').trim() : ""; }
 
 async function createAccount() {
-  const btn = $('btnCreateAccount');
-  const oldTxt = btn.innerHTML;
-  btn.textContent = "Création..."; btn.disabled = true;
-
+  const btn = $('btnCreateAccount'); const old=btn.innerHTML;
+  btn.textContent = "Patientez..."; btn.disabled = true;
   try {
     const newCode = generateCode();
-    const { data, error } = await supabaseClient.from('users').insert([{ id: newCode, points: 0 }]).select();
+    const { error } = await supabaseClient.from('users').insert([{ id: newCode, points: 0 }]).select();
     if (error) throw error;
-    alert("Compte créé !");
+    alert("Bienvenue !");
     userCode = newCode; userPoints = 0;
     saveLocal(); initApp();
   } catch (err) { alert("Erreur: " + err.message); } 
-  finally { btn.innerHTML = oldTxt; btn.disabled = false; }
+  finally { btn.innerHTML = old; btn.disabled = false; }
 }
 
 async function login(code) {
-  const cleanCode = code.replace(/\s/g, '');
-  if(cleanCode.length !== 16) { $('loginError').textContent = "Le code doit faire 16 chiffres."; return; }
-
-  const btn = $('btnLogin');
-  const oldTxt = btn.textContent;
-  btn.textContent = "..."; btn.disabled = true;
-
+  const clean = code.replace(/\s/g, '');
+  if(clean.length !== 16) { $('loginError').textContent="Code invalide"; return; }
+  const btn = $('btnLogin'); const old=btn.textContent; btn.textContent="..."; btn.disabled=true;
   try {
-    const { data, error } = await supabaseClient.from('users').select('*').eq('id', cleanCode);
+    const { data, error } = await supabaseClient.from('users').select('*').eq('id', clean);
     if (error) throw error;
-    if (data && data.length > 0) {
-      userCode = cleanCode; userPoints = data[0].points;
-      saveLocal(); await loadFavorites(); initApp();
-    } else { $('loginError').textContent = "Compte introuvable."; }
-  } catch (e) { $('loginError').textContent = "Erreur réseau"; } 
-  finally { btn.textContent = oldTxt; btn.disabled = false; }
+    if (data.length) { userCode=clean; userPoints=data[0].points; saveLocal(); await loadFavorites(); initApp(); }
+    else $('loginError').textContent="Inconnu";
+  } catch(e){ $('loginError').textContent="Erreur réseau"; }
+  finally { btn.textContent=old; btn.disabled=false; }
 }
 
-/* DATA */
+/* --- DATA --- */
 async function loadFavorites() {
   if(!userCode) return;
   const { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode);
   if(data) { places = data.map(d => d.place_data); renderPlaces(); }
 }
-
 async function addFavorite(place) {
   places.push(place); renderPlaces();
   if(userCode) await supabaseClient.from('user_favorites').insert([{ user_id: userCode, place_data: place }]);
 }
-
-async function deleteFavorite(index) {
-  const p = places[index];
-  places.splice(index, 1); renderPlaces();
+async function deleteFavorite(i) {
+  const p = places[i]; places.splice(i, 1); renderPlaces();
   if(userCode && p) await supabaseClient.from('user_favorites').delete().match({ user_id: userCode }).filter('place_data->>name', 'eq', p.name);
 }
 
-async function updatePoints(km) {
-  const pts = Math.floor(km * 10);
-  if(pts > 0) {
-    userPoints += pts; $('displayPoints').textContent = userPoints;
-    if(userCode) await supabaseClient.from('users').update({ points: userPoints }).eq('id', userCode);
-  }
-}
-
-/* UI */
+/* --- UI --- */
 function initApp() {
   $('viewLogin').classList.remove('active');
   $('viewDiscover').classList.add('active');
   $('navBar').style.display = 'flex';
-  
   $('displayCode').textContent = formatCode(userCode);
   $('displayPoints').textContent = userPoints;
   renderPlaces();
@@ -466,23 +507,16 @@ function initApp() {
 
 function renderPlaces() {
   const list = $('placesList');
-  if(places.length === 0) {
-    list.innerHTML = `<div style="text-align:center; padding:40px 20px; color:var(--text-secondary)">
-      <div style="font-size:40px; margin-bottom:10px; opacity:0.5;">🏝</div>
-      Aucun favori.<br>Cherche une adresse !
-    </div>`;
-    return;
-  }
+  if(!places.length) { list.innerHTML = `<div style="text-align:center; padding:30px; opacity:0.5;">Vide. Ajoute une adresse !</div>`; return; }
   list.innerHTML = places.map((p, i) => `
     <div class="placeCard" onclick="startNav(${i})">
       <div class="card-icon">📍</div>
       <div style="flex:1">
         <div class="placeName">${escapeHtml(p.name)}</div>
-        <div class="placeMeta">${escapeHtml(p.type || 'Lieu')}</div>
+        <div class="placeMeta">${escapeHtml(p.fullAddress || p.type)}</div>
       </div>
-      <button class="btn" style="padding:0; width:30px; height:30px; background:rgba(0,0,0,0.05); color:var(--text-secondary);" onclick="event.stopPropagation(); deleteFavorite(${i})">✕</button>
-    </div>
-  `).join('');
+      <button class="btn" style="width:30px; height:30px; padding:0; background:transparent; color:#888;" onclick="event.stopPropagation(); deleteFavorite(${i})">✕</button>
+    </div>`).join('');
 }
 
 function show(id) {
@@ -494,71 +528,131 @@ function show(id) {
   if(id==='viewAccount') document.querySelectorAll('.nav-tab')[2].classList.add('active');
 }
 
-/* NAV */
+/* --- SUGGESTIONS (TOULOUSE PRIORITY) --- */
+$('addrInput').addEventListener('input', (e) => {
+  const q = e.target.value.trim();
+  if(debounceTimer) clearTimeout(debounceTimer);
+  if(q.length < 3) { $('suggestions').style.display = 'none'; return; }
+  debounceTimer = setTimeout(() => fetchSuggestions(q), 300);
+});
+
+async function fetchSuggestions(query) {
+  // Priority to Toulouse (43.6045, 1.4442)
+  let url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5&autocomplete=1&lat=43.6045&lon=1.4442`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const box = $('suggestions');
+    box.innerHTML = '';
+    
+    if(!data.features.length) { box.style.display='none'; return; }
+    
+    data.features.forEach(f => {
+      const div = document.createElement('div');
+      div.className = 'suggestion-item';
+      div.innerHTML = `
+        <div class="s-icon">📍</div>
+        <div>
+           <div class="s-main">${f.properties.name}</div>
+           <div class="s-sub">${f.properties.context}</div>
+        </div>
+      `;
+      div.onclick = () => {
+        addFavorite({ 
+            name: f.properties.name, 
+            fullAddress: f.properties.label,
+            lat: f.geometry.coordinates[1], 
+            lon: f.geometry.coordinates[0], 
+            type: 'Adresse' 
+        });
+        $('addrInput').value = '';
+        box.style.display = 'none';
+      };
+      box.appendChild(div);
+    });
+    box.style.display = 'block';
+  } catch(e) {}
+}
+// Hide on outside click
+document.addEventListener('click', e => {
+    if(!e.target.closest('#addrInput') && !e.target.closest('#suggestions')) $('suggestions').style.display='none';
+});
+
+/* --- SETTINGS HANDLERS --- */
+$('toggleTheme').onchange = (e) => {
+  settings.theme = e.target.checked ? 'dark' : 'light';
+  localStorage.setItem('cc_theme', settings.theme);
+  document.body.setAttribute('data-theme', settings.theme);
+};
+$('toggleVib').onchange = (e) => {
+  settings.vib = e.target.checked;
+  localStorage.setItem('cc_vib', settings.vib);
+};
+$('toggleWake').onchange = (e) => {
+  settings.wake = e.target.checked;
+  localStorage.setItem('cc_wake', settings.wake);
+  if(settings.wake && navigator.wakeLock) requestWakeLock();
+};
+
+let wakeLock = null;
+async function requestWakeLock() {
+  try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){}
+}
+
+/* --- NAV --- */
 function checkGPS() {
   if (navigator.permissions) {
-    navigator.permissions.query({name:'geolocation'}).then(result => {
-      if (result.state === 'granted') { $('gpsPermissionBlock').style.display = 'none'; startWatching(); } 
-      else if (result.state === 'prompt') { $('gpsPermissionBlock').style.display = 'block'; }
+    navigator.permissions.query({name:'geolocation'}).then(r => {
+      if (r.state === 'granted') { $('gpsPermissionBlock').style.display='none'; startWatching(); } 
+      else $('gpsPermissionBlock').style.display='block';
     });
-  } else { $('gpsPermissionBlock').style.display = 'block'; }
+  } else $('gpsPermissionBlock').style.display='block';
 }
-
 function requestGPS() {
-  navigator.geolocation.getCurrentPosition(
-    (pos) => { $('gpsPermissionBlock').style.display = 'none'; startWatching(); },
-    (err) => { alert("Localisation refusée."); }, { enableHighAccuracy: true }
-  );
+  navigator.geolocation.getCurrentPosition(()=>{ $('gpsPermissionBlock').style.display='none'; startWatching(); },
+  ()=>{ alert("GPS requis"); }, { enableHighAccuracy: true });
 }
-
 function startWatching() {
-  if(navigator.geolocation) navigator.geolocation.watchPosition(updatePos, console.error, {enableHighAccuracy:true});
+  navigator.geolocation.watchPosition(updatePos, console.error, {enableHighAccuracy:true});
 }
-
 function startNav(i) {
   currentDest = places[i]; $('navDestName').textContent = currentDest.name; show('viewNav');
+  if(settings.vib && navigator.vibrate) navigator.vibrate(50);
 }
-
 function updatePos(pos) {
-  const lat = pos.coords.latitude;
-  const lon = pos.coords.longitude;
-  
+  const lat = pos.coords.latitude; const lon = pos.coords.longitude;
   if(lastPos) {
     totalDistTraveled += getDist(lastPos.lat, lastPos.lon, lat, lon);
-    if(totalDistTraveled >= 1) { updatePoints(1); totalDistTraveled -= 1; }
+    if(totalDistTraveled >= 1) { 
+        userPoints += 10; $('displayPoints').textContent = userPoints;
+        supabaseClient.from('users').update({points: userPoints}).eq('id', userCode).then(()=>{});
+        totalDistTraveled -= 1; 
+    }
   }
   lastPos = {lat, lon};
-
   if(!currentDest) return;
-  const d = getDist(lat, lon, currentDest.lat, currentDest.lon);
-  $('distVal').textContent = d < 1 ? Math.round(d*1000)+' m' : d.toFixed(1)+' km';
   
+  const d = getDist(lat, lon, currentDest.lat, currentDest.lon);
+  $('distVal').textContent = d<1 ? Math.round(d*1000)+'m' : d.toFixed(1)+'km';
   const b = getBearing(lat, lon, currentDest.lat, currentDest.lon);
   const h = pos.coords.heading || 0;
-  
   $('arrow').style.transform = `rotate(${b - h}deg)`;
-  $('capVal').textContent = Math.round(b) + "°";
+  $('capVal').textContent = Math.round(b)+"°";
+  $('ringProg').style.strokeDashoffset = 301 * Math.min(Math.max(d/10, 0), 1);
   
-  const maxDist = 10; 
-  const progress = Math.min(Math.max(d / maxDist, 0), 1);
-  $('ringProg').style.strokeDashoffset = 301 * progress; // 301 = perimeter approx
+  if(d < 0.02 && settings.vib && navigator.vibrate) navigator.vibrate([100, 50, 100]); // Arrived
 }
 
 /* UTILS */
 function getDist(lat1, lon1, lat2, lon2) {
-  const R = 6371; 
-  const dLat = (lat2-lat1)*Math.PI/180;
-  const dLon = (lon2-lon1)*Math.PI/180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const R=6371; const dLat=(lat2-lat1)*Math.PI/180; const dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 function getBearing(lat1, lon1, lat2, lon2) {
-  const dL = (lon2-lon1)*Math.PI/180;
-  const l1 = lat1*Math.PI/180;
-  const l2 = lat2*Math.PI/180;
-  const y = Math.sin(dL)*Math.cos(l2);
-  const x = Math.cos(l1)*Math.sin(l2) - Math.sin(l1)*Math.cos(l2)*Math.cos(dL);
-  return (Math.atan2(y, x)*180/Math.PI + 360) % 360;
+  const dL=(lon2-lon1)*Math.PI/180; const l1=lat1*Math.PI/180; const l2=lat2*Math.PI/180;
+  const y=Math.sin(dL)*Math.cos(l2); const x=Math.cos(l1)*Math.sin(l2)-Math.sin(l1)*Math.cos(l2)*Math.cos(dL);
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
 }
 function escapeHtml(t) { return t ? t.replace(/&/g, "&amp;").replace(/</g, "&lt;") : ""; }
 function saveLocal() { localStorage.setItem('cc_user_code', userCode); }
@@ -569,36 +663,11 @@ $('btnLogin').onclick = () => login($('inputLoginCode').value);
 $('btnBackNav').onclick = () => show('viewDiscover');
 $('btnLogout').onclick = () => { localStorage.removeItem('cc_user_code'); location.reload(); };
 $('btnGrantGPS').onclick = requestGPS;
-
 $('inputLoginCode').addEventListener('input', e => {
   let v = e.target.value.replace(/\D/g,'').slice(0,16);
   e.target.value = v.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
 });
 
-// Search
-async function doSearch() {
-  const q = $('addrInput').value;
-  if(!q) return;
-  try {
-    const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=1`);
-    const data = await res.json();
-    if(data.features?.length) {
-      const f = data.features[0];
-      addFavorite({ name: f.properties.label, lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], type: 'Adresse' });
-      $('addrInput').value = '';
-    } else { alert("Aucune adresse trouvée."); }
-  } catch(e) { alert("Erreur recherche"); }
-}
-$('btnSearch').onclick = doSearch;
-$('addrInput').onkeydown = e => { if(e.key === 'Enter') doSearch(); };
-
-// Theme
-$('themeBtn').onclick = () => {
-  const b = document.body;
-  b.setAttribute('data-theme', b.getAttribute('data-theme')==='dark'?'light':'dark');
-};
-
-// Start
 if(userCode) login(userCode);
 </script>
 </body>
