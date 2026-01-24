@@ -30,7 +30,9 @@
     @keyframes fadeIn{ from{opacity:0;transform:translateY(5px);} to{opacity:1;transform:translateY(0);} }
     
     input, textarea{ width:100%; padding:14px; background:var(--bg-surface); border:none; border-radius:12px; color:var(--text-primary); font-size:16px; margin-bottom:10px; outline:none; }
-    button{ width:100%; padding:14px; background:var(--bg-surface); color:var(--accent); border:none; border-radius:12px; font-weight:700; font-size:16px; margin-bottom:10px; cursor:pointer; }
+    button{ width:100%; padding:14px; background:var(--bg-surface); color:var(--accent); border:none; border-radius:12px; font-weight:700; font-size:16px; margin-bottom:10px; cursor:pointer; transition:opacity 0.2s; }
+    button:active{ opacity:0.7; }
+    button:disabled{ opacity:0.5; cursor:not-allowed; }
     button.primary{ background:var(--accent); color:#fff; }
     button.danger{ color:var(--danger); }
     
@@ -68,7 +70,7 @@
 <div class="app">
   <div class="topbar">
     <div class="title">City Compass</div>
-    <div style="font-size:20px;" id="themeBtn">◑</div>
+    <div style="font-size:20px; cursor:pointer;" id="themeBtn">◑</div>
   </div>
 
   <!-- LOGIN VIEW -->
@@ -184,55 +186,95 @@ let lastPos = null;
 // DOM Elements
 const $ = id => document.getElementById(id);
 
-// 3. AUTHENTIFICATION SYSTEM (16 DIGITS)
+// 3. AUTHENTIFICATION SYSTEM
 function generateCode() {
   let code = '';
+  // Génère exactement 16 chiffres
   for(let i=0; i<16; i++) code += Math.floor(Math.random()*10);
-  return code; // Format brut pour la DB
+  return code;
 }
 
 function formatCode(c) {
+  if(!c) return "";
   return c.replace(/(\d{4})(?=\d)/g, '$1 '); // Ajoute espace tous les 4 chiffres
 }
 
 async function login(code) {
-  code = code.replace(/\s/g, ''); // Enlever espaces
-  if(code.length !== 16) return { error: "Le code doit faire 16 chiffres." };
+  const cleanCode = code.replace(/\s/g, ''); // Enlever espaces
+  if(cleanCode.length !== 16) return { error: "Le code doit faire exactement 16 chiffres." };
 
-  // Vérifier si user existe sur Supabase
-  const { data, error } = await supabase.from('users').select('*').eq('id', code).single();
-  
-  if(data) {
-    // Compte existant
-    userCode = code;
-    userPoints = data.points;
-    saveLocal();
-    await loadFavorites();
-    initApp();
-    return { success: true };
-  } else {
-    // Si pas trouvé mais qu'on essaie de se loguer...
-    // Pour simplifier : on crée le compte si l'ID est valide format
-    // Ou on renvoie erreur. Ici on va dire erreur pour sécurité.
-    return { error: "Compte introuvable. Vérifie le code." };
+  const btn = $('btnLogin');
+  const originalText = btn.textContent;
+  btn.textContent = "Chargement...";
+  btn.disabled = true;
+
+  try {
+    // Vérifier si user existe sur Supabase
+    const { data, error } = await supabase.from('users').select('*').eq('id', cleanCode).maybeSingle();
+    
+    if(error) throw error;
+
+    if(data) {
+      // Compte existant
+      userCode = cleanCode;
+      userPoints = data.points;
+      saveLocal();
+      await loadFavorites();
+      initApp();
+      return { success: true };
+    } else {
+      return { error: "Compte introuvable. Vérifie le code." };
+    }
+  } catch(e) {
+    console.error(e);
+    return { error: "Erreur de connexion." };
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
   }
 }
 
 async function createAccount() {
-  const newCode = generateCode();
-  
-  // Création sur Supabase
-  const { error } = await supabase.from('users').insert([{ id: newCode, points: 0 }]);
-  
-  if(error) {
-    alert("Erreur création: " + error.message);
-    return;
-  }
+  const btn = $('btnCreateAccount');
+  const originalText = btn.textContent;
+  btn.textContent = "Création...";
+  btn.disabled = true;
 
-  userCode = newCode;
-  userPoints = 0;
-  saveLocal();
-  initApp();
+  try {
+    const newCode = generateCode();
+    console.log("Tentative création pour:", newCode);
+
+    // Insertion explicite
+    const { data, error } = await supabase
+      .from('users')
+      .insert([{ id: newCode, points: 0 }])
+      .select()
+      .single();
+      
+    if(error) {
+      console.error("Supabase Error:", error);
+      // Si clé dupliquée (très rare), on réessaie
+      if(error.code === '23505') {
+        createAccount(); 
+        return;
+      }
+      alert("Erreur: " + error.message + "\n(Vérifiez que les Policies RLS permettent l'insertion anon)");
+      return;
+    }
+
+    // Succès
+    userCode = newCode;
+    userPoints = 0;
+    saveLocal();
+    initApp();
+
+  } catch (err) {
+    console.error(err);
+    alert("Erreur réseau ou inconnue.");
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
 }
 
 // 4. SYNC DATA
@@ -248,28 +290,37 @@ async function loadFavorites() {
 async function addFavorite(place) {
   places.push(place);
   renderPlaces();
-  // Sync DB
-  await supabase.from('user_favorites').insert([{ user_id: userCode, place_data: place }]);
+  if(userCode) {
+    await supabase.from('user_favorites').insert([{ user_id: userCode, place_data: place }]);
+  }
 }
 
 async function deleteFavorite(index) {
-  const place = places[index];
+  const placeToDelete = places[index];
   places.splice(index, 1);
   renderPlaces();
-  // Pour faire simple, on supprime par user_id et nom du lieu (pas parfait mais simple)
-  // Idéalement faudrait un ID unique par lieu
-  // Ici on laisse la synchro simple: au prochain reload ça rechargera tout.
-  // Vrai suppression DB : faudrait stocker l'ID de la ligne supabase.
+  
+  if(userCode && placeToDelete) {
+    // Suppression approximative par nom (idéalement utiliser un ID unique par favori)
+    // Pour l'instant on supprime une entrée correspondant au nom
+    // Note: Ceci est une simplification.
+    // Une vraie implémentation stockerait l'ID Supabase de chaque favori dans `places`
+    const { error } = await supabase
+      .from('user_favorites')
+      .delete()
+      .eq('user_id', userCode)
+      .eq('place_data->>name', placeToDelete.name); // Filtre JSONB
+  }
 }
 
 async function updatePoints(kmToAdd) {
-  const pts = Math.floor(kmToAdd * 10); // 10 pts par KM
+  const pts = Math.floor(kmToAdd * 10);
   if(pts > 0) {
     userPoints += pts;
     $('displayPoints').textContent = userPoints;
-    // Update DB
-    await supabase.from('users').update({ points: userPoints }).eq('id', userCode);
-    alert(`🎉 Tu as gagné ${pts} points !`);
+    if(userCode) {
+      await supabase.from('users').update({ points: userPoints }).eq('id', userCode);
+    }
   }
 }
 
@@ -286,11 +337,17 @@ function initApp() {
 }
 
 function renderPlaces() {
-  $('placesList').innerHTML = places.map((p, i) => `
+  const list = $('placesList');
+  if(places.length === 0) {
+    list.innerHTML = `<div style="text-align:center; color:var(--text-sec); margin-top:20px;">Aucun favori pour l'instant.</div>`;
+    return;
+  }
+  
+  list.innerHTML = places.map((p, i) => `
     <div class="row">
       <div class="info" onclick="startNav(${i})">
-        <div style="font-weight:bold;">${p.name}</div>
-        <div class="meta">📍 ${p.type || 'Lieu'}</div>
+        <div style="font-weight:bold;">${escapeHtml(p.name)}</div>
+        <div class="meta">📍 ${escapeHtml(p.type || 'Lieu')}</div>
       </div>
       <button class="danger" style="width:40px; margin:0;" onclick="deleteFavorite(${i})">×</button>
     </div>
@@ -308,6 +365,13 @@ function startNav(index) {
   }
 }
 
+function stopNav() {
+  show('viewDiscover');
+  currentDest = null;
+  // On ne coupe pas le watchPosition ici pour simplifier, 
+  // mais en prod il faudrait le clearWatch(id)
+}
+
 function updatePos(pos) {
   if(!currentDest) return;
   
@@ -323,24 +387,25 @@ function updatePos(pos) {
   // Calcul Cap
   const bearing = getBearing(lat, lon, destLat, destLon);
   const heading = pos.coords.heading || 0;
+  // Rotation relative (Cap à suivre - Cap actuel)
   const arrowRot = bearing - heading;
   
   $('arrow').style.transform = `rotate(${arrowRot}deg)`;
-  $('capVal').style.transform = `${Math.round(bearing)}°`;
+  $('capVal').textContent = `${Math.round(bearing)}°`;
 
   // Gestion des points (simulation simple)
   if(lastPos) {
     const step = getDist(lastPos.lat, lastPos.lon, lat, lon);
     totalDistTraveled += step;
-    if(totalDistTraveled >= 1) { // Chaque km
-      updatePoints(1);
-      totalDistTraveled = 0;
+    if(totalDistTraveled >= 1) { // Chaque km complet
+      updatePoints(1); // +10 points
+      totalDistTraveled -= 1;
     }
   }
   lastPos = { lat, lon };
 }
 
-// Utils Maths
+// Utils
 function getDist(lat1, lon1, lat2, lon2) {
   const R = 6371; // Rayon Terre km
   const dLat = (lat2-lat1) * Math.PI/180;
@@ -353,9 +418,19 @@ function getDist(lat1, lon1, lat2, lon2) {
 }
 
 function getBearing(lat1, lon1, lat2, lon2) {
-  const y = Math.sin(lon2-lon1) * Math.cos(lat2);
-  const x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(lon2-lon1);
+  const dLon = (lon2-lon1) * Math.PI/180;
+  const lat1Rad = lat1 * Math.PI/180;
+  const lat2Rad = lat2 * Math.PI/180;
+  
+  const y = Math.sin(dLon) * Math.cos(lat2Rad);
+  const x = Math.cos(lat1Rad)*Math.sin(lat2Rad) - Math.sin(lat1Rad)*Math.cos(lat2Rad)*Math.cos(dLon);
+  
   return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360; 
+}
+
+function escapeHtml(text) {
+  if (!text) return text;
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
 // 7. EVENT LISTENERS
@@ -365,6 +440,7 @@ $('btnLogin').onclick = async () => {
   const res = await login(code);
   if(res.error) $('loginError').textContent = res.error;
 };
+$('btnStopNav').onclick = stopNav;
 
 $('inputLoginCode').addEventListener('input', (e) => {
   // Auto-format avec espaces
@@ -381,22 +457,29 @@ $('btnLogout').onclick = () => {
 $('addrInput').onkeydown = async (e) => {
   if(e.key === 'Enter') {
     const q = e.target.value;
-    const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const suggestions = data.features;
+    if(!q) return;
     
-    // Auto add first result (pour simplifier démo)
-    if(suggestions.length > 0) {
-      const s = suggestions[0];
-      const p = { 
-        name: s.properties.label, 
-        lat: s.geometry.coordinates[1], 
-        lon: s.geometry.coordinates[0],
-        type: 'Adresse'
-      };
-      addFavorite(p);
-      e.target.value = '';
+    // API Adresse (France)
+    const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=1`;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      
+      if(data.features && data.features.length > 0) {
+        const s = data.features[0];
+        const p = { 
+          name: s.properties.label, 
+          lat: s.geometry.coordinates[1], 
+          lon: s.geometry.coordinates[0],
+          type: 'Adresse'
+        };
+        addFavorite(p);
+        e.target.value = '';
+      } else {
+        alert("Adresse introuvable.");
+      }
+    } catch(err) {
+      alert("Erreur de recherche.");
     }
   }
 };
@@ -405,6 +488,10 @@ function show(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   $(id).classList.add('active');
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  // Update Tab Active State
+  if(id === 'viewDiscover') document.querySelectorAll('.tab')[0].classList.add('active');
+  if(id === 'viewNav') document.querySelectorAll('.tab')[1].classList.add('active');
+  if(id === 'viewAccount') document.querySelectorAll('.tab')[2].classList.add('active');
 }
 
 function saveLocal() {
@@ -413,7 +500,10 @@ function saveLocal() {
 
 // Auto-Login Check
 if(userCode) {
-  login(userCode);
+  login(userCode); // Essaie de rafraichir les points
+  // On charge l'interface immédiatement pour éviter le flash
+  initApp();
+  loadFavorites();
 }
 
 // Thème
