@@ -3,205 +3,603 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#000000" />
   <title>City Compass</title>
-  
+
+  <!-- SUPABASE JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
+    /* =========================
+       1. VARIABLES & THEME SYSTEM
+       ========================== */
     :root {
-      --bg-body: #F2F2F7; --bg-card: #FFFFFF; --text-main: #000; --accent: #007AFF;
+      /* Palette IOS System */
+      --bg-body: #F2F2F7;
+      --bg-card: #FFFFFF;
+      --bg-input: #E5E5EA;
+      --text-primary: #000000;
+      --text-secondary: #8E8E93;
+      --separator: rgba(60, 60, 67, 0.12);
+      
+      /* Brand */
+      --accent: #007AFF;
+      --accent-gradient: linear-gradient(135deg, #007AFF, #00C7BE);
+      --danger: #FF3B30;
+      --success: #34C759;
+      
+      /* UI Specs */
+      --radius-l: 20px;
+      --radius-m: 14px;
+      --shadow: 0 4px 20px rgba(0,0,0,0.06);
+      --nav-height: 80px;
+      --safe-top: env(safe-area-inset-top);
+      --safe-bottom: env(safe-area-inset-bottom);
     }
+
     [data-theme="dark"] {
-      --bg-body: #000000; --bg-card: #1C1C1E; --text-main: #FFF; --accent: #0A84FF;
+      --bg-body: #000000;
+      --bg-card: #1C1C1E;
+      --bg-input: #2C2C2E;
+      --text-primary: #FFFFFF;
+      --text-secondary: #98989D;
+      --separator: rgba(84, 84, 88, 0.4);
+      --accent: #0A84FF;
+      --shadow: 0 4px 20px rgba(0,0,0,0.4);
     }
+
+    /* RESET & BASE */
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
     
     body {
-      margin: 0; padding: 0; font-family: -apple-system, sans-serif;
-      background: var(--bg-body); color: var(--text-main);
-      height: 100dvh; overflow: hidden;
-      transition: background 0.3s;
+      margin: 0; padding: 0; height: 100dvh; overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-body); color: var(--text-primary);
+      transition: background-color 0.3s ease, color 0.3s ease;
+      font-size: 17px; letter-spacing: -0.01em;
     }
 
-    .app { display: flex; flex-direction: column; height: 100%; }
-    .main { flex: 1; overflow-y: auto; padding: 20px; }
+    .app { display: flex; flex-direction: column; height: 100%; position: relative; }
+
+    /* =========================
+       2. COMPONENTS
+       ========================== */
     
-    /* Login Screen */
-    .screen { display: none; animation: fadeIn 0.3s; }
-    .screen.active { display: block; }
-    @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+    /* Top Bar */
+    .topbar {
+      flex: 0 0 auto;
+      padding: max(12px, var(--safe-top)) 24px 12px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: transparent; z-index: 10;
+    }
+    .brand h1 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+    .brand p { margin: 0; font-size: 13px; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    .card {
-      background: var(--bg-card); padding: 20px; border-radius: 20px;
-      margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      text-align: center;
+    .theme-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--bg-card); border: none;
+      color: var(--text-primary); font-size: 18px;
+      box-shadow: var(--shadow); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s;
+    }
+    .theme-btn:active { transform: scale(0.9); }
+
+    /* Main Area */
+    .main {
+      flex: 1; overflow-y: auto; overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 10px 20px 120px 20px; /* Padding bottom pour la nav */
+    }
+    .view { display: none; opacity: 0; transform: translateY(10px); transition: opacity 0.3s ease, transform 0.3s ease; }
+    .view.active { display: block; opacity: 1; transform: translateY(0); }
+
+    /* Inputs & Buttons */
+    .label {
+      font-size: 13px; text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--text-secondary); font-weight: 600; margin: 24px 0 8px 4px;
     }
 
-    button {
-      width: 100%; padding: 16px; border-radius: 14px; border: none;
-      font-size: 17px; font-weight: 700; background: var(--accent); color: white;
-      margin-bottom: 12px; cursor: pointer;
+    .input-group {
+      position: relative; display: flex; align-items: center;
+      background: var(--bg-card); border-radius: var(--radius-l);
+      padding: 4px; box-shadow: var(--shadow);
     }
-    button:disabled { opacity: 0.6; }
     input {
-      width: 100%; padding: 16px; border-radius: 14px; border: 1px solid #ddd;
-      background: var(--bg-card); color: var(--text-main); font-size: 18px;
-      margin-bottom: 12px; text-align: center; font-family: monospace;
+      width: 100%; padding: 14px 16px; border: none; background: transparent;
+      color: var(--text-primary); font-size: 17px; border-radius: var(--radius-l);
+      font-family: inherit;
+    }
+    input::placeholder { color: var(--text-secondary); opacity: 0.7; }
+
+    .btn {
+      width: 100%; padding: 16px; border-radius: var(--radius-l); border: none;
+      font-weight: 700; font-size: 17px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    .btn:active { transform: scale(0.97); opacity: 0.9; }
+    
+    .btn-primary { background: var(--accent); color: #FFF; box-shadow: 0 4px 15px rgba(10, 132, 255, 0.3); }
+    .btn-danger { background: rgba(255, 59, 48, 0.1); color: var(--danger); }
+    .btn-icon { width: 44px; height: 44px; padding: 0; background: transparent; color: var(--accent); font-size: 20px; }
+
+    /* Cards */
+    .placeCard {
+      background: var(--bg-card); padding: 16px; border-radius: var(--radius-l);
+      display: flex; align-items: center; gap: 16px; margin-bottom: 12px;
+      box-shadow: var(--shadow); transition: background 0.2s;
+      border: 1px solid transparent;
+    }
+    [data-theme="dark"] .placeCard { border-color: var(--separator); }
+    .placeCard:active { background: var(--bg-input); }
+    
+    .card-icon {
+      width: 46px; height: 46px; border-radius: 14px;
+      background: var(--bg-body); display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .placeName { font-weight: 600; font-size: 17px; line-height: 1.2; }
+    .placeMeta { color: var(--text-secondary); font-size: 14px; margin-top: 3px; }
+
+    /* Account Hero */
+    .account-hero {
+      background: var(--accent-gradient);
+      padding: 30px 20px; border-radius: 24px; color: white;
+      text-align: center; margin-bottom: 30px;
+      box-shadow: 0 10px 30px -5px rgba(10, 132, 255, 0.5);
+    }
+    .big-code {
+      font-family: "SF Mono", "Menlo", monospace; font-size: 22px;
+      background: rgba(0,0,0,0.2); padding: 12px; border-radius: 12px;
+      margin: 16px 0; letter-spacing: 2px;
+    }
+    .points-badge {
+      background: rgba(255,255,255,0.25); backdrop-filter: blur(10px);
+      padding: 6px 16px; border-radius: 100px; font-weight: 600;
+      font-size: 14px; display: inline-flex; align-items: center; gap: 6px;
     }
 
-    .error-msg { color: #FF3B30; font-size: 13px; margin-top: 10px; min-height: 20px; }
+    /* Compass */
+    .compass-container {
+      position: relative; width: 260px; height: 260px; margin: 40px auto;
+    }
+    .compass-bg {
+      width: 100%; height: 100%; border-radius: 50%;
+      background: var(--bg-card); border: 1px solid var(--separator);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.05);
+    }
+    .arrow-svg {
+      width: 60%; height: 60%;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+      transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    .progress-ring {
+      position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px;
+      transform: rotate(-90deg); pointer-events: none;
+    }
+
+    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px; }
+    .metric-box {
+      background: var(--bg-card); padding: 15px; border-radius: var(--radius-m);
+      text-align: center; box-shadow: var(--shadow);
+    }
+    .metric-val { font-size: 22px; font-weight: 800; color: var(--accent); }
+    .metric-lbl { font-size: 11px; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; margin-bottom: 4px; }
+
+    /* Bottom Nav (Glassmorphism) */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: var(--nav-height);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--separator);
+      display: flex; justify-content: space-around;
+      padding-bottom: 20px; z-index: 100;
+    }
+    [data-theme="dark"] .bottom-nav { background: rgba(28, 28, 30, 0.85); }
+
+    .nav-tab {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: none; border: none; color: var(--text-secondary);
+      font-size: 10px; font-weight: 600; cursor: pointer;
+      transition: color 0.2s;
+    }
+    .nav-tab.active { color: var(--accent); }
+    .nav-icon { font-size: 24px; margin-bottom: 4px; transition: transform 0.2s; }
+    .nav-tab.active .nav-icon { transform: translateY(-2px); }
+
+    /* Login Specifics */
+    .input-code { font-family: monospace; letter-spacing: 3px; text-align: center; font-size: 20px; }
   </style>
 </head>
-<body data-theme="dark">
 
-<div class="app">
-  <!-- ECRAN 1 : LOGIN -->
-  <div id="viewLogin" class="screen active">
-    <div style="height: 60px;"></div>
-    <h1 style="text-align:center;">City Compass</h1>
+<body>
+  <div class="app">
     
+    <!-- Top Bar -->
+    <div class="topbar">
+      <div class="brand">
+        <h1>City Compass</h1>
+        <p>Navigation Intelligente</p>
+      </div>
+      <button class="theme-btn" id="themeBtn">◑</button>
+    </div>
+
+    <!-- MAIN CONTAINER -->
     <div class="main">
-      <div class="card">
-        <h3>Nouveau Compte</h3>
-        <p style="opacity:0.7; font-size:14px;">Crée un accès anonyme unique.</p>
-        <button id="btnCreate" onclick="createAccount()">Créer un compte</button>
+      
+      <!-- VIEW: LOGIN -->
+      <div class="view active" id="viewLogin">
+        <div style="height: 40px;"></div>
+        <h2 style="text-align: center; font-size: 28px; margin-bottom: 10px;">Explorer</h2>
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 40px; padding: 0 20px;">
+          Gagne des points en découvrant<br>les lieux cachés de ta ville.
+        </p>
+        
+        <div class="account-hero" style="margin-bottom: 40px; box-shadow: 0 15px 40px -10px rgba(0,122,255,0.4);">
+          <div style="font-size: 18px; font-weight: 700;">Nouveau ici ?</div>
+          <p style="opacity: 0.9; font-size: 14px; margin: 8px 0 20px 0;">Crée un accès anonyme en 1 clic.</p>
+          <button class="btn" id="btnCreateAccount" style="background: white; color: var(--accent); margin-top: 10px;">
+            ✨ Créer un compte
+          </button>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:10px; margin: 30px 0;">
+          <div style="flex:1; height:1px; background:var(--separator);"></div>
+          <span style="font-size:12px; font-weight:700; color:var(--text-secondary);">OU CODE EXISTANT</span>
+          <div style="flex:1; height:1px; background:var(--separator);"></div>
+        </div>
+        
+        <div class="input-group">
+          <input id="inputLoginCode" class="input-code" placeholder="0000 0000 0000 0000" maxlength="19" inputmode="numeric" />
+        </div>
+        <button class="btn btn-primary" id="btnLogin" style="margin-top: 16px;">Connexion</button>
+        <p id="loginError" style="color: var(--danger); font-size: 13px; text-align: center; margin-top: 16px; min-height: 20px;"></p>
       </div>
 
-      <div class="card">
-        <h3>J'ai déjà un code</h3>
-        <input id="inputCode" placeholder="0000 0000 0000 0000" maxlength="19" />
-        <button id="btnLogin" onclick="login()">Connexion</button>
-        <div id="logError" class="error-msg"></div>
-      </div>
-    </div>
-  </div>
 
-  <!-- ECRAN 2 : APP (Contenu temporaire pour tester l'accès) -->
-  <div id="viewApp" class="screen">
-    <div class="main" style="text-align: center;">
-      <h2 style="margin-top: 50px;">🎉 Connecté !</h2>
-      <p>Bienvenue dans l'application.</p>
-      <div class="card">
-        <div>TON CODE SECRET</div>
-        <div id="displayCode" style="font-family:monospace; font-size:24px; margin:10px 0;">...</div>
+      <!-- VIEW: DISCOVER -->
+      <div class="view" id="viewDiscover">
+        
+        <!-- GPS Permission -->
+        <div id="gpsPermissionBlock" style="background: var(--bg-card); padding: 20px; border-radius: var(--radius-l); margin-bottom: 24px; display:none; border: 1px solid var(--accent);">
+           <div style="font-weight:700; margin-bottom:5px; font-size: 16px;">⚠️ GPS requis</div>
+           <p style="font-size:14px; color:var(--text-secondary); margin:0 0 15px 0;">Nécessaire pour le guidage et les points.</p>
+           <button class="btn btn-primary" id="btnGrantGPS" style="padding: 10px;">Activer la localisation</button>
+        </div>
+
+        <div class="label">Où veux-tu aller ?</div>
+        <div class="input-group">
+          <div style="padding-left: 16px; font-size: 18px;">🔍</div>
+          <input id="addrInput" placeholder="Rechercher une adresse..." />
+          <button class="btn btn-icon" id="btnSearch">➜</button>
+        </div>
+
+        <div class="label">Mes Favoris</div>
+        <div id="placesList"></div>
       </div>
-      <button onclick="logout()" style="background: #FF3B30; margin-top: 20px;">Déconnexion</button>
+
+
+      <!-- VIEW: NAV (Compass) -->
+      <div class="view" id="viewNav">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+          <button class="theme-btn" id="btnBackNav">✕</button>
+          <div style="font-weight: 700; font-size: 18px; text-align: center; line-height: 1.2;" id="navDestName">Destination</div>
+          <div style="width: 40px;"></div>
+        </div>
+
+        <div class="compass-container">
+          <!-- Ring SVG -->
+          <svg class="progress-ring" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="48" fill="none" stroke="var(--separator)" stroke-width="2"></circle>
+            <circle id="ringProg" cx="50" cy="50" r="48" fill="none"
+                    stroke="var(--accent)" stroke-width="4" stroke-linecap="round" 
+                    stroke-dasharray="301" stroke-dashoffset="301"
+                    style="transition: stroke-dashoffset 0.5s ease;"></circle>
+          </svg>
+          
+          <div class="compass-bg">
+            <svg id="arrow" class="arrow-svg" viewBox="0 0 24 24">
+               <path fill="currentColor" d="M12 2L4.5 20.29C4.24 21.06 5.12 21.73 5.8 21.31L12 17.5L18.2 21.31C18.88 21.73 19.76 21.06 19.5 20.29L12 2Z"></path>
+            </svg>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-box">
+            <div class="metric-lbl">Distance</div>
+            <div class="metric-val" id="distVal">—</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-lbl">Cap</div>
+            <div class="metric-val" id="capVal">—</div>
+          </div>
+        </div>
+
+        <p style="text-align: center; font-size: 13px; color: var(--text-secondary); margin-top: 30px;">
+          🎯 Marche vers la flèche pour gagner des points !
+        </p>
+      </div>
+
+
+      <!-- VIEW: ACCOUNT -->
+      <div class="view" id="viewAccount">
+        <div class="account-hero">
+          <div class="points-badge">🏆 <span id="displayPoints">0</span> Points</div>
+          
+          <div style="margin-top: 24px; font-size: 11px; font-weight: 700; opacity: 0.7; letter-spacing: 1px;">CODE SECRET</div>
+          <div class="big-code" id="displayCode">...</div>
+          <p style="font-size: 13px; opacity: 0.8;">Gardez ce code précieusement.</p>
+        </div>
+
+        <div class="label">Paramètres</div>
+        <div class="placeCard" style="cursor: default;">
+           <div class="card-icon" style="color: var(--success); background: rgba(52, 199, 89, 0.1);">☁️</div>
+           <div>
+             <div class="placeName">Cloud Sync</div>
+             <div class="placeMeta" style="color: var(--success);">Actif • Sécurisé</div>
+           </div>
+        </div>
+
+        <button class="btn btn-danger" id="btnLogout" style="margin-top: 40px;">Déconnexion</button>
+      </div>
+
+    </div> <!-- End Main -->
+
+    <!-- Bottom Nav -->
+    <div class="bottom-nav" id="navBar" style="display:none;">
+      <button class="nav-tab active" onclick="show('viewDiscover')">
+        <div class="nav-icon">🗺️</div>
+        <span>Carte</span>
+      </button>
+      <button class="nav-tab" onclick="show('viewNav')">
+        <div class="nav-icon">🧭</div>
+        <span>Boussole</span>
+      </button>
+      <button class="nav-tab" onclick="show('viewAccount')">
+        <div class="nav-icon">👤</div>
+        <span>Profil</span>
+      </button>
     </div>
+
   </div>
-</div>
 
 <script>
-// CONFIGURATION SUPABASE
+/* =========================================
+   LOGIQUE JS (FONCTIONNELLE)
+   ========================================= */
 const SUPABASE_URL = 'https://vjlfbcwnfwyrxstfvefq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGZiY3duZnd5cnhzdGZ2ZWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMDc2MjcsImV4cCI6MjA4NDc4MzYyN30.WTuWbxB-8isJOp2lNnq73njQmifDjxTNEWngMgKtmv4';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// LOGIQUE
 const $ = id => document.getElementById(id);
 let userCode = localStorage.getItem('cc_user_code');
+let places = [];
+let userPoints = 0;
+let currentDest = null;
+let lastPos = null;
+let totalDistTraveled = 0;
 
+/* COMPTE */
 function generateCode() {
-  let c = ''; for(let i=0;i<16;i++) c+=Math.floor(Math.random()*10);
-  return c;
+  let code = ''; for(let i=0; i<16; i++) code += Math.floor(Math.random()*10);
+  return code;
 }
+function formatCode(c) { return c ? c.replace(/(\d{4})(?=\d)/g, '$1 ').trim() : ""; }
 
-// 1. CREATION DE COMPTE
 async function createAccount() {
-  const btn = $('btnCreate');
-  btn.textContent = "Création...";
-  btn.disabled = true;
-  $('logError').textContent = "";
+  const btn = $('btnCreateAccount');
+  const oldTxt = btn.innerHTML;
+  btn.textContent = "Création..."; btn.disabled = true;
 
   try {
     const newCode = generateCode();
-    console.log("Tentative création:", newCode);
-
-    // On utilise upsert pour éviter les erreurs si l'ID existe déjà (très rare)
-    const { data, error } = await supabase
-      .from('users')
-      .upsert([{ id: newCode, points: 0 }])
-      .select();
-
-    if (error) {
-      console.error(error);
-      throw new Error(error.message); // Affiche l'erreur réelle
-    }
-
-    // Succès
-    userCode = newCode;
-    localStorage.setItem('cc_user_code', userCode);
-    showApp();
-    alert("Compte créé ! Note ton code : " + newCode);
-
-  } catch (e) {
-    $('logError').textContent = "Erreur: " + e.message;
-    // Si permission denied, c'est que le SQL n'a pas été fait.
-    if(e.message.includes('permission denied')) {
-        alert("ERREUR CRITIQUE : La base de données bloque l'accès.\n\nIl faut exécuter le SQL 'GRANT ALL' dans Supabase.");
-    }
-  } finally {
-    btn.textContent = "Créer un compte";
-    btn.disabled = false;
-  }
+    const { data, error } = await supabaseClient.from('users').insert([{ id: newCode, points: 0 }]).select();
+    if (error) throw error;
+    alert("Compte créé !");
+    userCode = newCode; userPoints = 0;
+    saveLocal(); initApp();
+  } catch (err) { alert("Erreur: " + err.message); } 
+  finally { btn.innerHTML = oldTxt; btn.disabled = false; }
 }
 
-// 2. CONNEXION
-async function login() {
-  const input = $('inputCode').value.replace(/\s/g, '');
-  if (input.length !== 16) {
-    $('logError').textContent = "Le code doit faire 16 chiffres.";
-    return;
-  }
+async function login(code) {
+  const cleanCode = code.replace(/\s/g, '');
+  if(cleanCode.length !== 16) { $('loginError').textContent = "Le code doit faire 16 chiffres."; return; }
 
   const btn = $('btnLogin');
-  btn.textContent = "...";
-  btn.disabled = true;
+  const oldTxt = btn.textContent;
+  btn.textContent = "..."; btn.disabled = true;
 
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', input);
-
+    const { data, error } = await supabaseClient.from('users').select('*').eq('id', cleanCode);
     if (error) throw error;
-
     if (data && data.length > 0) {
-      userCode = input;
-      localStorage.setItem('cc_user_code', userCode);
-      showApp();
-    } else {
-      $('logError').textContent = "Compte introuvable.";
-    }
-  } catch (e) {
-    $('logError').textContent = "Erreur: " + e.message;
-  } finally {
-    btn.textContent = "Connexion";
-    btn.disabled = false;
+      userCode = cleanCode; userPoints = data[0].points;
+      saveLocal(); await loadFavorites(); initApp();
+    } else { $('loginError').textContent = "Compte introuvable."; }
+  } catch (e) { $('loginError').textContent = "Erreur réseau"; } 
+  finally { btn.textContent = oldTxt; btn.disabled = false; }
+}
+
+/* DATA */
+async function loadFavorites() {
+  if(!userCode) return;
+  const { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode);
+  if(data) { places = data.map(d => d.place_data); renderPlaces(); }
+}
+
+async function addFavorite(place) {
+  places.push(place); renderPlaces();
+  if(userCode) await supabaseClient.from('user_favorites').insert([{ user_id: userCode, place_data: place }]);
+}
+
+async function deleteFavorite(index) {
+  const p = places[index];
+  places.splice(index, 1); renderPlaces();
+  if(userCode && p) await supabaseClient.from('user_favorites').delete().match({ user_id: userCode }).filter('place_data->>name', 'eq', p.name);
+}
+
+async function updatePoints(km) {
+  const pts = Math.floor(km * 10);
+  if(pts > 0) {
+    userPoints += pts; $('displayPoints').textContent = userPoints;
+    if(userCode) await supabaseClient.from('users').update({ points: userPoints }).eq('id', userCode);
   }
 }
 
-function showApp() {
+/* UI */
+function initApp() {
   $('viewLogin').classList.remove('active');
-  $('viewApp').classList.add('active');
-  $('displayCode').textContent = userCode.replace(/(\d{4})(?=\d)/g, '$1 ');
+  $('viewDiscover').classList.add('active');
+  $('navBar').style.display = 'flex';
+  
+  $('displayCode').textContent = formatCode(userCode);
+  $('displayPoints').textContent = userPoints;
+  renderPlaces();
+  checkGPS();
 }
 
-function logout() {
-  localStorage.removeItem('cc_user_code');
-  location.reload();
+function renderPlaces() {
+  const list = $('placesList');
+  if(places.length === 0) {
+    list.innerHTML = `<div style="text-align:center; padding:40px 20px; color:var(--text-secondary)">
+      <div style="font-size:40px; margin-bottom:10px; opacity:0.5;">🏝</div>
+      Aucun favori.<br>Cherche une adresse !
+    </div>`;
+    return;
+  }
+  list.innerHTML = places.map((p, i) => `
+    <div class="placeCard" onclick="startNav(${i})">
+      <div class="card-icon">📍</div>
+      <div style="flex:1">
+        <div class="placeName">${escapeHtml(p.name)}</div>
+        <div class="placeMeta">${escapeHtml(p.type || 'Lieu')}</div>
+      </div>
+      <button class="btn" style="padding:0; width:30px; height:30px; background:rgba(0,0,0,0.05); color:var(--text-secondary);" onclick="event.stopPropagation(); deleteFavorite(${i})">✕</button>
+    </div>
+  `).join('');
 }
 
-// Formatage input
-$('inputCode').addEventListener('input', e => {
+function show(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  $(id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  if(id==='viewDiscover') document.querySelectorAll('.nav-tab')[0].classList.add('active');
+  if(id==='viewNav') document.querySelectorAll('.nav-tab')[1].classList.add('active');
+  if(id==='viewAccount') document.querySelectorAll('.nav-tab')[2].classList.add('active');
+}
+
+/* NAV */
+function checkGPS() {
+  if (navigator.permissions) {
+    navigator.permissions.query({name:'geolocation'}).then(result => {
+      if (result.state === 'granted') { $('gpsPermissionBlock').style.display = 'none'; startWatching(); } 
+      else if (result.state === 'prompt') { $('gpsPermissionBlock').style.display = 'block'; }
+    });
+  } else { $('gpsPermissionBlock').style.display = 'block'; }
+}
+
+function requestGPS() {
+  navigator.geolocation.getCurrentPosition(
+    (pos) => { $('gpsPermissionBlock').style.display = 'none'; startWatching(); },
+    (err) => { alert("Localisation refusée."); }, { enableHighAccuracy: true }
+  );
+}
+
+function startWatching() {
+  if(navigator.geolocation) navigator.geolocation.watchPosition(updatePos, console.error, {enableHighAccuracy:true});
+}
+
+function startNav(i) {
+  currentDest = places[i]; $('navDestName').textContent = currentDest.name; show('viewNav');
+}
+
+function updatePos(pos) {
+  const lat = pos.coords.latitude;
+  const lon = pos.coords.longitude;
+  
+  if(lastPos) {
+    totalDistTraveled += getDist(lastPos.lat, lastPos.lon, lat, lon);
+    if(totalDistTraveled >= 1) { updatePoints(1); totalDistTraveled -= 1; }
+  }
+  lastPos = {lat, lon};
+
+  if(!currentDest) return;
+  const d = getDist(lat, lon, currentDest.lat, currentDest.lon);
+  $('distVal').textContent = d < 1 ? Math.round(d*1000)+' m' : d.toFixed(1)+' km';
+  
+  const b = getBearing(lat, lon, currentDest.lat, currentDest.lon);
+  const h = pos.coords.heading || 0;
+  
+  $('arrow').style.transform = `rotate(${b - h}deg)`;
+  $('capVal').textContent = Math.round(b) + "°";
+  
+  const maxDist = 10; 
+  const progress = Math.min(Math.max(d / maxDist, 0), 1);
+  $('ringProg').style.strokeDashoffset = 301 * progress; // 301 = perimeter approx
+}
+
+/* UTILS */
+function getDist(lat1, lon1, lat2, lon2) {
+  const R = 6371; 
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+function getBearing(lat1, lon1, lat2, lon2) {
+  const dL = (lon2-lon1)*Math.PI/180;
+  const l1 = lat1*Math.PI/180;
+  const l2 = lat2*Math.PI/180;
+  const y = Math.sin(dL)*Math.cos(l2);
+  const x = Math.cos(l1)*Math.sin(l2) - Math.sin(l1)*Math.cos(l2)*Math.cos(dL);
+  return (Math.atan2(y, x)*180/Math.PI + 360) % 360;
+}
+function escapeHtml(t) { return t ? t.replace(/&/g, "&amp;").replace(/</g, "&lt;") : ""; }
+function saveLocal() { localStorage.setItem('cc_user_code', userCode); }
+
+/* EVENTS */
+$('btnCreateAccount').onclick = createAccount;
+$('btnLogin').onclick = () => login($('inputLoginCode').value);
+$('btnBackNav').onclick = () => show('viewDiscover');
+$('btnLogout').onclick = () => { localStorage.removeItem('cc_user_code'); location.reload(); };
+$('btnGrantGPS').onclick = requestGPS;
+
+$('inputLoginCode').addEventListener('input', e => {
   let v = e.target.value.replace(/\D/g,'').slice(0,16);
   e.target.value = v.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
 });
 
-// Auto-login
-if (userCode) {
-    // Petit check rapide pour voir si le code est valide
-    login(); 
+// Search
+async function doSearch() {
+  const q = $('addrInput').value;
+  if(!q) return;
+  try {
+    const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=1`);
+    const data = await res.json();
+    if(data.features?.length) {
+      const f = data.features[0];
+      addFavorite({ name: f.properties.label, lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], type: 'Adresse' });
+      $('addrInput').value = '';
+    } else { alert("Aucune adresse trouvée."); }
+  } catch(e) { alert("Erreur recherche"); }
 }
+$('btnSearch').onclick = doSearch;
+$('addrInput').onkeydown = e => { if(e.key === 'Enter') doSearch(); };
+
+// Theme
+$('themeBtn').onclick = () => {
+  const b = document.body;
+  b.setAttribute('data-theme', b.getAttribute('data-theme')==='dark'?'light':'dark');
+};
+
+// Start
+if(userCode) login(userCode);
 </script>
 </body>
 </html>
