@@ -118,10 +118,9 @@
       box-shadow: inset 0 0 30px rgba(0,0,0,0.05);
       position: relative; z-index: 2;
     }
-    /* La flèche est centrée absoluement */
     .arrow-container {
       width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-      transition: transform 0.1s linear; /* Rotation fluide */
+      transition: transform 0.1s linear;
     }
     .arrow-svg {
       width: 60px; height: auto; 
@@ -144,12 +143,11 @@
     }
     .history-pts { font-weight: 700; color: var(--success); }
     
-    /* Shop Grid */
     .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .shop-card {
       background: var(--bg-card); padding: 16px; border-radius: var(--radius-m);
       text-align: center; position: relative; overflow: hidden;
-      border: 1px solid var(--separator);
+      border: 1px solid var(--separator); cursor: pointer;
     }
     .shop-icon { font-size: 32px; margin-bottom: 8px; }
     .shop-cost { 
@@ -157,7 +155,7 @@
       padding: 4px 10px; border-radius: 100px; font-size: 12px; font-weight: 700;
       display: inline-block; margin-top: 8px;
     }
-    .shop-card.locked { opacity: 0.6; }
+    .shop-card.locked { opacity: 0.6; cursor: not-allowed; }
     .shop-card.locked::after {
       content: "🔒"; position: absolute; inset:0; background: rgba(0,0,0,0.05);
       display: flex; align-items: center; justify-content: center; font-size: 24px;
@@ -166,7 +164,7 @@
     /* Cards & Nav */
     .placeCard {
       background: var(--bg-card); padding: 16px; border-radius: var(--radius-l);
-      display: flex; align-items: center; gap: 16px; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 16px; margin-bottom: 12px; cursor:pointer;
     }
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height);
@@ -175,11 +173,11 @@
       padding-bottom: 20px; z-index: 100;
     }
     [data-theme="dark"] .bottom-nav { background: rgba(28, 28, 30, 0.85); }
-    .nav-tab { background: none; border: none; color: var(--text-secondary); font-size: 10px; font-weight: 600; display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; }
+    .nav-tab { background: none; border: none; color: var(--text-secondary); font-size: 10px; font-weight: 600; display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; cursor:pointer; }
     .nav-tab.active { color: var(--accent); }
     .nav-icon { font-size: 24px; margin-bottom: 4px; }
     
-    .big-code { font-family: monospace; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; margin-top: 10px; font-size: 18px; }
+    .big-code { font-family: monospace; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; margin-top: 10px; font-size: 18px; user-select: text;}
   </style>
 </head>
 
@@ -189,9 +187,8 @@
     <div class="topbar">
       <div class="brand">
         <h1>City Compass</h1>
-        <p>Beta v2.0</p>
+        <p>Beta v2.1</p>
       </div>
-      <!-- Paramètres icon moved to profile tab content -->
     </div>
 
     <div class="main">
@@ -258,9 +255,9 @@
           </div>
         </div>
         
-        <!-- Calibration Button (iOS) -->
+        <!-- Calibration Button (iOS only) -->
         <button id="btnCalibrate" class="btn btn-small" style="margin:0 auto 20px auto; display:none; background:var(--bg-card); color:var(--accent);">
-          📡 Calibrer la boussole
+          📡 Activer la boussole
         </button>
 
         <div class="metrics-grid">
@@ -312,7 +309,6 @@
              <span>Bienvenue</span>
              <span class="history-pts">+50 pts</span>
            </div>
-           <!-- Placeholder for dynamic history -->
         </div>
 
         <div class="label">Paramètres</div>
@@ -357,103 +353,116 @@ let settings = {
   vib: localStorage.getItem('cc_vib') !== 'false'
 };
 
-/* --- BOUSSOLE & CAPTEURS (LOGIQUE AMÉLIORÉE) --- */
-let deviceHeading = 0; // Orientation magnétique du téléphone
+/* --- BOUSSOLE (Correction iOS pour reload) --- */
+let deviceHeading = 0;
 
-// 1. Gestion Permission iOS
-if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-  $('btnCalibrate').style.display = 'block';
-  $('btnCalibrate').onclick = () => {
-    DeviceOrientationEvent.requestPermission()
-      .then(response => {
-        if (response === 'granted') {
-          window.addEventListener('deviceorientation', handleOrientation);
-          $('btnCalibrate').style.display = 'none';
-        } else alert('Permission refusée');
-      })
-      .catch(console.error);
-  };
-} else {
-  // Android / Non-iOS
-  window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-  window.addEventListener('deviceorientation', handleOrientation, true);
+// Gestion Permissions iOS (Requis après reload)
+function initCompassPermission() {
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    // Sur iOS, après un reload, la permission est perdue. On doit la redemander via click.
+    $('btnCalibrate').style.display = 'block';
+    $('btnCalibrate').onclick = () => {
+      DeviceOrientationEvent.requestPermission()
+        .then(response => {
+          if (response === 'granted') {
+            window.addEventListener('deviceorientation', handleOrientation);
+            $('btnCalibrate').style.display = 'none';
+          }
+        })
+        .catch(console.error);
+    };
+  } else {
+    // Android ou Desktop (Pas de permission requise généralement si HTTPS)
+    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    window.addEventListener('deviceorientation', handleOrientation, true);
+  }
 }
 
 function handleOrientation(e) {
-  // Récupérer le Nord Magnétique
-  if(e.webkitCompassHeading) {
-    deviceHeading = e.webkitCompassHeading; // iOS
-  } else if(e.alpha) {
-    deviceHeading = 360 - e.alpha; // Android (approximatif sans calibration absolue)
-  }
+  if(e.webkitCompassHeading) deviceHeading = e.webkitCompassHeading; // iOS
+  else if(e.alpha) deviceHeading = 360 - e.alpha; // Android
   updateCompassUI();
 }
 
 function updateCompassUI() {
   if (!currentDest || !lastPos) return;
-
-  // 1. Calculer le Cap Géographique (Bearing) entre moi et la cible
   const targetBearing = getBearing(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon);
-  
-  // 2. L'angle de la flèche = Cap vers Cible - Où je regarde
-  // Exemple: Je dois aller au Nord (0°). Je regarde l'Est (90°). La flèche doit pointer -90° (Gauche).
+  // Rotation de la flèche = Cap cible - Cap téléphone
   let arrowRotation = targetBearing - deviceHeading;
-  
-  // Appliquer la rotation
   $('arrowContainer').style.transform = `rotate(${arrowRotation}deg)`;
   $('capVal').textContent = Math.round(targetBearing) + "°";
 }
 
 
-/* --- GEOLOCALISATION TEMPS RÉEL --- */
+/* --- GPS (Auto-Start au reload) --- */
 function startWatching() {
+  // Option enableHighAccuracy cruciale pour la navigation piétonne
   navigator.geolocation.watchPosition(pos => {
     const lat = pos.coords.latitude;
     const lon = pos.coords.longitude;
     
-    // Mise à jour de la distance vol d'oiseau
+    // Update Dest
     if (currentDest) {
       const d = getDist(lat, lon, currentDest.lat, currentDest.lon);
-      
-      // Update UI Distance
       $('distVal').textContent = d < 1 ? Math.round(d*1000) + ' m' : d.toFixed(1) + ' km';
-      
-      // Update Cercle Progression (Max 10km)
       const prog = Math.min(Math.max(d/10, 0), 1);
       $('ringProg').style.strokeDashoffset = 301 * prog;
-      
-      // Re-update compass si on bouge
       updateCompassUI();
     }
     
-    // Update Points logic (simple mock for distance)
+    // Update Points logic (Mock 1km)
     if(lastPos) {
-      const step = getDist(lastPos.lat, lastPos.lon, lat, lon);
-      // Accumulate logic here if needed
+       // Logique accumulation distance ici
     }
     lastPos = {lat, lon};
     
   }, err => console.warn(err), { enableHighAccuracy: true });
 }
 
-
-/* --- REWARDS SYSTEM --- */
-async function buyItem(cost, name) {
-  if(userPoints >= cost) {
-    if(confirm(`Acheter "${name}" pour ${cost} points ?`)) {
-      userPoints -= cost;
-      $('displayPoints').textContent = userPoints;
-      // Update DB
-      if(userCode) await supabaseClient.from('users').update({points: userPoints}).eq('id', userCode);
-      alert(`🎉 Félicitations ! "${name}" débloqué.`);
-    }
+function checkAutoStartGPS() {
+  if (navigator.permissions) {
+    navigator.permissions.query({name:'geolocation'}).then(r => {
+      if (r.state === 'granted') {
+        $('gpsPermissionBlock').style.display = 'none';
+        startWatching(); // Démarrage auto silencieux
+      } else {
+        $('gpsPermissionBlock').style.display = 'block';
+      }
+    });
   } else {
-    alert(`Pas assez de points ! Il t'en manque ${cost - userPoints}.`);
+    // Fallback vieux navigateurs
+    startWatching();
   }
 }
 
 
-/* --- GENERAL APP LOGIC --- */
+/* --- PERSISTANCE D'ÉTAT (RELOAD) --- */
+function restoreSession() {
+  // 1. Restaurer la vue
+  const savedView = localStorage.getItem('cc_current_view');
+  
+  // 2. Restaurer la destination si on était en nav
+  const savedDest = localStorage.getItem('cc_current_dest');
+  
+  if (savedView === 'viewNav' && savedDest) {
+    currentDest = JSON.parse(savedDest);
+    $('navDestName').textContent = currentDest.name;
+    show('viewNav', false); // false = ne pas resauvegarder tout de suite
+  } else if (savedView) {
+    show(savedView, false);
+  } else {
+    show('viewDiscover', false);
+  }
+
+  // 3. Restaurer GPS
+  checkAutoStartGPS();
+
+  // 4. Initialiser la boussole (bouton s'affichera si nécessaire)
+  initCompassPermission();
+}
+
+
+/* --- GENERAL LOGIC --- */
 function applySettings() {
   document.body.setAttribute('data-theme', settings.theme);
   $('toggleTheme').checked = settings.theme === 'dark';
@@ -474,7 +483,7 @@ async function createAccount() {
   const btn = $('btnCreateAccount'); const old=btn.innerHTML; btn.innerHTML="..."; btn.disabled=true;
   try {
     const newCode = generateCode();
-    await supabaseClient.from('users').insert([{ id: newCode, points: 50 }]); // Bonus bienvenue
+    await supabaseClient.from('users').insert([{ id: newCode, points: 50 }]);
     alert("Compte créé ! +50 points offerts.");
     userCode=newCode; userPoints=50; localStorage.setItem('cc_user_code', userCode);
     initApp();
@@ -506,19 +515,25 @@ async function deleteFavorite(i) {
   const p = places[i]; places.splice(i,1); renderPlaces();
   if(userCode) await supabaseClient.from('user_favorites').delete().match({user_id:userCode}).filter('place_data->>name','eq',p.name);
 }
+async function buyItem(cost, name) {
+  if(userPoints >= cost) {
+    if(confirm(`Acheter "${name}" pour ${cost} points ?`)) {
+      userPoints -= cost; $('displayPoints').textContent = userPoints;
+      if(userCode) await supabaseClient.from('users').update({points: userPoints}).eq('id', userCode);
+      alert(`🎉 Félicitations ! "${name}" débloqué.`);
+    }
+  } else alert(`Pas assez de points !`);
+}
 
 function initApp() {
   $('viewLogin').classList.remove('active');
-  $('viewDiscover').classList.add('active');
   $('navBar').style.display = 'flex';
   $('displayCode').textContent = formatCode(userCode);
   $('displayPoints').textContent = userPoints;
   renderPlaces();
   
-  if(navigator.permissions) navigator.permissions.query({name:'geolocation'}).then(r=>{
-    if(r.state==='granted') { $('gpsPermissionBlock').style.display='none'; startWatching(); }
-    else $('gpsPermissionBlock').style.display='block';
-  });
+  // Restaure la session (Vue + GPS + Boussole)
+  restoreSession();
 }
 
 function renderPlaces() {
@@ -535,17 +550,34 @@ function renderPlaces() {
     </div>`).join('');
 }
 
-function show(id) {
+function show(id, save = true) {
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   $(id).classList.add('active');
+  
+  // Update Navbar
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   if(id==='viewDiscover')$('navBar').children[0].classList.add('active');
   if(id==='viewNav')$('navBar').children[1].classList.add('active');
   if(id==='viewAccount')$('navBar').children[2].classList.add('active');
+
+  // Save State
+  if (save) {
+    localStorage.setItem('cc_current_view', id);
+    if(id !== 'viewNav') {
+      localStorage.removeItem('cc_current_dest'); // Clear dest if we leave nav
+      currentDest = null;
+    }
+  }
 }
 
 function startNav(i) {
-  currentDest = places[i]; $('navDestName').textContent = currentDest.name; show('viewNav');
+  currentDest = places[i]; 
+  $('navDestName').textContent = currentDest.name; 
+  
+  // Save Destination for reload
+  localStorage.setItem('cc_current_dest', JSON.stringify(currentDest));
+  
+  show('viewNav');
   updateCompassUI();
 }
 
@@ -555,21 +587,22 @@ $('addrInput').addEventListener('input', (e)=>{
   if(debounceTimer) clearTimeout(debounceTimer);
   if(q.length<3){ $('suggestions').style.display='none'; return; }
   debounceTimer = setTimeout(async ()=>{
-    // Priority Toulouse
     const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5&lat=43.6045&lon=1.4442`;
-    const res = await fetch(url); const data = await res.json();
-    const box = $('suggestions'); box.innerHTML='';
-    if(!data.features.length) { box.style.display='none'; return; }
-    data.features.forEach(f=>{
-      const d = document.createElement('div'); d.className='suggestion-item';
-      d.innerHTML = `<div>📍</div><div><div style="font-weight:600;">${f.properties.name}</div><div style="font-size:12px; opacity:0.7;">${f.properties.context}</div></div>`;
-      d.onclick=()=>{
-        addFavorite({name:f.properties.name, fullAddress:f.properties.label, lat:f.geometry.coordinates[1], lon:f.geometry.coordinates[0]});
-        $('addrInput').value=''; box.style.display='none';
-      };
-      box.appendChild(d);
-    });
-    box.style.display='block';
+    try {
+      const res = await fetch(url); const data = await res.json();
+      const box = $('suggestions'); box.innerHTML='';
+      if(!data.features.length) { box.style.display='none'; return; }
+      data.features.forEach(f=>{
+        const d = document.createElement('div'); d.className='suggestion-item';
+        d.innerHTML = `<div>📍</div><div><div style="font-weight:600;">${f.properties.name}</div><div style="font-size:12px; opacity:0.7;">${f.properties.context}</div></div>`;
+        d.onclick=()=>{
+          addFavorite({name:f.properties.name, fullAddress:f.properties.label, lat:f.geometry.coordinates[1], lon:f.geometry.coordinates[0]});
+          $('addrInput').value=''; box.style.display='none';
+        };
+        box.appendChild(d);
+      });
+      box.style.display='block';
+    } catch(e){}
   }, 300);
 });
 document.addEventListener('click', e=>{ if(!e.target.closest('.input-group')) $('suggestions').style.display='none'; });
@@ -588,7 +621,7 @@ function getBearing(lat1,lon1,lat2,lon2) {
 $('btnGrantGPS').onclick = ()=>{ navigator.geolocation.getCurrentPosition(()=>{ $('gpsPermissionBlock').style.display='none'; startWatching(); }, ()=>{alert('GPS Requis');}, {enableHighAccuracy:true}); };
 $('btnLogin').onclick = ()=>login($('inputLoginCode').value);
 $('btnCreateAccount').onclick = createAccount;
-$('btnLogout').onclick = ()=>{ localStorage.removeItem('cc_user_code'); location.reload(); };
+$('btnLogout').onclick = ()=>{ localStorage.removeItem('cc_user_code'); localStorage.removeItem('cc_current_view'); location.reload(); };
 $('btnBackNav').onclick = ()=>show('viewDiscover');
 $('inputLoginCode').oninput = (e)=>{ e.target.value = e.target.value.replace(/\D/g,'').slice(0,16).replace(/(\d{4})(?=\d)/g,'$1 ').trim(); };
 
