@@ -4,312 +4,422 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#000000" />
   <title>City Compass</title>
 
-  <!-- SUPABASE JS -->
+  <!-- SUPABASE -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    /* =========================
-       DESIGN SYSTEM (Apple/Google Style)
-    ========================== */
-    :root{
-      /* Dark Mode (Base) */
-      --bg-body: #000000;
-      --bg-surface: #1C1C1E;
-      --stroke: rgba(255,255,255,0.12);
-      --text-primary: #FFFFFF;
-      --text-secondary: #8E8E93;
-      --accent: #0A84FF;
-      --accent-soft: rgba(10, 132, 255, 0.15);
-      --danger: #FF453A;
-      --nav-bg: rgba(29, 29, 29, 0.85);
-      --shadow: 0 4px 12px rgba(0,0,0,0.2);
-      --r-btn: 12px;
-      --r-card: 16px;
-    }
-
-    [data-theme="light"]{
-      /* Light Mode */
-      --bg-body: #FFFFFF;
-      --bg-surface: #F2F2F7;
-      --stroke: rgba(0,0,0,0.08);
+    /* =========================================
+       1. VARIABLES & THEME SYSTEM
+       ========================================= */
+    :root {
+      /* Base Colors (Light Mode Default) */
+      --bg-body: #F2F2F7;       /* iOS System Gray 6 */
+      --bg-card: #FFFFFF;
+      --bg-input: #E5E5EA;      /* iOS System Gray 5 */
       --text-primary: #000000;
       --text-secondary: #8E8E93;
-      --accent: #007AFF;
-      --accent-soft: rgba(0, 122, 255, 0.12);
+      --divider: rgba(60, 60, 67, 0.12);
+      
+      /* Brand Colors */
+      --accent: #007AFF;        /* Apple Blue */
+      --accent-gradient: linear-gradient(135deg, #007AFF, #00C7BE);
       --danger: #FF3B30;
-      --nav-bg: rgba(255, 255, 255, 0.85);
-      --shadow: 0 4px 12px rgba(0,0,0,0.05);
+      --success: #34C759;
+
+      /* UI Utils */
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+      --radius-l: 22px;
+      --radius-m: 14px;
+      --nav-height: 85px;
+      --safe-top: env(safe-area-inset-top);
+      --safe-bottom: env(safe-area-inset-bottom);
     }
 
-    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
-    html, body{ height:100%; margin:0; padding:0; overflow: hidden; }
-    
-    body{
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      font-size: 17px;
-      line-height: 1.4;
-      color: var(--text-primary);
-      background-color: var(--bg-body);
-      transition: background-color 0.3s ease, color 0.3s ease;
+    /* DARK MODE */
+    [data-theme="dark"] {
+      --bg-body: #000000;
+      --bg-card: #1C1C1E;       /* iOS Dark Gray */
+      --bg-input: #2C2C2E;
+      --text-primary: #FFFFFF;
+      --text-secondary: #98989D;
+      --divider: rgba(84, 84, 88, 0.35);
+      --accent: #0A84FF;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
     }
 
-    .app{ display: flex; flex-direction: column; height: 100dvh; width: 100%; position: relative; }
-
-    /* Top Bar */
-    .topbar{
-      flex: 0 0 auto;
-      padding: calc(env(safe-area-inset-top) + 12px) 20px 12px 20px;
-      display: flex; align-items: center; justify-content: space-between;
-      background: var(--bg-body); z-index: 10;
+    /* RESET */
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+    body {
+      margin: 0; padding: 0; height: 100dvh; overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-body); color: var(--text-primary);
+      transition: background 0.3s ease, color 0.3s ease;
     }
-    .brand h1{ margin:0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
-    .brand p{ margin:2px 0 0; font-size: 13px; color: var(--text-secondary); }
 
-    .iconBtn{
-      background: var(--bg-surface); border: none; color: var(--text-primary);
-      width: 40px; height: 40px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; cursor: pointer; transition: transform 0.1s;
+    /* =========================================
+       2. LAYOUT & STRUCTURE
+       ========================================= */
+    .app-container {
+      display: flex; flex-direction: column; height: 100%;
+      padding-top: max(20px, var(--safe-top));
     }
-    .iconBtn:active{ transform: scale(0.92); }
 
-    /* Main Content */
-    .main{
+    .main-content {
       flex: 1; overflow-y: auto; overflow-x: hidden;
-      -webkit-overflow-scrolling: touch; position: relative;
-      padding-bottom: calc(80px + env(safe-area-inset-bottom)); 
+      padding: 0 20px 120px 20px; /* Padding bas pour la nav */
+      scroll-behavior: smooth;
     }
-    .section{ padding: 0 20px 20px 20px; }
-    .view{ display:none; animation: fadeIn 0.3s ease; }
-    .view.active{ display:block; }
-    @keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
 
-    /* UI Elements */
-    .label{ font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; color: var(--text-secondary); margin: 24px 0 8px 0; }
+    /* HEADER */
+    .header {
+      padding: 10px 24px 10px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-body); /* Sticky effect if needed */
+      z-index: 50;
+    }
+    .header h1 { font-size: 26px; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
+    .header p { margin: 0; font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+
+    .theme-toggle {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--bg-card); border: none;
+      color: var(--text-primary); font-size: 20px;
+      box-shadow: var(--shadow-sm); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* VIEWS TRANSITION */
+    .view { display: none; opacity: 0; transform: translateY(10px); transition: opacity 0.3s ease, transform 0.3s ease; }
+    .view.active { display: block; opacity: 1; transform: translateY(0); }
+
+    /* =========================================
+       3. COMPONENTS
+       ========================================= */
     
-    input, textarea{
-      width: 100%; padding: 16px; border-radius: var(--r-btn);
-      border: 1px solid transparent; background: var(--bg-surface);
-      color: var(--text-primary); font-size: 17px; outline: none; transition: all 0.2s;
-      font-family: inherit;
+    /* BUTTONS */
+    .btn {
+      width: 100%; padding: 18px; border-radius: var(--radius-l);
+      border: none; font-size: 17px; font-weight: 700;
+      cursor: pointer; transition: transform 0.1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
     }
-    input:focus{ background: var(--bg-body); border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
-
-    .btn{
-      width: 100%; padding: 16px; border-radius: var(--r-btn); border: none;
-      background: var(--bg-surface); color: var(--accent); font-weight: 600; font-size: 17px;
-      cursor: pointer; text-align: center; transition: opacity 0.2s;
-    }
-    .btn:active{ opacity: 0.7; }
-    .btn:disabled{ opacity: 0.5; cursor: not-allowed; }
-    .btnPrimary{ background: var(--accent); color: #FFFFFF; box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); }
-    .btnAlert{ background: var(--danger); color: #FFFFFF; box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3); }
-
-    /* Cards */
-    .placeCard{ background: var(--bg-surface); border-radius: var(--r-card); padding: 16px; display: flex; align-items: center; gap: 16px; margin-bottom: 10px; cursor:pointer; }
-    .placeCard:active{ opacity: 0.8; }
-    .badge{ width: 42px; height: 42px; border-radius: 10px; background: var(--bg-body); display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: var(--shadow); }
-    .placeName{ font-weight: 600; font-size: 17px; }
-    .placeMeta{ color: var(--text-secondary); font-size: 14px; margin-top: 2px; }
-
-    /* Auto-Complete List */
-    .suggestions-list {
-      background: var(--bg-surface);
-      border-radius: var(--r-card);
-      margin-top: 8px;
-      overflow: hidden;
-      display: none; /* Caché par défaut */
-      box-shadow: var(--shadow);
-      position: absolute; width: calc(100% - 40px); z-index: 100;
-    }
-    .suggestion-item {
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--stroke);
-      cursor: pointer;
-    }
-    .suggestion-item:last-child { border-bottom: none; }
-    .suggestion-item:active { background: var(--bg-body); }
-    .s-main { font-weight: 600; font-size: 16px; }
-    .s-sub { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
-
-    /* Login & Account */
-    .login-screen{ text-align: center; padding-top: 40px; }
-    .account-gradient{
-      background: linear-gradient(135deg, #0A84FF, #5E5CE6);
-      padding: 24px; border-radius: 24px; color: white;
-      text-align: center; margin-bottom: 24px;
-      box-shadow: 0 8px 24px rgba(10, 132, 255, 0.4);
-    }
-    .big-code{
-      font-family: monospace; font-size: 26px; letter-spacing: 2px; font-weight: 700;
-      margin: 16px 0; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 12px;
-      user-select: all;
-    }
-    .points-pill{ background: rgba(255,255,255,0.25); padding: 6px 16px; border-radius: 20px; font-weight: 600; display: inline-block; font-size: 15px; }
-
-    /* Compass */
-    .compassWrap{ margin: 40px 0; display: flex; justify-content: center; align-items: center; }
-    .ringWrap{ width: min(80vw, 320px); aspect-ratio: 1/1; position: relative; }
-    .ringSvg circle{ stroke: var(--stroke); }
-    .ringSvg #ringProg{ stroke: var(--accent); transition: stroke-dashoffset 0.3s linear; }
-    .arrowSvg {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      transform-origin: 50% 50%; pointer-events: none;
-      transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
-    }
-    .arrowSvg path{ fill: var(--text-primary); }
-
-    .metrics{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: center; }
-    .metric{ background: var(--bg-surface); padding: 16px; border-radius: var(--r-card); }
-    .metric .k{ font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; }
-    .metric .v{ font-size: 24px; font-weight: 700; margin-top: 4px; color: var(--accent); }
-
-    /* Bottom Nav */
-    .bottomNav{
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border-top: 1px solid var(--stroke);
-      padding: 10px 20px calc(10px + env(safe-area-inset-bottom)) 20px;
-      display: flex; justify-content: space-around; z-index: 50;
-    }
-    .navTab{ background: transparent; border: none; color: var(--text-secondary); font-size: 11px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
-    .navTab.active{ color: var(--accent); }
-    .navTab span{ font-size: 24px; margin-bottom: 2px; }
+    .btn:active { transform: scale(0.97); opacity: 0.9; }
     
-    .input-code { font-family: monospace; letter-spacing: 3px; text-align: center; font-size: 20px; }
+    .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(0,122,255,0.3); }
+    .btn-secondary { background: var(--bg-card); color: var(--accent); }
+    .btn-danger { background: rgba(255, 59, 48, 0.1); color: var(--danger); }
+    
+    /* INPUTS */
+    .input-group { position: relative; margin-bottom: 16px; }
+    .input-field {
+      width: 100%; padding: 16px 16px 16px 48px; /* Place for icon */
+      background: var(--bg-card); border: none;
+      border-radius: var(--radius-l);
+      color: var(--text-primary); font-size: 17px;
+      box-shadow: var(--shadow-sm);
+    }
+    .input-icon {
+      position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+      font-size: 18px; color: var(--text-secondary); pointer-events: none;
+    }
+    .input-field::placeholder { color: #A0A0A5; }
+
+    /* CARDS (Favorites) */
+    .card {
+      background: var(--bg-card); padding: 16px;
+      border-radius: var(--radius-l);
+      margin-bottom: 12px;
+      display: flex; align-items: center; gap: 16px;
+      box-shadow: var(--shadow-sm);
+      transition: background 0.2s; cursor: pointer;
+    }
+    .card:active { background: var(--bg-input); }
+    
+    .card-icon {
+      width: 48px; height: 48px; border-radius: 14px;
+      background: var(--bg-body); font-size: 22px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .card-info { flex: 1; min-width: 0; }
+    .card-title { font-weight: 600; font-size: 17px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-sub { color: var(--text-secondary); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-action {
+      width: 32px; height: 32px; border-radius: 50%; border: none;
+      background: rgba(142, 142, 147, 0.1); color: var(--text-secondary);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* SUGGESTIONS LIST (Floating) */
+    .suggestions-panel {
+      position: absolute; top: 60px; left: 0; right: 0;
+      background: var(--bg-card);
+      border-radius: var(--radius-l);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      z-index: 100; overflow: hidden; display: none;
+      border: 1px solid var(--divider);
+    }
+    .suggestion-row {
+      padding: 14px 16px; border-bottom: 1px solid var(--divider);
+      display: flex; align-items: center; gap: 12px; cursor: pointer;
+    }
+    .suggestion-row:last-child { border-bottom: none; }
+    .suggestion-row:active { background: var(--bg-input); }
+    .s-icon { color: var(--text-secondary); font-size: 16px; }
+
+    /* COMPASS */
+    .compass-container {
+      position: relative; width: 280px; height: 280px;
+      margin: 40px auto;
+    }
+    .compass-bg {
+      width: 100%; height: 100%; border-radius: 50%;
+      border: 1px solid var(--divider);
+      background: var(--bg-card);
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .arrow-svg {
+      width: 60%; height: 60%;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .progress-ring {
+      position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px;
+      transform: rotate(-90deg); pointer-events: none;
+    }
+
+    /* STATS GRID */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+    .stat-box {
+      background: var(--bg-card); padding: 16px;
+      border-radius: var(--radius-m); text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); font-weight: 700; }
+    .stat-value { font-size: 22px; font-weight: 800; color: var(--accent); margin-top: 4px; }
+
+    /* ACCOUNT HERO */
+    .account-hero {
+      background: var(--accent-gradient);
+      padding: 30px 20px; border-radius: var(--radius-l);
+      color: white; text-align: center; margin-bottom: 24px;
+      box-shadow: 0 10px 30px -10px var(--accent);
+    }
+    .code-display {
+      background: rgba(0,0,0,0.2); backdrop-filter: blur(10px);
+      padding: 12px; border-radius: 12px; font-family: 'SF Mono', 'Courier New', monospace;
+      font-size: 20px; letter-spacing: 2px; margin: 16px 0; user-select: all;
+    }
+
+    /* BOTTOM NAVIGATION (Glassmorphism) */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height);
+      background: rgba(255, 255, 255, 0.8); /* Light mode default */
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--divider);
+      display: flex; justify-content: space-around; padding-bottom: 20px;
+      z-index: 999;
+    }
+    [data-theme="dark"] .bottom-nav { background: rgba(28, 28, 30, 0.85); }
+
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: none; border: none; color: var(--text-secondary);
+      font-size: 10px; font-weight: 600; cursor: pointer;
+      padding-top: 8px;
+    }
+    .nav-icon { font-size: 24px; margin-bottom: 4px; transition: transform 0.2s; }
+    .nav-item.active { color: var(--accent); }
+    .nav-item.active .nav-icon { transform: translateY(-2px); }
+
+    /* Login Input Specific */
+    .code-input { text-align: center; font-family: monospace; letter-spacing: 4px; font-size: 22px; font-weight: bold; }
+
   </style>
 </head>
 
-<body>
-  <div class="app" id="app" data-theme="light">
+<body data-theme="dark"> <!-- Default to Dark for premium feel, togglable -->
+
+  <div class="app-container">
     
-    <!-- Top Bar -->
-    <div class="topbar">
-      <div class="brand">
+    <!-- HEADER -->
+    <div class="header">
+      <div>
         <h1>City Compass</h1>
-        <p>Exploration connectée</p>
+        <p>Navigation intelligente</p>
       </div>
-      <button class="iconBtn" id="themeBtn" type="button">◑</button>
+      <button class="theme-toggle" id="btnTheme">◑</button>
     </div>
 
-    <!-- MAIN -->
-    <div class="main">
-      
-      <!-- VIEW: LOGIN -->
-      <div class="view active section login-screen" id="viewLogin">
-        <h2 style="font-size: 28px; margin-bottom: 10px;">Bienvenue 👋</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 40px;">Accède à tes favoris et gagne des points.</p>
-        
-        <div class="account-gradient">
-          <div style="font-size: 18px; font-weight: 600;">Nouveau compte</div>
-          <p style="font-size: 14px; opacity: 0.9; margin: 8px 0 16px 0;">Crée un accès anonyme en 1 clic.</p>
-          <button class="btn" id="btnCreateAccount" style="background: white; color: #0A84FF;">Créer un compte</button>
+    <div class="main-content">
+
+      <!-- ===========================
+           VIEW 1: LOGIN
+           =========================== -->
+      <div class="view active" id="viewLogin">
+        <div style="height: 40px;"></div>
+        <h2 style="text-align: center; font-size: 32px; margin-bottom: 10px;">Explorer</h2>
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 40px; padding: 0 20px;">
+          Gagne des points en découvrant<br>les lieux cachés de ta ville.
+        </p>
+
+        <!-- Create Account Block -->
+        <div class="account-hero" style="margin-bottom: 40px;">
+          <div style="font-size: 18px; font-weight: 600;">Nouveau ici ?</div>
+          <p style="opacity: 0.9; font-size: 14px; margin: 5px 0 20px 0;">Crée un compte anonyme instantanément.</p>
+          <button class="btn" id="btnCreateAccount" style="background: white; color: var(--accent);">
+            <span>✨ Créer mon compte</span>
+          </button>
         </div>
 
-        <div class="label" style="text-align: center; margin: 30px 0;">OU J'AI DÉJÀ UN CODE</div>
+        <!-- Login Block -->
+        <div style="text-align: center; margin-bottom: 20px;">
+          <span style="background: var(--bg-body); padding: 0 10px; color: var(--text-secondary); font-size: 12px; font-weight: 700; letter-spacing: 1px;">DÉJÀ UN CODE ?</span>
+          <hr style="margin-top: -8px; border: 0; border-top: 1px solid var(--divider); z-index: -1;">
+        </div>
+
+        <div class="input-group">
+          <input id="inputLoginCode" class="input-field code-input" placeholder="0000 0000..." maxlength="19" inputmode="numeric" />
+        </div>
         
-        <input id="inputLoginCode" class="input-code" placeholder="0000 0000 0000 0000" maxlength="19" inputmode="numeric" />
-        <button class="btn btnPrimary" id="btnLogin" style="margin-top: 16px;">Connexion</button>
-        <p id="loginError" style="color: var(--danger); font-size: 14px; margin-top: 16px;"></p>
+        <button class="btn btn-primary" id="btnLogin">Connexion</button>
+        <p id="loginError" style="text-align: center; color: var(--danger); font-size: 13px; margin-top: 16px; min-height: 20px;"></p>
       </div>
 
-      <!-- VIEW: DISCOVER -->
-      <div class="view section" id="viewDiscover">
+
+      <!-- ===========================
+           VIEW 2: DISCOVER
+           =========================== -->
+      <div class="view" id="viewDiscover">
         
-        <!-- GPS Permission -->
-        <div id="gpsPermissionBlock" style="background: var(--bg-surface); padding: 16px; border-radius: 16px; margin-bottom: 20px; display:none;">
-           <div style="font-weight:600; margin-bottom:8px;">⚠️ GPS requis</div>
-           <p style="font-size:14px; color:var(--text-secondary); margin:0 0 12px 0;">Pour te guider, nous avons besoin de ta position.</p>
-           <button class="btn btnPrimary" id="btnGrantGPS">Activer la localisation</button>
+        <!-- GPS ALERT -->
+        <div id="gpsAlert" style="background: var(--bg-card); padding: 20px; border-radius: var(--radius-l); margin-bottom: 24px; text-align: center; display: none; border: 1px solid var(--accent);">
+          <div style="font-size: 24px; margin-bottom: 10px;">📍</div>
+          <h3 style="margin: 0 0 5px 0; font-size: 17px;">Localisation requise</h3>
+          <p style="font-size: 14px; color: var(--text-secondary); margin: 0 0 15px 0;">Nécessaire pour le guidage et les points.</p>
+          <button class="btn btn-primary" id="btnGrantGPS" style="padding: 12px;">Activer GPS</button>
         </div>
 
-        <div class="label">Recherche</div>
-        <div style="position: relative;">
-          <input id="addrInput" placeholder="Tape une adresse (ex: Capitole...)" autocomplete="off" />
-          <!-- Suggestions -->
-          <div id="suggestions" class="suggestions-list"></div>
+        <h3 style="margin: 10px 0 16px 0; font-size: 14px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 1px;">Recherche</h3>
+        
+        <div class="input-group" style="z-index: 100;">
+          <div class="input-icon">🔍</div>
+          <input id="addrInput" class="input-field" placeholder="Où veux-tu aller ?" autocomplete="off" />
+          
+          <!-- AUTOCOMPLETE LIST -->
+          <div id="suggestions" class="suggestions-panel"></div>
         </div>
 
-        <div class="label">Mes Favoris</div>
+        <h3 style="margin: 30px 0 16px 0; font-size: 14px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 1px;">Mes Favoris</h3>
         <div id="placesList"></div>
       </div>
 
-      <!-- VIEW: NAV -->
-      <div class="view section" id="viewNav" style="text-align: center;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-          <button class="iconBtn" id="btnBackNav">✕</button>
-          <div style="font-weight: 600; font-size: 18px;" id="navDestName">Destination</div>
+
+      <!-- ===========================
+           VIEW 3: NAV (COMPASS)
+           =========================== -->
+      <div class="view" id="viewNav">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <button class="btn" style="width: 40px; height: 40px; padding: 0; border-radius: 50%; background: var(--bg-card); color: var(--text-primary);" id="btnBackNav">✕</button>
+          <div style="font-weight: 700; font-size: 18px;" id="navDestName">Destination</div>
           <div style="width: 40px;"></div>
         </div>
 
-        <div class="compassWrap">
-          <div class="ringWrap">
-            <svg class="ringSvg" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="45" fill="none" stroke-width="2" style="opacity:0.3"></circle>
-              <circle id="ringProg" cx="50" cy="50" r="45" fill="none"
-                      stroke-width="4" stroke-linecap="round" 
-                      transform="rotate(-90 50 50)"
-                      stroke-dasharray="282.7" stroke-dashoffset="282.7"></circle>
-            </svg>
-            <svg id="arrow" class="arrowSvg" viewBox="0 0 100 100">
-               <path d="M50 15 L75 80 L50 70 L25 80 Z" fill="currentColor"></path>
+        <div class="compass-container">
+          <!-- Progress Ring SVG -->
+          <svg class="progress-ring" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="48" fill="none" stroke="var(--divider)" stroke-width="2" />
+            <circle id="ringProg" cx="50" cy="50" r="48" fill="none" stroke="var(--accent)" stroke-width="4"
+                    stroke-linecap="round" stroke-dasharray="301" stroke-dashoffset="301" 
+                    style="transition: stroke-dashoffset 0.5s ease;" />
+          </svg>
+          
+          <div class="compass-bg">
+            <svg id="arrow" class="arrow-svg" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M12 2L4.5 20.29C4.24 21.06 5.12 21.73 5.8 21.31L12 17.5L18.2 21.31C18.88 21.73 19.76 21.06 19.5 20.29L12 2Z"/>
             </svg>
           </div>
         </div>
 
-        <div class="metrics">
-          <div class="metric">
-            <div class="k">Distance</div>
-            <div class="v" id="distVal">—</div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-label">Distance</div>
+            <div class="stat-value" id="distVal">--</div>
           </div>
-          <div class="metric">
-            <div class="k">Cap</div>
-            <div class="v" id="capVal">—</div>
+          <div class="stat-box">
+            <div class="stat-label">Cap</div>
+            <div class="stat-value" id="capVal">--°</div>
           </div>
         </div>
-        <p style="margin-top: 30px; font-size: 14px; color: var(--text-secondary);">🏆 Gagne 10 points tous les km parcourus !</p>
+
+        <p style="text-align: center; font-size: 13px; color: var(--text-secondary); margin-top: 30px;">
+          🎯 Marche vers la flèche pour gagner des points.
+        </p>
       </div>
 
-      <!-- VIEW: ACCOUNT -->
-      <div class="view section" id="viewAccount">
-        <div class="account-gradient">
-          <div class="points-pill">🏆 <span id="displayPoints">0</span> Points</div>
-          <div style="margin-top: 20px; font-size: 14px; opacity: 0.8;">TON CODE UNIQUE</div>
-          <div class="big-code" id="displayCode">...</div>
-          <p style="font-size: 13px; opacity: 0.7;">Note-le précieusement.</p>
+
+      <!-- ===========================
+           VIEW 4: ACCOUNT
+           =========================== -->
+      <div class="view" id="viewAccount">
+        <div class="account-hero">
+          <div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8;">Points accumulés</div>
+          <div style="font-size: 48px; font-weight: 800; margin: 4px 0;" id="displayPoints">0</div>
+          
+          <div style="margin-top: 30px; font-size: 12px; font-weight: 600; opacity: 0.7;">CODE SECRET</div>
+          <div class="code-display" id="displayCode">...</div>
         </div>
 
-        <div class="label">Statut</div>
-        <div class="placeCard" style="cursor: default;">
-           <div class="badge" style="font-size: 18px;">☁️</div>
-           <div>
-             <div class="placeName">Cloud Sync</div>
-             <div class="placeMeta" style="color: var(--success);">Actif • Sauvegardé</div>
-           </div>
+        <h3 style="margin: 10px 0 16px 0; font-size: 14px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 1px;">Synchronisation</h3>
+        <div class="card" style="cursor: default;">
+          <div class="card-icon" style="color: var(--success); background: rgba(52, 199, 89, 0.1);">☁️</div>
+          <div class="card-info">
+            <div class="card-title">Cloud Sync</div>
+            <div class="card-sub" style="color: var(--success);">Données sécurisées</div>
+          </div>
         </div>
-        <button class="btn btnAlert" id="btnLogout" style="margin-top: 40px;">Déconnexion</button>
+
+        <button class="btn btn-danger" id="btnLogout" style="margin-top: 40px;">Déconnexion</button>
       </div>
-    </div>
 
-    <!-- Bottom Nav -->
-    <div class="bottomNav" id="navBar" style="display:none;">
-      <button class="navTab active" onclick="show('viewDiscover')"><span>🗺️</span>Découvrir</button>
-      <button class="navTab" onclick="show('viewNav')"><span>🧭</span>Boussole</button>
-      <button class="navTab" onclick="show('viewAccount')"><span>👤</span>Compte</button>
+    </div> <!-- End Main Content -->
+
+    <!-- BOTTOM NAVIGATION -->
+    <div class="bottom-nav" id="navBar" style="display: none;">
+      <button class="nav-item active" onclick="show('viewDiscover')">
+        <div class="nav-icon">🗺️</div>
+        <span>Découvrir</span>
+      </button>
+      <button class="nav-item" onclick="show('viewNav')">
+        <div class="nav-icon">🧭</div>
+        <span>Boussole</span>
+      </button>
+      <button class="nav-item" onclick="show('viewAccount')">
+        <div class="nav-icon">👤</div>
+        <span>Profil</span>
+      </button>
     </div>
 
   </div>
 
 <script>
-/* 1. SUPABASE INIT */
+/* =========================================
+   CORE LOGIC (Identique mais adapté au nouveau DOM)
+   ========================================= */
+
+// 1. CONFIG SUPABASE
 const SUPABASE_URL = 'https://vjlfbcwnfwyrxstfvefq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGZiY3duZnd5cnhzdGZ2ZWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMDc2MjcsImV4cCI6MjA4NDc4MzYyN30.WTuWbxB-8isJOp2lNnq73njQmifDjxTNEWngMgKtmv4';
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* 2. VARIABLES */
+// 2. STATE
 const $ = id => document.getElementById(id);
 let userCode = localStorage.getItem('cc_user_code');
 let places = [];
@@ -317,9 +427,9 @@ let userPoints = 0;
 let currentDest = null;
 let lastPos = null;
 let totalDistTraveled = 0;
-let debounceTimer = null; // Pour éviter trop d'appels API
+let debounceTimer = null;
 
-/* 3. LOGIQUE COMPTE */
+// 3. ACCOUNT
 function generateCode() {
   let c = ''; for(let i=0;i<16;i++) c+=Math.floor(Math.random()*10);
   return c;
@@ -328,34 +438,32 @@ function formatCode(c) { return c ? c.replace(/(\d{4})(?=\d)/g, '$1 ').trim() : 
 
 async function createAccount() {
   const btn = $('btnCreateAccount');
-  const old = btn.textContent;
-  btn.textContent = "Création...";
-  btn.disabled = true;
+  const old = btn.innerHTML;
+  btn.innerHTML = 'Patientez...'; btn.disabled = true;
 
   try {
     const newCode = generateCode();
-    const { error } = await supabaseClient.from('users').insert([{ id: newCode, points: 0 }]).select();
+    const { error } = await supabase.from('users').insert([{ id: newCode, points: 0 }]).select();
     if(error) throw error;
-    alert("Compte créé !");
+    
     userCode = newCode;
     userPoints = 0;
     saveLocal();
     initApp();
   } catch(e) { alert("Erreur: "+e.message); } 
-  finally { btn.textContent = old; btn.disabled = false; }
+  finally { btn.innerHTML = old; btn.disabled = false; }
 }
 
 async function login(code) {
   const clean = code.replace(/\s/g, '');
-  if(clean.length !== 16) { $('loginError').textContent = "16 chiffres requis."; return; }
+  if(clean.length !== 16) { $('loginError').textContent = "Le code doit faire 16 chiffres."; return; }
   
   const btn = $('btnLogin');
   const old = btn.textContent;
-  btn.textContent = "Chargement...";
-  btn.disabled = true;
+  btn.textContent = "..."; btn.disabled = true;
 
   try {
-    const { data, error } = await supabaseClient.from('users').select('*').eq('id', clean);
+    const { data, error } = await supabase.from('users').select('*').eq('id', clean);
     if(error) throw error;
     if(data.length) {
       userCode = clean;
@@ -363,136 +471,64 @@ async function login(code) {
       saveLocal();
       await loadFavorites();
       initApp();
-    } else { $('loginError').textContent = "Inconnu."; }
-  } catch(e) { $('loginError').textContent = "Erreur: "+e.message; }
+    } else { $('loginError').textContent = "Code introuvable."; }
+  } catch(e) { $('loginError').textContent = "Erreur réseau."; }
   finally { btn.textContent = old; btn.disabled = false; }
 }
 
-/* 4. SYNC & POINTS */
+// 4. DATA
 async function loadFavorites() {
   if(!userCode) return;
-  const { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode);
+  const { data } = await supabase.from('user_favorites').select('place_data').eq('user_id', userCode);
   if(data) { places = data.map(d => d.place_data); renderPlaces(); }
 }
 async function addFavorite(place) {
   places.push(place); renderPlaces();
-  if(userCode) await supabaseClient.from('user_favorites').insert([{ user_id: userCode, place_data: place }]);
+  if(userCode) await supabase.from('user_favorites').insert([{ user_id: userCode, place_data: place }]);
 }
 async function deleteFavorite(i) {
   const p = places[i]; places.splice(i, 1); renderPlaces();
-  if(userCode && p) await supabaseClient.from('user_favorites').delete().match({user_id: userCode}).filter('place_data->>name', 'eq', p.name);
+  if(userCode && p) await supabase.from('user_favorites').delete().match({user_id: userCode}).filter('place_data->>name', 'eq', p.name);
 }
 async function updatePoints(km) {
   const pts = Math.floor(km * 10);
   if(pts > 0) {
     userPoints += pts; $('displayPoints').textContent = userPoints;
-    if(userCode) await supabaseClient.from('users').update({ points: userPoints }).eq('id', userCode);
+    if(userCode) await supabase.from('users').update({ points: userPoints }).eq('id', userCode);
   }
 }
 
-/* 5. UI & RECHERCHE AVANCEE */
+// 5. UI RENDERING
 function initApp() {
   $('viewLogin').classList.remove('active');
   $('viewDiscover').classList.add('active');
   $('navBar').style.display = 'flex';
+  
   $('displayCode').textContent = formatCode(userCode);
   $('displayPoints').textContent = userPoints;
   renderPlaces();
   checkGPS();
 }
 
-// === MOTEUR DE RECHERCHE AVEC SUGGESTIONS ===
-$('addrInput').addEventListener('input', (e) => {
-  const q = e.target.value.trim();
-  if(debounceTimer) clearTimeout(debounceTimer);
-  if(q.length < 3) { $('suggestions').style.display = 'none'; return; }
-
-  // Temporisation 300ms
-  debounceTimer = setTimeout(() => fetchSuggestions(q), 300);
-});
-
-async function fetchSuggestions(query) {
-  // On priorise le département 31 (Haute-Garonne) via lat/lon centre Toulouse (environ)
-  // Ou mieux : on envoie un paramètre de priorité
-  // API Adresse supporte 'lat' et 'lon' pour booster la pertinence
-  
-  let url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5&autocomplete=1`;
-  
-  // Si on a la position GPS, on l'utilise pour la pertinence
-  if(lastPos) {
-    url += `&lat=${lastPos.lat}&lon=${lastPos.lon}`;
-  } else {
-    // Sinon, on centre par défaut sur Toulouse (31) pour "tricher" un peu
-    url += `&lat=43.6047&lon=1.4442`; 
-  }
-
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    renderSuggestions(data.features);
-  } catch(err) { console.error(err); }
-}
-
-function renderSuggestions(list) {
-  const container = $('suggestions');
-  container.innerHTML = '';
-  
-  if(!list || list.length === 0) {
-    container.style.display = 'none';
-    return;
-  }
-
-  list.forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'suggestion-item';
-    // Mise en forme
-    const label = item.properties.label;
-    const context = item.properties.context; // ex: "31, Haute-Garonne, Occitanie"
-    
-    div.innerHTML = `
-      <div class="s-main">${label}</div>
-      <div class="s-sub">${context}</div>
-    `;
-    
-    div.onclick = () => {
-      // Au clic : on ajoute et on vide
-      const p = {
-        name: item.properties.name, // Juste le nom du lieu
-        fullAddress: item.properties.label,
-        lat: item.geometry.coordinates[1],
-        lon: item.geometry.coordinates[0],
-        type: item.properties.type === 'municipality' ? 'Ville' : 'Adresse'
-      };
-      addFavorite(p);
-      $('addrInput').value = '';
-      container.style.display = 'none';
-    };
-    
-    container.appendChild(div);
-  });
-  
-  container.style.display = 'block';
-}
-
-// Cacher suggestions si on clique ailleurs
-document.addEventListener('click', (e) => {
-  if(!e.target.closest('#addrInput') && !e.target.closest('#suggestions')) {
-    $('suggestions').style.display = 'none';
-  }
-});
-
-
 function renderPlaces() {
   const list = $('placesList');
-  if(!places.length) { list.innerHTML = `<div style="text-align:center; padding:20px; color:#888;">Aucun favori.</div>`; return; }
+  if(!places.length) { 
+    list.innerHTML = `
+      <div style="text-align:center; padding:40px; opacity:0.6;">
+        <div style="font-size:40px; margin-bottom:10px;">🏝</div>
+        Vide. Ajoute une adresse !
+      </div>`; 
+    return; 
+  }
+  
   list.innerHTML = places.map((p, i) => `
-    <div class="placeCard" onclick="startNav(${i})">
-      <div class="badge">📍</div>
-      <div style="flex:1">
-        <div class="placeName">${escapeHtml(p.name)}</div>
-        <div class="placeMeta">${escapeHtml(p.fullAddress || p.type || 'Lieu')}</div>
+    <div class="card" onclick="startNav(${i})">
+      <div class="card-icon">📍</div>
+      <div class="card-info">
+        <div class="card-title">${escapeHtml(p.name)}</div>
+        <div class="card-sub">${escapeHtml(p.fullAddress || p.type)}</div>
       </div>
-      <button class="btn" style="width:auto; padding:8px 12px; background:transparent; color:#888;" onclick="event.stopPropagation(); deleteFavorite(${i})">✕</button>
+      <button class="card-action" onclick="event.stopPropagation(); deleteFavorite(${i})">✕</button>
     </div>
   `).join('');
 }
@@ -500,25 +536,76 @@ function renderPlaces() {
 function show(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   $(id).classList.add('active');
-  const tabs = document.querySelectorAll('.navTab');
+  
+  const tabs = document.querySelectorAll('.nav-item');
   tabs.forEach(t => t.classList.remove('active'));
+  
   if(id==='viewDiscover') tabs[0].classList.add('active');
   if(id==='viewNav') tabs[1].classList.add('active');
   if(id==='viewAccount') tabs[2].classList.add('active');
 }
 
-/* 6. GPS & NAV */
+// 6. SUGGESTIONS
+$('addrInput').addEventListener('input', (e) => {
+  const q = e.target.value.trim();
+  if(debounceTimer) clearTimeout(debounceTimer);
+  if(q.length < 3) { $('suggestions').style.display = 'none'; return; }
+  debounceTimer = setTimeout(() => fetchSuggestions(q), 300);
+});
+
+async function fetchSuggestions(query) {
+  let url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5&autocomplete=1`;
+  if(lastPos) url += `&lat=${lastPos.lat}&lon=${lastPos.lon}`; // Bias location
+  else url += `&lat=43.6047&lon=1.4442`; // Bias Toulouse
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    
+    const container = $('suggestions');
+    container.innerHTML = '';
+    
+    if(!data.features.length) { container.style.display = 'none'; return; }
+
+    data.features.forEach(f => {
+      const div = document.createElement('div');
+      div.className = 'suggestion-row';
+      div.innerHTML = `
+        <div class="s-icon">📍</div>
+        <div style="flex:1">
+          <div style="font-weight:600; font-size:15px;">${f.properties.name}</div>
+          <div style="font-size:12px; color:var(--text-secondary);">${f.properties.context}</div>
+        </div>
+      `;
+      div.onclick = () => {
+        addFavorite({
+          name: f.properties.name,
+          fullAddress: f.properties.label,
+          lat: f.geometry.coordinates[1],
+          lon: f.geometry.coordinates[0],
+          type: 'Adresse'
+        });
+        $('addrInput').value = '';
+        container.style.display = 'none';
+      };
+      container.appendChild(div);
+    });
+    container.style.display = 'block';
+  } catch(e) { console.error(e); }
+}
+
+// 7. GPS & NAV
 function checkGPS() {
   if(navigator.permissions) {
     navigator.permissions.query({name:'geolocation'}).then(r => {
-      if(r.state === 'granted') { $('gpsPermissionBlock').style.display='none'; startWatching(); }
-      else $('gpsPermissionBlock').style.display='block';
+      if(r.state === 'granted') { $('gpsAlert').style.display='none'; startWatching(); }
+      else $('gpsAlert').style.display='block';
     });
-  } else $('gpsPermissionBlock').style.display='block';
+  } else $('gpsAlert').style.display='block';
 }
 function requestGPS() {
-  navigator.geolocation.getCurrentPosition(()=>{$('gpsPermissionBlock').style.display='none'; startWatching();}, 
-  ()=>{alert("GPS refusé.");}, {enableHighAccuracy:true});
+  navigator.geolocation.getCurrentPosition(()=>{ $('gpsAlert').style.display='none'; startWatching(); }, 
+  ()=>{ alert("GPS refusé."); }, {enableHighAccuracy:true});
 }
 function startWatching() {
   if(navigator.geolocation) navigator.geolocation.watchPosition(updatePos, console.error, {enableHighAccuracy:true});
@@ -529,22 +616,30 @@ function startNav(i) {
 function updatePos(pos) {
   const lat = pos.coords.latitude;
   const lon = pos.coords.longitude;
+  
   if(lastPos) {
     totalDistTraveled += getDist(lastPos.lat, lastPos.lon, lat, lon);
     if(totalDistTraveled >= 1) { updatePoints(1); totalDistTraveled -= 1; }
   }
   lastPos = {lat, lon};
+
   if(!currentDest) return;
   const d = getDist(lat, lon, currentDest.lat, currentDest.lon);
-  $('distVal').textContent = d<1 ? Math.round(d*1000)+' m' : d.toFixed(1)+' km';
+  $('distVal').textContent = d<1 ? Math.round(d*1000)+'m' : d.toFixed(1)+'km';
+  
   const b = getBearing(lat, lon, currentDest.lat, currentDest.lon);
   const h = pos.coords.heading || 0;
   $('arrow').style.transform = `rotate(${b - h}deg)`;
   $('capVal').textContent = Math.round(b)+"°";
-  $('ringProg').style.strokeDashoffset = 282.7 * Math.min(Math.max(d/10, 0), 1);
+  
+  // Ring logic (10km max)
+  const maxD = 10;
+  const pct = Math.min(Math.max(d/maxD, 0), 1);
+  // 301 is circle perimeter (2*PI*48)
+  $('ringProg').style.strokeDashoffset = 301 * pct; 
 }
 
-/* 7. UTILS */
+// 8. UTILS & EVENTS
 function getDist(lat1, lon1, lat2, lon2) {
   const R = 6371; 
   const dLat = (lat2-lat1)*Math.PI/180;
@@ -563,21 +658,27 @@ function getBearing(lat1, lon1, lat2, lon2) {
 function escapeHtml(t) { return t ? t.replace(/&/g, "&amp;").replace(/</g, "&lt;") : ""; }
 function saveLocal() { localStorage.setItem('cc_user_code', userCode); }
 
-/* EVENTS */
 $('btnCreateAccount').onclick = createAccount;
 $('btnLogin').onclick = () => login($('inputLoginCode').value);
 $('btnBackNav').onclick = () => show('viewDiscover');
 $('btnLogout').onclick = () => { localStorage.removeItem('cc_user_code'); location.reload(); };
 $('btnGrantGPS').onclick = requestGPS;
+$('btnTheme').onclick = () => {
+  const b = document.body;
+  b.setAttribute('data-theme', b.getAttribute('data-theme')==='dark'?'light':'dark');
+};
+
 $('inputLoginCode').addEventListener('input', e => {
   let v = e.target.value.replace(/\D/g,'').slice(0,16);
   e.target.value = v.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
 });
-$('themeBtn').onclick = () => {
-  const isDark = document.body.getAttribute('data-theme') === 'dark';
-  document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
-};
+document.addEventListener('click', (e) => {
+  if(!e.target.closest('#addrInput') && !e.target.closest('#suggestions')) {
+    $('suggestions').style.display = 'none';
+  }
+});
 
+// AUTO INIT
 if(userCode) login(userCode);
 
 </script>
