@@ -89,13 +89,16 @@
     .map-sheet { position: absolute; bottom: 20px; left: 16px; right: 16px; background: var(--bg-glass); backdrop-filter: blur(30px); border-radius: var(--radius-l); padding: 24px; z-index: 1000; box-shadow: var(--shadow-float); transform: translateY(120%); transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1); display: flex; flex-direction: column; gap: 12px; }
     .map-sheet.active { transform: translateY(0); }
 
+    /* MAP SPECIAL FX */
+    .map-blueprint .leaflet-tile-pane { filter: invert(1) sepia(1) hue-rotate(180deg) saturate(1.5) contrast(1.2); }
+
     /* PROFILE WIDGETS */
     .profile-widgets-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
     .p-widget { background: var(--bg-card); padding: 12px; border-radius: 16px; text-align: center; border: 1px solid var(--separator); display:flex; flex-direction:column; justify-content:center; align-items:center; }
     .p-widget-val { font-size: 18px; font-weight: 800; color: var(--accent); }
     .p-widget-lbl { font-size: 10px; text-transform: uppercase; opacity: 0.6; font-weight: 700; margin-top: 4px; }
 
-    /* === NEW ADMIN DASHBOARD === */
+    /* === ADMIN DASHBOARD === */
     .admin-dashboard {
       position: fixed; inset: 0; background: #000; color: white; z-index: 4000;
       transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
@@ -117,17 +120,30 @@
     .btn-red { background: rgba(255, 59, 48, 0.2); color: #FF3B30; }
     .btn-blue { background: rgba(10, 132, 255, 0.2); color: #0A84FF; }
     
-    /* LISTS */
+    /* BROADCAST MODAL */
+    .broadcast-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px);
+        z-index: 5000; display: flex; align-items: center; justify-content: center;
+        opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .broadcast-overlay.active { opacity: 1; pointer-events: auto; }
+    .broadcast-card {
+        background: var(--bg-card); width: 85%; max-width: 320px; border-radius: 24px; padding: 30px;
+        text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+    .broadcast-overlay.active .broadcast-card { transform: scale(1); }
+    .broadcast-icon { font-size: 48px; margin-bottom: 20px; display: block; }
+    
+    /* LISTS & UI */
     .suggestion-card { background: linear-gradient(135deg, var(--bg-card), var(--bg-input)); border-left: 4px solid var(--gold); padding: 14px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
     .place-card { background: var(--bg-card); padding: 14px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; border: 1px solid var(--separator); }
 
-    /* NAVBAR */
     .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: var(--bg-glass); backdrop-filter: blur(20px); border-top: 1px solid var(--separator); display: flex; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); z-index: 2000; }
     .nav-tab { background: none; border: none; color: var(--text-secondary); font-size: 10px; font-weight: 600; display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; }
     .nav-tab.active { color: var(--accent); }
     .nav-icon { font-size: 24px; margin-bottom: 4px; }
 
-    /* SHOP & MISC */
+    /* SHOP */
     .shop-container { position: relative; overflow: hidden; max-height: 320px; transition: max-height 0.4s ease; }
     .shop-container.expanded { max-height: 2000px; }
     .shop-blur-overlay { position: absolute; bottom: 0; left: 0; right: 0; height: 100px; background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, var(--bg-body) 90%); pointer-events: none; transition: opacity 0.3s; }
@@ -325,18 +341,22 @@
       <div class="admin-content" id="adminTabSys" style="display:none;">
         <h3 style="margin-top:0;">Opérations Globales</h3>
         <div class="admin-card">
-           <div style="font-weight:700; margin-bottom:10px;">📣 Broadcast Message</div>
-           <input id="broadcastInput" placeholder="Message..." style="width:100%; padding:10px; border-radius:8px; border:none; margin-bottom:10px; background:#333; color:white;">
-           <button class="admin-act-btn btn-blue" style="width:100%;" onclick="alert('Message envoyé à tous les utilisateurs (simulation)');">Envoyer</button>
-        </div>
-        <div class="admin-card" style="display:flex; justify-content:space-between; align-items:center;">
-           <div>
-             <div style="font-weight:700;">Maintenance Mode</div>
-             <div style="font-size:12px; opacity:0.6;">Verrouiller l'accès au site</div>
-           </div>
-           <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+           <div style="font-weight:700; margin-bottom:10px;">📣 Broadcast Message (LIVE)</div>
+           <p style="font-size:12px; opacity:0.6; margin-bottom:10px;">Envoie une alerte pop-up à tous les utilisateurs connectés.</p>
+           <input id="broadcastInput" placeholder="Votre message..." style="width:100%; padding:10px; border-radius:8px; border:none; margin-bottom:10px; background:#333; color:white;">
+           <button class="admin-act-btn btn-blue" style="width:100%;" onclick="sendBroadcast()">Envoyer l'Alerte</button>
         </div>
       </div>
+    </div>
+
+    <!-- BROADCAST OVERLAY -->
+    <div class="broadcast-overlay" id="broadcastOverlay">
+        <div class="broadcast-card">
+            <span class="broadcast-icon">📢</span>
+            <h2 style="margin-top:0;">Message Admin</h2>
+            <p id="broadcastText" style="font-size:16px; line-height:1.5; opacity:0.8;">...</p>
+            <button class="btn btn-primary" onclick="closeBroadcast()">Bien reçu</button>
+        </div>
     </div>
 
     <!-- TAB BAR -->
@@ -371,8 +391,14 @@ const SHOP_ITEMS = [
   { id: 'pack_urbex', name: 'Icônes Urbex', cost: 500, type: 'tool', icon:'🏭' },
   { id: 'map_sat', name: 'Satellite', cost: 500, type: 'map', icon:'🛰️' },
   { id: 'map_dark', name: 'Nuit', cost: 200, type: 'map', icon:'🌃' },
+  { id: 'map_retro', name: 'Plan Blueprint', cost: 400, type: 'map', icon:'🗺️' },
+  { id: 'style_footprint', name: 'Traceur', cost: 150, type: 'marker', icon:'👣' },
   { id: 'wid_speed', name: 'Vitesse', cost: 100, type: 'widget', icon:'⚡' },
-  { id: 'wid_weather', name: 'Météo', cost: 200, type: 'widget', icon:'⛅' }
+  { id: 'wid_weather', name: 'Météo', cost: 200, type: 'widget', icon:'⛅' },
+  { id: 'wid_alt', name: 'Altimètre', cost: 250, type: 'widget', icon:'⛰️' },
+  { id: 'wid_coords', name: 'GPS Raw', cost: 150, type: 'widget', icon:'📍' },
+  { id: 'style_beam', name: 'Lampe Torche', cost: 300, type: 'marker', icon:'🔦' },
+  { id: 'tool_ruler', name: 'Règle Rayon', cost: 200, type: 'tool', icon:'📏' }
 ];
 
 /* LOGIN */
@@ -403,23 +429,68 @@ function initApp() {
   applySettings(); renderPlaces(); renderShop();
   const v = localStorage.getItem('cc_current_view') || 'viewDiscover';
   show(v, false); startGPS();
+  
+  // Start Polling for Messages
+  checkBroadcasts();
+  setInterval(checkBroadcasts, 15000);
 }
 
 /* SENSORS & MAP */
 function requestSensors() { startGPS(); if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') { DeviceOrientationEvent.requestPermission().then(r => { if(r==='granted') window.addEventListener('deviceorientation', handleOrientation); }); } else window.addEventListener('deviceorientationabsolute', handleOrientation, true); $('btnReqSensors').style.display='none'; }
 function handleOrientation(e) { let heading = e.webkitCompassHeading || (e.alpha ? 360 - e.alpha : 0); if(currentDest && lastPos) { const bearing = getBearing(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon); $('arrowContainer').style.transform = `rotate(${bearing - heading}deg)`; } else $('arrowContainer').style.transform = `rotate(${-heading}deg)`; }
-function startGPS() { navigator.geolocation.watchPosition(pos => { lastPos = { lat: pos.coords.latitude, lon: pos.coords.longitude, speed: pos.coords.speed }; if (mapInstance && mapMarker) { mapMarker.setLatLng([lastPos.lat, lastPos.lon]); if(!hasCentered) { mapInstance.setView([lastPos.lat, lastPos.lon], 16); hasCentered = true; } } if(currentDest) updateNavDisplay(); }, null, { enableHighAccuracy: settings.highGPS, maximumAge: 10000 }); }
+function startGPS() { navigator.geolocation.watchPosition(pos => { lastPos = { lat: pos.coords.latitude, lon: pos.coords.longitude, speed: pos.coords.speed, alt: pos.coords.altitude }; if (mapInstance && mapMarker) { mapMarker.setLatLng([lastPos.lat, lastPos.lon]); if(!hasCentered) { mapInstance.setView([lastPos.lat, lastPos.lon], 16); hasCentered = true; } if(activeFeatures['tool_ruler']) updateRuler(); } if(currentDest) updateNavDisplay(); }, null, { enableHighAccuracy: settings.highGPS, maximumAge: 10000 }); }
 
 function initMap() { if (mapInstance) return; if (!$('map')) return; mapInstance = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.6045, 1.4442], 14); updateMapTiles(); updateUserMarker(); poiLayerGroup = L.layerGroup().addTo(mapInstance); mapInstance.on('moveend', () => refreshPOIs(false)); mapInstance.on('contextmenu', e => { tempMapPoint = { lat: e.latlng.lat, lon: e.latlng.lng, name: "Point repéré" }; $('sheetTitle').textContent = "Point Repéré"; $('sheetDesc').textContent = "Coordonnées GPS"; $('mapSheet').classList.add('active'); }); }
 function centerMap() { if(lastPos) mapInstance.flyTo([lastPos.lat, lastPos.lon], 16); }
-function updateMapTiles() { if (!mapInstance) return; if (mapTileLayer) mapInstance.removeLayer(mapTileLayer); let url = settings.theme === 'dark' ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'; if(activeFeatures['map_sat']) url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'; mapTileLayer = L.tileLayer(url, { maxZoom: 19 }).addTo(mapInstance); }
-function updateUserMarker() { if(!mapInstance) return; if(mapMarker) mapInstance.removeLayer(mapMarker); let html = `<div class="user-marker-pulse"></div>`; if(activeFeatures['style_marker_car']) html = `<div style="font-size:24px;">🚗</div>`; if(activeFeatures['style_marker_ufo']) html = `<div style="font-size:24px;">🛸</div>`; if(activeFeatures['style_marker_plane']) html = `<div style="font-size:24px;">✈️</div>`; mapMarker = L.marker([43.6045, 1.4442], {icon: L.divIcon({ className: '', html: html, iconSize: [24, 24] }) }).addTo(mapInstance); }
+function updateMapTiles() { 
+    if (!mapInstance) return; if (mapTileLayer) mapInstance.removeLayer(mapTileLayer); 
+    let url = settings.theme === 'dark' ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'; 
+    if(activeFeatures['map_sat']) url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+    
+    // BLUEPRINT STYLE
+    $('map').classList.remove('map-blueprint');
+    if(activeFeatures['map_retro']) {
+        url = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+        $('map').classList.add('map-blueprint');
+    }
+    
+    mapTileLayer = L.tileLayer(url, { maxZoom: 19 }).addTo(mapInstance); 
+}
+function updateUserMarker() { 
+    if(!mapInstance) return; if(mapMarker) mapInstance.removeLayer(mapMarker); 
+    let html = `<div class="user-marker-pulse"></div>`; 
+    if(activeFeatures['style_marker_car']) html = `<div style="font-size:24px;">🚗</div>`; 
+    if(activeFeatures['style_marker_ufo']) html = `<div style="font-size:24px;">🛸</div>`; 
+    if(activeFeatures['style_marker_plane']) html = `<div style="font-size:24px;">✈️</div>`; 
+    if(activeFeatures['style_footprint']) html = `<div style="font-size:24px;">👣</div>`;
+    if(activeFeatures['style_beam']) html = `<div style="font-size:32px; transform:rotate(-45deg);">🔦</div>`;
+    mapMarker = L.marker([43.6045, 1.4442], {icon: L.divIcon({ className: '', html: html, iconSize: [24, 24] }) }).addTo(mapInstance); 
+}
+let rulerCircle = null;
+function updateRuler() {
+    if(!mapInstance) return;
+    if(rulerCircle) mapInstance.removeLayer(rulerCircle);
+    if(activeFeatures['tool_ruler'] && lastPos) {
+        rulerCircle = L.circle([lastPos.lat, lastPos.lon], {radius: 1000, color: 'var(--accent)', fillOpacity: 0.1}).addTo(mapInstance);
+    }
+}
+
 async function refreshPOIs(force) { if(!mapInstance) return; const b = mapInstance.getBounds(); const q = `[out:json][timeout:5];(node["amenity"~"restaurant|cafe|bar"](${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()});node["tourism"](${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()}););out 15;`; try { const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`); const data = await res.json(); poiLayerGroup.clearLayers(); data.elements.forEach(el => { let icon = '📍'; if(el.tags.amenity==='restaurant')icon='🍴'; if(el.tags.amenity==='bar')icon='🍸'; L.marker([el.lat, el.lon], { icon: L.divIcon({ className: 'poi-marker', html: icon, iconSize:[32,32] }) }).addTo(poiLayerGroup).on('click', () => { tempMapPoint = { lat: el.lat, lon: el.lon, name: el.tags.name||"Lieu" }; $('sheetTitle').textContent = tempMapPoint.name; $('sheetDesc').textContent = el.tags.cuisine||"Lieu d'intérêt"; $('mapSheet').classList.add('active'); }); }); } catch(e){} }
 
 /* UI */
 function toggleShop() { $('shopContainer').classList.toggle('expanded'); $('btnExpandShop').textContent = $('shopContainer').classList.contains('expanded') ? "Réduire" : "Voir tout"; }
 function renderShop() { $('shopGrid').innerHTML = SHOP_ITEMS.map(item => { const owned = ownedItems.includes(item.id), active = activeFeatures[item.id]; return `<div class="shop-card ${active?'active-item':''}" onclick="handleShop('${item.id}')"><div style="font-size:32px;">${item.icon}</div><div style="font-weight:700; font-size:12px; margin-top:5px;">${item.name}</div><div class="shop-status" style="${owned&&active?'background:var(--accent); color:white':''}">${owned?(active?"ON":"OFF"):item.cost}</div></div>`; }).join(''); }
-async function handleShop(id) { const item = SHOP_ITEMS.find(i=>i.id===id); if(!ownedItems.includes(id)) { if(userPoints < item.cost) return alert("Points insuffisants"); if(!confirm("Acheter ?")) return; userPoints -= item.cost; ownedItems.push(id); localStorage.setItem('cc_owned_items', JSON.stringify(ownedItems)); if(userCode) await supabaseClient.from('users').update({points: userPoints}).eq('id', userCode); $('displayPoints').textContent = userPoints; } if(activeFeatures[id]) delete activeFeatures[id]; else { if(item.type==='map') Object.keys(activeFeatures).forEach(k=>{if(k.startsWith('map_')) delete activeFeatures[k]}); if(item.type==='marker') Object.keys(activeFeatures).forEach(k=>{if(k.startsWith('style_')) delete activeFeatures[k]}); activeFeatures[id]=true; } localStorage.setItem('cc_active_features', JSON.stringify(activeFeatures)); updateMapTiles(); updateUserMarker(); renderShop(); }
+async function handleShop(id) { 
+    const item = SHOP_ITEMS.find(i=>i.id===id); 
+    if(!ownedItems.includes(id)) { if(userPoints < item.cost) return alert("Points insuffisants"); if(!confirm("Acheter ?")) return; userPoints -= item.cost; ownedItems.push(id); localStorage.setItem('cc_owned_items', JSON.stringify(ownedItems)); if(userCode) await supabaseClient.from('users').update({points: userPoints}).eq('id', userCode); $('displayPoints').textContent = userPoints; } 
+    if(activeFeatures[id]) delete activeFeatures[id]; else { 
+        if(item.type==='map') Object.keys(activeFeatures).forEach(k=>{if(k.startsWith('map_')) delete activeFeatures[k]}); 
+        if(item.type==='marker') Object.keys(activeFeatures).forEach(k=>{if(k.startsWith('style_')) delete activeFeatures[k]}); 
+        activeFeatures[id]=true; 
+    } 
+    localStorage.setItem('cc_active_features', JSON.stringify(activeFeatures)); 
+    updateMapTiles(); updateUserMarker(); renderShop(); updateNavDisplay();
+}
 function applySettings() { document.body.setAttribute('data-theme', settings.theme); $('toggleTheme').checked = settings.theme==='dark'; $('toggleHighGPS').checked = settings.highGPS; $('toggleUnits').checked = settings.units; }
 $('toggleTheme').onchange = (e) => { settings.theme=e.target.checked?'dark':'light'; localStorage.setItem('cc_theme', settings.theme); applySettings(); updateMapTiles(); };
 
@@ -434,9 +505,11 @@ async function loadData() {
   // Load Favorites
   let { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode);
   if(data) places = data.map(d=>d.place_data);
-  // Load Global Suggestions (Admin ID)
+  // Load Global Suggestions (Admin ID), FILTERING OUT Broadcasts
   let { data: adminData } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', ADMIN_ID);
-  if(adminData) globalSuggestions = adminData.map(d=>d.place_data);
+  if(adminData) {
+     globalSuggestions = adminData.map(d=>d.place_data).filter(p => !p.type || p.type !== 'broadcast');
+  }
 }
 
 /* ===========================
@@ -514,29 +587,79 @@ async function loadAdminContent() {
   const { data } = await supabaseClient.from('user_favorites').select('id, place_data').eq('user_id', ADMIN_ID);
   const l = $('adminContentList'); l.innerHTML = '';
   if(data && data.length) {
-    data.forEach(item => {
-      l.innerHTML += `
-      <div class="admin-card" style="display:flex; justify-content:space-between; align-items:center;">
-         <div>
-            <div style="font-weight:700;">${item.place_data.name}</div>
-            <div style="font-size:12px; opacity:0.6;">Lat: ${item.place_data.lat.toFixed(4)}</div>
-         </div>
-         <button class="admin-act-btn btn-red" onclick="deleteSuggestion(${item.id})">Supprimer</button>
-      </div>`;
-    });
+    const validContent = data.filter(item => !item.place_data.type || item.place_data.type !== 'broadcast'); // Filter out system messages
+    if(validContent.length) {
+        validContent.forEach(item => {
+          l.innerHTML += `
+          <div class="admin-card" style="display:flex; justify-content:space-between; align-items:center;">
+             <div>
+                <div style="font-weight:700;">${item.place_data.name}</div>
+                <div style="font-size:12px; opacity:0.6;">Lat: ${item.place_data.lat.toFixed(4)}</div>
+             </div>
+             <button class="admin-act-btn btn-red" onclick="deleteSuggestion(${item.id})">Supprimer</button>
+          </div>`;
+        });
+    } else { l.innerHTML = '<div style="opacity:0.5; padding:20px; text-align:center;">Aucune suggestion.</div>'; }
   } else {
-    l.innerHTML = '<div style="opacity:0.5; padding:20px; text-align:center;">Aucune suggestion publiée.</div>';
+    l.innerHTML = '<div style="opacity:0.5; padding:20px; text-align:center;">Aucune suggestion.</div>';
   }
 }
 
 async function deleteSuggestion(dbId) {
   if(confirm("Supprimer définitivement ?")) {
     await supabaseClient.from('user_favorites').delete().eq('id', dbId);
-    loadAdminContent(); // Refresh Admin Panel
-    loadData().then(renderPlaces); // Refresh User UI
+    loadAdminContent(); 
+    loadData().then(renderPlaces); 
   }
 }
 
+/* ===========================
+   BROADCAST SYSTEM (REAL)
+   =========================== */
+async function sendBroadcast() {
+    const msg = $('broadcastInput').value;
+    if(!msg) return;
+    if(!confirm("Envoyer ce message à TOUS les utilisateurs ?")) return;
+    
+    // We save the message as a "favorite" for the admin, but with a special flag
+    const payload = { type: 'broadcast', text: msg, date: Date.now(), name: 'System Msg', lat:0, lon:0 };
+    await supabaseClient.from('user_favorites').insert([{ user_id: ADMIN_ID, place_data: payload }]);
+    
+    alert('Message envoyé au réseau !');
+    $('broadcastInput').value = '';
+}
+
+async function checkBroadcasts() {
+    // Polls for the latest message from Admin that has type='broadcast'
+    const { data } = await supabaseClient.from('user_favorites')
+        .select('id, place_data')
+        .eq('user_id', ADMIN_ID)
+        .order('created_at', { ascending: false })
+        .limit(5); 
+        
+    if(data && data.length) {
+        // Find latest valid broadcast
+        const latestBroadcast = data.find(d => d.place_data.type === 'broadcast');
+        if(latestBroadcast) {
+            const seenId = localStorage.getItem('cc_last_broadcast_id');
+            // If we haven't seen this message ID yet
+            if(seenId != latestBroadcast.id) {
+                showBroadcast(latestBroadcast.place_data.text);
+                localStorage.setItem('cc_last_broadcast_id', latestBroadcast.id);
+            }
+        }
+    }
+}
+
+function showBroadcast(text) {
+    $('broadcastText').textContent = text;
+    $('broadcastOverlay').classList.add('active');
+}
+function closeBroadcast() {
+    $('broadcastOverlay').classList.remove('active');
+}
+
+/* UI UTILS */
 function confirmMapAction(action) {
   if (action === 'save') { places.push(tempMapPoint); supabaseClient.from('user_favorites').insert([{user_id:userCode, place_data:tempMapPoint}]); renderPlaces(); } 
   else { currentDest=tempMapPoint; $('navDestName').textContent=currentDest.name; show('viewNav'); } 
@@ -544,7 +667,20 @@ function confirmMapAction(action) {
 }
 
 function show(id, save=true) { document.querySelectorAll('.view').forEach(v => { if(v.id!=='viewLogin') v.classList.remove('active'); }); $(id).classList.add('active'); document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active')); if(id==='viewDiscover') { $('navBar').children[0].classList.add('active'); setTimeout(()=>{initMap(); mapInstance.invalidateSize();}, 50); } if(id==='viewPlaces') { $('navBar').children[1].classList.add('active'); renderPlaces(); } if(id==='viewNav') $('navBar').children[2].classList.add('active'); if(id==='viewAccount') $('navBar').children[3].classList.add('active'); if(save) localStorage.setItem('cc_current_view', id); }
-function updateNavDisplay() { const d = getDist(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon); const distText = settings.units ? (d * 0.621371).toFixed(1) + ' mi' : (d < 1 ? Math.round(d*1000)+'m' : d.toFixed(1)+'km'); $('distVal').textContent = distText; const prog = Math.min(Math.max(d/10, 0), 1); $('ringProg').style.strokeDashoffset = 301 * prog; let wHtml = ''; if(activeFeatures['wid_speed']) wHtml += `<div class="nav-widget-pill">⚡ ${Math.round((lastPos.speed||0)*3.6)} km/h</div>`; if(activeFeatures['wid_weather']) wHtml += `<div class="nav-widget-pill">🌤️ 19°C</div>`; $('navWidgetsArea').innerHTML = wHtml; }
+
+function updateNavDisplay() { 
+    const d = getDist(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon); 
+    const distText = settings.units ? (d * 0.621371).toFixed(1) + ' mi' : (d < 1 ? Math.round(d*1000)+'m' : d.toFixed(1)+'km'); 
+    $('distVal').textContent = distText; 
+    const prog = Math.min(Math.max(d/10, 0), 1); $('ringProg').style.strokeDashoffset = 301 * prog; 
+    
+    let wHtml = ''; 
+    if(activeFeatures['wid_speed']) wHtml += `<div class="nav-widget-pill">⚡ ${Math.round((lastPos.speed||0)*3.6)} km/h</div>`; 
+    if(activeFeatures['wid_weather']) wHtml += `<div class="nav-widget-pill">🌤️ 19°C</div>`; 
+    if(activeFeatures['wid_alt']) wHtml += `<div class="nav-widget-pill">⛰️ ${(lastPos.alt||0).toFixed(0)}m</div>`;
+    if(activeFeatures['wid_coords']) wHtml += `<div class="nav-widget-pill">📍 ${lastPos.lat.toFixed(3)}, ${lastPos.lon.toFixed(3)}</div>`;
+    $('navWidgetsArea').innerHTML = wHtml; 
+}
 function closeMapSheet() { $('mapSheet').classList.remove('active'); } function clearHistory() { localStorage.removeItem('cc_history'); renderPlaces(); }
 function getDist(lat1,lon1,lat2,lon2) { const R=6371; const dLat=(lat2-lat1)*Math.PI/180; const dLon=(lon2-lon1)*Math.PI/180; const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2; return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)); }
 function getBearing(lat1,lon1,lat2,lon2) { const dL=(lon2-lon1)*Math.PI/180; const l1=lat1*Math.PI/180; const l2=lat2*Math.PI/180; const y=Math.sin(dL)*Math.cos(l2); const x=Math.cos(l1)*Math.sin(l2)-Math.sin(l1)*Math.cos(l2)*Math.cos(dL); return (Math.atan2(y,x)*180/Math.PI+360)%360; }
