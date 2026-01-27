@@ -8,10 +8,10 @@
   <meta name="theme-color" content="#000000" />
   <title>City Compass</title>
 
-  <!-- LEAFLET MAP CSS -->
+  <!-- LEAFLET CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   
-  <!-- SUPABASE & LEAFLET JS -->
+  <!-- LIBS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -20,30 +20,21 @@
        VARIABLES & THEME
        ========================== */
     :root {
-      --bg-body: #F2F2F7;
-      --bg-card: #FFFFFF;
-      --bg-input: rgba(118, 118, 128, 0.12);
+      --bg-body: #F2F2F7; --bg-card: #FFFFFF; --bg-input: rgba(118, 118, 128, 0.12);
       --bg-blur: rgba(255, 255, 255, 0.85);
-      --text-primary: #000000;
-      --text-secondary: #8E8E93;
+      --text-primary: #000000; --text-secondary: #8E8E93;
       --separator: rgba(60, 60, 67, 0.12);
-      --accent: #007AFF;
-      --accent-gradient: linear-gradient(135deg, #007AFF, #00C7BE);
-      --danger: #FF3B30;
-      --success: #34C759;
-      --radius-l: 22px;
+      --accent: #007AFF; --accent-gradient: linear-gradient(135deg, #007AFF, #00C7BE);
+      --danger: #FF3B30; --success: #34C759;
+      --radius-l: 22px; --radius-m: 14px;
       --nav-height: 85px;
       --safe-top: env(safe-area-inset-top);
       --safe-bottom: env(safe-area-inset-bottom);
     }
-
     [data-theme="dark"] {
-      --bg-body: #000000;
-      --bg-card: #1C1C1E;
-      --bg-input: rgba(118, 118, 128, 0.24);
+      --bg-body: #000000; --bg-card: #1C1C1E; --bg-input: rgba(118, 118, 128, 0.24);
       --bg-blur: rgba(30, 30, 30, 0.85);
-      --text-primary: #FFFFFF;
-      --text-secondary: #98989D;
+      --text-primary: #FFFFFF; --text-secondary: #98989D;
       --separator: rgba(84, 84, 88, 0.4);
       --accent: #0A84FF;
     }
@@ -56,27 +47,34 @@
       transition: background 0.3s ease, color 0.3s ease;
       font-size: 17px;
     }
-
     .app { display: flex; flex-direction: column; height: 100%; position: relative; }
 
-    /* VIEW MANAGEMENT */
-    .view { 
-        display: none; 
-        position: absolute; top: 0; left: 0; right: 0; bottom: var(--nav-height); /* Prend tout l'espace sauf nav */
-        overflow: hidden; 
-        opacity: 0; transition: opacity 0.3s;
-    }
+    /* VIEW MANAGER */
+    .view { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: var(--nav-height); overflow: hidden; opacity: 0; transition: opacity 0.3s; }
     .view.active { display: block; opacity: 1; z-index: 1; }
-    
-    /* Z-Index fix for Login to be on top */
     #viewLogin { bottom: 0; z-index: 2000; background: var(--bg-body); }
-    #viewLogin.active { display: block; }
-
-    /* MAP CONTAINER */
     #viewDiscover { padding: 0 !important; }
     #map { width: 100%; height: 100%; z-index: 1; background: var(--bg-input); }
+    .scroll-container { height: 100%; overflow-y: auto; overflow-x: hidden; padding: max(20px, var(--safe-top)) 20px 40px 20px; }
 
-    /* FLOATING UI */
+    /* LOGIN ANIMATION */
+    .login-compass-anim {
+      width: 80px; height: 80px; margin: 40px auto;
+      border: 4px solid var(--accent); border-radius: 50%;
+      position: relative;
+      animation: breathe 3s ease-in-out infinite;
+    }
+    .login-compass-needle {
+      position: absolute; top: 50%; left: 50%; width: 60px; height: 60px;
+      margin-left: -30px; margin-top: -30px;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23007AFF' d='M12 2L4.5 20.29C4.24 21.06 5.12 21.73 5.8 21.31L12 17.5L18.2 21.31C18.88 21.73 19.76 21.06 19.5 20.29L12 2Z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: center;
+      animation: compassSpin 4s ease-in-out infinite alternate;
+    }
+    @keyframes compassSpin { 0% { transform: rotate(-45deg); } 100% { transform: rotate(45deg); } }
+    @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } }
+
+    /* FLOATING MAP UI */
     .floating-search {
       position: absolute; top: max(20px, var(--safe-top)); left: 16px; right: 16px;
       background: var(--bg-blur); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
@@ -85,7 +83,6 @@
     }
     .search-input-box { display: flex; align-items: center; background: var(--bg-input); border-radius: 12px; padding: 0 12px; height: 44px; }
     .search-input-box input { border: none; background: transparent; height: 100%; width: 100%; font-size: 17px; color: var(--text-primary); }
-    
     .suggestions-float { margin-top: 8px; background: var(--bg-card); border-radius: 12px; overflow: hidden; display: none; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
     .suggestion-item { padding: 14px 16px; border-bottom: 1px solid var(--separator); display: flex; gap: 12px; align-items: center; cursor: pointer; }
 
@@ -100,9 +97,6 @@
     }
     .map-sheet.active { transform: translateY(0); }
 
-    /* SCROLLABLE CONTENT (Nav & Account) */
-    .scroll-container { height: 100%; overflow-y: auto; overflow-x: hidden; padding: max(20px, var(--safe-top)) 20px 40px 20px; }
-
     /* BOUSSOLE UI */
     .compass-wrapper { position: relative; width: 280px; height: 280px; margin: 40px auto; display: flex; align-items: center; justify-content: center; }
     .compass-face { width: 86%; height: 86%; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--separator); display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 30px rgba(0,0,0,0.02); z-index: 2; }
@@ -113,12 +107,15 @@
     .metric-box { background: var(--bg-card); padding: 14px; border-radius: var(--radius-m); text-align: center; border: 1px solid var(--separator); }
     .metric-val { font-size: 22px; font-weight: 800; color: var(--accent); }
 
-    /* SHOP & GENERIC */
+    /* LISTS & CARDS */
+    .placeCard { background: var(--bg-card); padding: 16px; border-radius: var(--radius-l); display: flex; align-items: center; gap: 16px; margin-bottom: 12px; border: 1px solid var(--separator); cursor:pointer;}
     .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .shop-card { background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%); padding: 16px; border-radius: 18px; text-align: center; position: relative; overflow: hidden; border: 1px solid var(--separator); }
     .shop-icon { font-size: 32px; margin-bottom: 8px; }
-    .shop-cost { background: var(--bg-input); color: var(--accent); padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 800; display: inline-block; margin-top: 8px; }
-    
+    .shop-cost { background: var(--bg-input); color: var(--accent); padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 800; display: inline-block; margin-top: 8px; }
+    .shop-card.locked { opacity: 0.6; filter: grayscale(1); }
+
+    /* BUTTONS & HERO */
     .btn { width: 100%; padding: 16px; border-radius: var(--radius-l); border: none; font-weight: 700; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--bg-card); color: var(--text-primary); }
     .btn-primary { background: var(--accent); color: white; }
     .account-hero { background: var(--accent-gradient); padding: 30px; border-radius: 24px; color: white; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 40px -10px var(--accent); }
@@ -162,6 +159,11 @@
         <input id="inputLoginCode" placeholder="Code secret" style="text-align:center; letter-spacing:2px; font-family:monospace; background:var(--bg-input); padding:16px; border-radius:12px; width:100%; border:none; color: var(--text-primary);" maxlength="19" inputmode="numeric" />
         <button class="btn btn-primary" id="btnLogin" style="margin-top:16px;">Connexion</button>
         <p id="loginError" style="color:var(--danger); text-align:center; margin-top:10px; min-height:20px; font-size:14px;"></p>
+
+        <!-- ANIMATION BOUSSOLE ACCUEIL -->
+        <div class="login-compass-anim">
+          <div class="login-compass-needle"></div>
+        </div>
       </div>
     </div>
 
@@ -191,6 +193,22 @@
           <button class="btn" style="background:var(--bg-input);" onclick="confirmMapAction('save')">⭐ Sauver</button>
         </div>
         <button class="btn" style="margin-top:10px; padding:10px; background:transparent; font-size:14px;" onclick="closeMapSheet()">Fermer</button>
+      </div>
+    </div>
+
+    <!-- MES LIEUX (New Tab) -->
+    <div class="view" id="viewPlaces">
+      <div class="scroll-container">
+        <h2 style="margin-bottom:20px;">Mes Lieux</h2>
+        
+        <div class="label">Favoris Enregistrés</div>
+        <div id="placesList"></div>
+
+        <div class="label">Historique Récents (Trajets)</div>
+        <div id="historyList">
+          <div style="text-align:center; opacity:0.5; padding:20px;">Aucun historique récent</div>
+        </div>
+        <button class="btn" style="margin-top:20px; background:var(--bg-input); font-size:14px;" onclick="clearHistory()">Effacer l'historique</button>
       </div>
     </div>
 
@@ -233,11 +251,8 @@
           <div style="font-size:42px; font-weight:800;" id="displayPoints">0</div>
           <div style="font-family:monospace; background:rgba(255,255,255,0.2); padding:8px; border-radius:8px; margin-top:10px; display:inline-block; font-size:14px; user-select:all;" id="displayCode">...</div>
         </div>
-        
-        <div class="label">Mes Lieux</div>
-        <div id="placesList"></div>
 
-        <div class="label">Boutique</div>
+        <div class="label">Boutique & Personnalisation</div>
         <div class="shop-grid" id="shopGrid"></div>
 
         <div class="label">Paramètres</div>
@@ -248,9 +263,10 @@
       </div>
     </div>
 
-    <!-- NAV BAR -->
+    <!-- NAV BAR (Updated Order) -->
     <div class="bottom-nav" id="navBar" style="display:none;">
       <button class="nav-tab active" onclick="show('viewDiscover')"><span class="nav-icon">🗺️</span>Carte</button>
+      <button class="nav-tab" onclick="show('viewPlaces')"><span class="nav-icon">📍</span>Lieux</button>
       <button class="nav-tab" onclick="show('viewNav')"><span class="nav-icon">🧭</span>Boussole</button>
       <button class="nav-tab" onclick="show('viewAccount')"><span class="nav-icon">👤</span>Profil</button>
     </div>
@@ -258,7 +274,7 @@
   </div>
 
 <script>
-/* CONFIG */
+/* CONFIG & STATE */
 const SUPABASE_URL = 'https://vjlfbcwnfwyrxstfvefq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGZiY3duZnd5cnhzdGZ2ZWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMDc2MjcsImV4cCI6MjA4NDc4MzYyN30.WTuWbxB-8isJOp2lNnq73njQmifDjxTNEWngMgKtmv4';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -274,69 +290,73 @@ let mapMarker = null;
 let mapTileLayer = null;
 let tempMapPoint = null;
 
+// Settings
 let settings = { theme: localStorage.getItem('cc_theme') || 'light', vib: localStorage.getItem('cc_vib') !== 'false' };
 let ownedItems = JSON.parse(localStorage.getItem('cc_owned_items') || '[]');
 let activeArrowColor = localStorage.getItem('cc_arrow_color') || null;
+let activeMarkerIcon = localStorage.getItem('cc_marker_icon') || 'default';
 
+// SHOP DATA (Enriched)
 const SHOP_ITEMS = [
+  // Styles
   { id: 'arrow_color', name: 'Couleur Flèche', cost: 50, type: 'style', icon:'🎨' },
-  { id: 'widget_speed', name: 'Vitesse (Widget)', cost: 100, type: 'widget', icon:'⚡' },
-  { id: 'map_pro', name: 'Carte Satellite', cost: 500, type: 'map', icon:'🛰️' }
-];
-const ARROW_COLORS = ['#000000', '#FF3B30', '#34C759', '#0A84FF', '#FFCC00'];
+  { id: 'marker_car', name: 'Icône Voiture', cost: 150, type: 'marker', icon:'🚗' },
+  { id: 'marker_ufo', name: 'Icône OVNI', cost: 300, type: 'marker', icon:'🛸' },
+  
+  // Maps
+  { id: 'map_dark', name: 'Carte Sombre', cost: 0, type: 'map', icon:'🌑' },
+  { id: 'map_sat', name: 'Carte Satellite', cost: 500, type: 'map', icon:'🛰️' },
+  { id: 'map_retro', name: 'Carte Rétro', cost: 400, type: 'map', icon:'📜' },
 
-/* --- INIT & LOGIN FLOW --- */
+  // Widgets
+  { id: 'widget_speed', name: 'Vitesse', cost: 100, type: 'widget', icon:'⚡' },
+  { id: 'widget_weather', name: 'Météo (Simu)', cost: 200, type: 'widget', icon:'⛅' },
+  
+  // Avatar / Profile
+  { id: 'avatar_frame', name: 'Cadre Avatar', cost: 250, type: 'profile', icon:'🖼️' },
+  { id: 'title_explorer', name: 'Titre Explorateur', cost: 1000, type: 'profile', icon:'👑' },
+  
+  // Tools
+  { id: 'export_gpx', name: 'Export GPX', cost: 150, type: 'tool', icon:'📁' },
+  { id: 'history_plus', name: 'Historique illimité', cost: 300, type: 'tool', icon:'📚' }
+];
+
+const ARROW_COLORS = ['#000000', '#FF3B30', '#34C759', '#0A84FF', '#FFCC00', '#AF52DE'];
+const MARKER_ICONS = ['default', 'car', 'ufo'];
+
+/* --- INIT & LOGIN --- */
 async function login(c) {
   const clean = c.replace(/\s/g, '');
   if(clean.length!==16) { $('loginError').textContent = "Le code doit faire 16 chiffres"; return; }
   
-  $('btnLogin').textContent = "Connexion...";
-  $('btnLogin').disabled = true;
-
+  $('btnLogin').textContent = "Connexion..."; $('btnLogin').disabled = true;
   try {
     const { data, error } = await supabaseClient.from('users').select('*').eq('id', clean);
-    
-    if (error) throw error;
     if (data && data.length > 0) {
-      userCode = clean;
-      userPoints = data[0].points;
+      userCode = clean; userPoints = data[0].points;
       localStorage.setItem('cc_user_code', userCode);
-      await loadFavorites();
-      initApp();
+      await loadFavorites(); initApp();
     } else {
       $('loginError').textContent = "Code introuvable.";
-      $('btnLogin').textContent = "Connexion";
-      $('btnLogin').disabled = false;
+      $('btnLogin').textContent = "Connexion"; $('btnLogin').disabled = false;
     }
   } catch (err) {
-    $('loginError').textContent = "Erreur de connexion. Réessayez.";
-    $('btnLogin').textContent = "Connexion";
-    $('btnLogin').disabled = false;
+    $('loginError').textContent = "Erreur réseau."; $('btnLogin').textContent = "Connexion"; $('btnLogin').disabled = false;
   }
 }
 
 async function createAccount() {
   const btn = $('btnCreateAccount'); btn.textContent="..."; btn.disabled=true;
   const newCode = Array(16).fill(0).map(()=>Math.floor(Math.random()*10)).join('');
-  
-  try {
-    await supabaseClient.from('users').insert([{ id: newCode, points: 200 }]);
-    userCode = newCode; 
-    userPoints = 200; 
-    localStorage.setItem('cc_user_code', newCode);
-    initApp();
-  } catch(e) {
-    alert("Erreur création: " + e.message);
-    btn.textContent="Créer un profil"; btn.disabled=false;
-  }
+  await supabaseClient.from('users').insert([{ id: newCode, points: 200 }]);
+  userCode = newCode; userPoints = 200; localStorage.setItem('cc_user_code', newCode);
+  initApp();
 }
 
 function initApp() {
-  // Hide Login
   $('viewLogin').classList.remove('active');
   $('navBar').style.display = 'flex';
   
-  // Update UI
   $('displayCode').textContent = userCode ? userCode.replace(/(\d{4})(?=\d)/g, '$1 ').trim() : '...';
   $('displayPoints').textContent = userPoints;
   
@@ -344,76 +364,35 @@ function initApp() {
   renderPlaces();
   renderShop();
 
-  // Restore Last View
   const v = localStorage.getItem('cc_current_view') || 'viewDiscover';
-  const d = localStorage.getItem('cc_current_dest');
-  
-  if (v === 'viewNav' && d) {
-    currentDest = JSON.parse(d);
-    $('navDestName').textContent = currentDest.name;
-    show('viewNav', false);
-  } else {
-    show(v, false);
-  }
+  show(v, false);
 
-  // Start GPS
-  if (navigator.permissions) {
-    navigator.permissions.query({name:'geolocation'}).then(r => {
-      if (r.state === 'granted') { $('gpsPermissionBlock').style.display='none'; startGPS(); }
-      else $('gpsPermissionBlock').style.display='block';
-    });
-  } else startGPS();
+  if (navigator.permissions) navigator.permissions.query({name:'geolocation'}).then(r => { if (r.state === 'granted') { $('gpsPermissionBlock').style.display='none'; startGPS(); } else $('gpsPermissionBlock').style.display='block'; });
+  else startGPS();
 }
 
 /* --- VIEW MANAGER --- */
 function show(id, save=true) {
-  // Hide all views
-  document.querySelectorAll('.view').forEach(v => {
-    if(v.id !== 'viewLogin') v.classList.remove('active');
-  });
-  
-  // Show target view
-  const target = $(id);
-  if(target) target.classList.add('active');
+  document.querySelectorAll('.view').forEach(v => { if(v.id!=='viewLogin') v.classList.remove('active'); });
+  $(id).classList.add('active');
 
-  // Update Navbar
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-  if(id==='viewDiscover') {
-    $('navBar').children[0].classList.add('active');
-    // Important: Leaflet needs visible container to size correctly
-    setTimeout(() => { 
-      initMap(); 
-      if(mapInstance) mapInstance.invalidateSize(); 
-    }, 100);
-  }
-  if(id==='viewNav') {
-    $('navBar').children[1].classList.add('active');
-    initCompassPermission();
-  }
-  if(id==='viewAccount') $('navBar').children[2].classList.add('active');
+  if(id==='viewDiscover') { $('navBar').children[0].classList.add('active'); setTimeout(() => { initMap(); if(mapInstance) mapInstance.invalidateSize(); }, 100); }
+  if(id==='viewPlaces') $('navBar').children[1].classList.add('active');
+  if(id==='viewNav') { $('navBar').children[2].classList.add('active'); initCompassPermission(); }
+  if(id==='viewAccount') $('navBar').children[3].classList.add('active');
 
-  // Save State
-  if(save) {
-    localStorage.setItem('cc_current_view', id);
-    if(id!=='viewNav') { localStorage.removeItem('cc_current_dest'); currentDest=null; }
-  }
+  if(save) { localStorage.setItem('cc_current_view', id); if(id!=='viewNav') { localStorage.removeItem('cc_current_dest'); currentDest=null; } }
 }
 
-/* --- MAP SYSTEM --- */
+/* --- MAP --- */
 function initMap() {
   if (mapInstance) return; 
   if (!$('map')) return;
-
   mapInstance = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.6045, 1.4442], 13);
   updateMapTiles();
+  updateMarkerIcon();
   
-  const icon = L.divIcon({
-    className: 'user-marker',
-    html: `<div style="width:16px; height:16px; background:var(--accent); border:3px solid white; border-radius:50%; box-shadow:0 2px 5px rgba(0,0,0,0.3);"></div>`,
-    iconSize: [20, 20]
-  });
-  mapMarker = L.marker([43.6045, 1.4442], {icon: icon}).addTo(mapInstance);
-
   mapInstance.on('contextmenu', function(e) {
     tempMapPoint = { lat: e.latlng.lat, lon: e.latlng.lng, name: "Point repéré" };
     $('sheetCoords').textContent = `${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`;
@@ -426,27 +405,34 @@ function initMap() {
 function updateMapTiles() {
   if (!mapInstance) return;
   if (mapTileLayer) mapInstance.removeLayer(mapTileLayer);
-  const isDark = settings.theme === 'dark';
-  const url = isDark ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  
+  let url = settings.theme === 'dark' ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  if(ownedItems.includes('map_sat') && activeMarkerIcon === 'sat') url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'; // Example logic
+  
   mapTileLayer = L.tileLayer(url, { maxZoom: 19 }).addTo(mapInstance);
+}
+
+function updateMarkerIcon() {
+  if(!mapInstance) return;
+  if(mapMarker) mapInstance.removeLayer(mapMarker);
+  
+  let html = `<div style="width:16px; height:16px; background:var(--accent); border:3px solid white; border-radius:50%;"></div>`;
+  if(activeMarkerIcon === 'car') html = `<div style="font-size:20px;">🚗</div>`;
+  if(activeMarkerIcon === 'ufo') html = `<div style="font-size:20px;">🛸</div>`;
+
+  const icon = L.divIcon({ className: 'user-marker', html: html, iconSize: [20, 20] });
+  mapMarker = L.marker([43.6045, 1.4442], {icon: icon}).addTo(mapInstance);
 }
 
 function closeMapSheet() { $('mapSheet').classList.remove('active'); }
 function confirmMapAction(action) {
   if (!tempMapPoint) return;
-  if (action === 'save') {
-    addFavorite({ name: tempMapPoint.name, fullAddress: "Carte", lat: tempMapPoint.lat, lon: tempMapPoint.lon });
-    alert("Enregistré !");
-  } else if (action === 'go') {
-    currentDest = { ...tempMapPoint };
-    $('navDestName').textContent = currentDest.name;
-    localStorage.setItem('cc_current_dest', JSON.stringify(currentDest));
-    show('viewNav');
-  }
+  if (action === 'save') { addFavorite({ name: tempMapPoint.name, fullAddress: "Carte", lat: tempMapPoint.lat, lon: tempMapPoint.lon }); alert("Enregistré dans 'Mes Lieux'"); }
+  else if (action === 'go') { currentDest = { ...tempMapPoint }; $('navDestName').textContent = currentDest.name; localStorage.setItem('cc_current_dest', JSON.stringify(currentDest)); show('viewNav'); addToHistory(currentDest); }
   closeMapSheet();
 }
 
-/* --- NAVIGATION & SENSORS --- */
+/* --- NAV & SENSORS --- */
 let deviceHeading = 0, renderedHeading = 0;
 function navLoop() {
   requestAnimationFrame(navLoop);
@@ -474,61 +460,54 @@ function startGPS() {
       const prog = Math.min(Math.max(d/10, 0), 1);
       $('ringProg').style.strokeDashoffset = 301 * prog;
       
-      if(ownedItems.includes('widget_speed')) {
-        const kmh = Math.round((pos.coords.speed || 0) * 3.6);
-        $('navWidgetsArea').innerHTML = `<div style="background:var(--bg-input); padding:6px 12px; border-radius:10px; font-weight:700;">⚡ ${kmh} km/h</div>`;
-      }
+      let wHtml = '';
+      if(ownedItems.includes('widget_speed')) wHtml += `<div style="background:var(--bg-input); padding:6px 12px; border-radius:10px; font-weight:700;">⚡ ${Math.round((pos.coords.speed||0)*3.6)} km/h</div>`;
+      if(ownedItems.includes('widget_weather')) wHtml += `<div style="background:var(--bg-input); padding:6px 12px; border-radius:10px; font-weight:700; margin-left:10px;">⛅ 18°C</div>`;
+      $('navWidgetsArea').innerHTML = wHtml;
     }
   }, null, { enableHighAccuracy: true });
 }
+function initCompassPermission() { if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') { $('btnCalibrate').style.display = 'block'; $('btnCalibrate').onclick = () => { DeviceOrientationEvent.requestPermission().then(r => { if (r === 'granted') { window.addEventListener('deviceorientation', e => deviceHeading = e.webkitCompassHeading || 0); $('btnCalibrate').style.display = 'none'; } }); }; } else { window.addEventListener('deviceorientationabsolute', e => deviceHeading = 360 - e.alpha, true); } }
 
-function initCompassPermission() {
-  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    $('btnCalibrate').style.display = 'block';
-    $('btnCalibrate').onclick = () => {
-      DeviceOrientationEvent.requestPermission().then(r => {
-        if (r === 'granted') {
-          window.addEventListener('deviceorientation', e => deviceHeading = e.webkitCompassHeading || 0);
-          $('btnCalibrate').style.display = 'none';
-        }
-      });
-    };
-  } else {
-    window.addEventListener('deviceorientationabsolute', e => deviceHeading = 360 - e.alpha, true);
-  }
-}
-
-/* --- SETTINGS & HELPERS --- */
+/* --- SETTINGS, SHOP & LOGIC --- */
 function applySettings() {
   document.body.setAttribute('data-theme', settings.theme);
-  $('toggleTheme').checked = settings.theme === 'dark';
-  $('toggleVib').checked = settings.vib;
+  $('toggleTheme').checked = settings.theme === 'dark'; $('toggleVib').checked = settings.vib;
   updateMapTiles();
-  const path = document.querySelector('.arrow-svg path');
-  if(path) path.style.fill = activeArrowColor || 'var(--text-primary)';
+  const path = document.querySelector('.arrow-svg path'); if(path) path.style.fill = activeArrowColor || 'var(--text-primary)';
 }
-$('toggleTheme').onchange = (e) => {
-  settings.theme = e.target.checked ? 'dark' : 'light';
-  localStorage.setItem('cc_theme', settings.theme);
-  applySettings();
-}
+$('toggleTheme').onchange = (e) => { settings.theme = e.target.checked ? 'dark' : 'light'; localStorage.setItem('cc_theme', settings.theme); applySettings(); }
 
 function renderPlaces() {
   const l = $('placesList');
   if(!places.length) { l.innerHTML='<div style="text-align:center; opacity:0.5; padding:20px;">Vide</div>'; return; }
   l.innerHTML = places.map((p,i) => `
     <div class="placeCard" onclick="startNavFromList(${i})">
-      <div style="font-size:24px;">📍</div>
-      <div style="flex:1"><div style="font-weight:600;">${p.name}</div><div style="font-size:12px; opacity:0.7;">${p.fullAddress||'Saved'}</div></div>
+      <div style="font-size:24px;">⭐</div>
+      <div style="flex:1"><div style="font-weight:600;">${p.name}</div><div style="font-size:12px; opacity:0.7;">${p.fullAddress||'Favori'}</div></div>
       <button class="btn" style="width:30px; padding:0; background:transparent;" onclick="event.stopPropagation(); deleteFavorite(${i})">✕</button>
     </div>`).join('');
 }
-function startNavFromList(i) {
-  currentDest = places[i];
-  $('navDestName').textContent = currentDest.name;
-  localStorage.setItem('cc_current_dest', JSON.stringify(currentDest));
-  show('viewNav');
+function addToHistory(place) {
+  let hist = JSON.parse(localStorage.getItem('cc_history') || '[]');
+  hist.unshift(place); if(hist.length>5) hist.pop();
+  localStorage.setItem('cc_history', JSON.stringify(hist));
+  renderHistory();
 }
+function renderHistory() {
+  let hist = JSON.parse(localStorage.getItem('cc_history') || '[]');
+  const l = $('historyList');
+  if(!hist.length) { l.innerHTML='<div style="text-align:center; opacity:0.5; padding:20px;">Aucun trajet récent</div>'; return; }
+  l.innerHTML = hist.map(p => `
+    <div class="placeCard" onclick="currentDest={...p}; show('viewNav');">
+      <div style="font-size:24px;">🕒</div>
+      <div style="flex:1"><div style="font-weight:600;">${p.name}</div><div style="font-size:12px; opacity:0.7;">Historique</div></div>
+    </div>`).join('');
+}
+function clearHistory() { localStorage.removeItem('cc_history'); renderHistory(); }
+renderHistory();
+
+function startNavFromList(i) { currentDest = places[i]; $('navDestName').textContent = currentDest.name; localStorage.setItem('cc_current_dest', JSON.stringify(currentDest)); show('viewNav'); addToHistory(currentDest); }
 
 function renderShop() {
   $('shopGrid').innerHTML = SHOP_ITEMS.map(item => {
@@ -536,19 +515,24 @@ function renderShop() {
     return `<div class="shop-card ${!owned && userPoints < item.cost ? 'locked' : ''}" onclick="buyItem('${item.id}')">
         <div class="shop-icon">${item.icon}</div>
         <div style="font-weight:700; font-size:13px;">${item.name}</div>
-        <div class="shop-cost">${owned ? (item.type==='style'?'Changer':'Acquis') : item.cost+' pts'}</div>
+        <div class="shop-cost">${owned ? (item.type.startsWith('m')||item.type.startsWith('s')?'Activer':'Acquis') : item.cost+' pts'}</div>
       </div>`;
   }).join('');
 }
 async function buyItem(id) {
   const item = SHOP_ITEMS.find(i=>i.id===id);
   if(ownedItems.includes(id)) {
-    if(id==='arrow_color') {
+    if(item.type==='style') {
       let idx = ARROW_COLORS.indexOf(activeArrowColor||'#000000');
       activeArrowColor = ARROW_COLORS[(idx+1)%ARROW_COLORS.length];
       localStorage.setItem('cc_arrow_color', activeArrowColor);
-      applySettings();
     }
+    if(item.type==='marker') {
+      activeMarkerIcon = (activeMarkerIcon === 'default' ? 'car' : (activeMarkerIcon === 'car' ? 'ufo' : 'default'));
+      localStorage.setItem('cc_marker_icon', activeMarkerIcon);
+      updateMarkerIcon();
+    }
+    applySettings(); alert("Activé !");
     return;
   }
   if(userPoints < item.cost) return alert("Pas assez de points");
@@ -557,59 +541,31 @@ async function buyItem(id) {
   ownedItems.push(id);
   localStorage.setItem('cc_owned_items', JSON.stringify(ownedItems));
   if(userCode) await supabaseClient.from('users').update({points: userPoints}).eq('id', userCode);
-  $('displayPoints').textContent = userPoints;
-  renderShop();
+  $('displayPoints').textContent = userPoints; renderShop();
 }
 
-/* DATABASE */
-async function loadFavorites() {
-  if(!userCode)return;
-  const { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode);
-  if(data) { places = data.map(d=>d.place_data); renderPlaces(); }
-}
-async function addFavorite(p) {
-  places.push(p); renderPlaces();
-  if(userCode) await supabaseClient.from('user_favorites').insert([{user_id:userCode, place_data:p}]);
-}
-async function deleteFavorite(i) {
-  const p = places[i]; places.splice(i,1); renderPlaces();
-  if(userCode) await supabaseClient.from('user_favorites').delete().match({user_id:userCode}).filter('place_data->>name','eq',p.name);
-}
+/* API & UTILS */
+async function loadFavorites() { if(!userCode)return; const { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode); if(data) { places = data.map(d=>d.place_data); renderPlaces(); } }
+async function addFavorite(p) { places.push(p); renderPlaces(); if(userCode) await supabaseClient.from('user_favorites').insert([{user_id:userCode, place_data:p}]); }
+async function deleteFavorite(i) { const p = places[i]; places.splice(i,1); renderPlaces(); if(userCode) await supabaseClient.from('user_favorites').delete().match({user_id:userCode}).filter('place_data->>name','eq',p.name); }
 
-/* MATH */
-function getDist(lat1,lon1,lat2,lon2) {
-  const R=6371; const dLat=(lat2-lat1)*Math.PI/180; const dLon=(lon2-lon1)*Math.PI/180;
-  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
-function getBearing(lat1,lon1,lat2,lon2) {
-  const dL=(lon2-lon1)*Math.PI/180; const l1=lat1*Math.PI/180; const l2=lat2*Math.PI/180;
-  const y=Math.sin(dL)*Math.cos(l2); const x=Math.cos(l1)*Math.sin(l2)-Math.sin(l1)*Math.cos(l2)*Math.cos(dL);
-  return (Math.atan2(y,x)*180/Math.PI+360)%360;
-}
+function getDist(lat1,lon1,lat2,lon2) { const R=6371; const dLat=(lat2-lat1)*Math.PI/180; const dLon=(lon2-lon1)*Math.PI/180; const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2; return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)); }
+function getBearing(lat1,lon1,lat2,lon2) { const dL=(lon2-lon1)*Math.PI/180; const l1=lat1*Math.PI/180; const l2=lat2*Math.PI/180; const y=Math.sin(dL)*Math.cos(l2); const x=Math.cos(l1)*Math.sin(l2)-Math.sin(l1)*Math.cos(l2)*Math.cos(dL); return (Math.atan2(y,x)*180/Math.PI+360)%360; }
 
 $('addrInput').addEventListener('input', (e) => {
-  const q = e.target.value;
-  if(q.length<3) { $('suggestions').style.display='none'; return; }
-  fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5&lat=43.6045&lon=1.4442`)
-    .then(r=>r.json()).then(d=>{
-      const b=$('suggestions'); b.innerHTML='';
-      if(!d.features.length) { b.style.display='none'; return; }
+  const q = e.target.value; if(q.length<3) { $('suggestions').style.display='none'; return; }
+  fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5&lat=43.6045&lon=1.4442`).then(r=>r.json()).then(d=>{
+      const b=$('suggestions'); b.innerHTML=''; if(!d.features.length) { b.style.display='none'; return; }
       d.features.forEach(f=>{
         const el=document.createElement('div'); el.className='suggestion-item';
         el.innerHTML=`<div>📍</div><div><div style="font-weight:600;">${f.properties.name}</div><div style="font-size:12px; opacity:0.7;">${f.properties.context}</div></div>`;
         el.onclick=()=>{
-          const [lo,la]=f.geometry.coordinates;
-          mapInstance.setView([la,lo],16);
+          const [lo,la]=f.geometry.coordinates; mapInstance.setView([la,lo],16);
           tempMapPoint={lat:la,lon:lo,name:f.properties.name};
-          $('sheetTitle').textContent=f.properties.name;
-          $('sheetCoords').textContent=f.properties.context;
-          $('mapSheet').classList.add('active');
-          b.style.display='none'; $('addrInput').value='';
-        };
-        b.appendChild(el);
-      });
-      b.style.display='block';
+          $('sheetTitle').textContent=f.properties.name; $('sheetCoords').textContent=f.properties.context;
+          $('mapSheet').classList.add('active'); b.style.display='none'; $('addrInput').value='';
+        }; b.appendChild(el);
+      }); b.style.display='block';
     });
 });
 
