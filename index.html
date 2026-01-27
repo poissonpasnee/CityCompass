@@ -25,7 +25,7 @@
       --text-primary: #000000; --text-secondary: #8E8E93;
       --separator: rgba(60, 60, 67, 0.12);
       --accent: #007AFF; --accent-rgb: 0, 122, 255;
-      --gold: #FFD700; --gold-rgb: 255, 215, 0;
+      --gold: #FFD700; 
       --danger: #FF3B30; --success: #34C759;
       --radius-l: 24px; --nav-height: 85px;
       --safe-top: env(safe-area-inset-top);
@@ -68,6 +68,7 @@
     .btn-primary { background: var(--accent); color: white; }
     .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--separator); }
     .btn-admin { background: var(--text-primary); color: var(--bg-body); border: 1px solid var(--gold); }
+    .btn-mini { padding: 8px 12px; font-size: 12px; border-radius: 10px; width: auto; display: inline-block; }
 
     /* LOGIN */
     .login-container { width: 100%; max-width: 400px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
@@ -96,11 +97,12 @@
     .p-widget-lbl { font-size: 10px; text-transform: uppercase; opacity: 0.6; font-weight: 700; margin-top: 4px; }
 
     /* ADMIN PANEL */
-    .admin-panel { background: #1a1a1a; color: #fff; padding: 16px; border-radius: 18px; margin-top: 20px; border: 1px solid var(--gold); display: none; }
+    .admin-panel { background: #1a1a1a; color: #fff; padding: 16px; border-radius: 18px; margin-top: 20px; border: 1px solid var(--gold); display: none; margin-bottom: 20px; }
     .admin-panel.visible { display: block; }
+    .admin-user-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 10px 0; font-size: 13px; }
     .admin-badge { background: var(--gold); color: black; padding: 4px 8px; border-radius: 8px; font-size: 10px; font-weight: 800; display: inline-block; vertical-align: middle; margin-left: 8px; }
 
-    /* SUGGESTIONS CARD */
+    /* LISTS */
     .suggestion-card { background: linear-gradient(135deg, var(--bg-card), var(--bg-input)); border-left: 4px solid var(--gold); padding: 14px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
     .place-card { background: var(--bg-card); padding: 14px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; border: 1px solid var(--separator); }
 
@@ -178,7 +180,7 @@
         <div style="font-size:14px; opacity:0.6; margin-bottom:10px;" id="sheetDesc">Description</div>
         
         <div id="adminControlsArea" style="display:none; margin-bottom:10px;">
-           <button class="btn btn-admin" onclick="confirmMapAction('publish')">🌍 Publier (Admin)</button>
+           <button class="btn btn-admin" onclick="startPublishFlow()">🌍 Publier (Admin)</button>
         </div>
 
         <div style="display:flex; gap:12px;">
@@ -238,7 +240,7 @@
           <div style="font-family:monospace; background:rgba(255,255,255,0.2); padding:6px 12px; border-radius:8px; margin-top:10px; display:inline-block; font-size:14px; user-select:all;" id="displayCode">...</div>
         </div>
 
-        <!-- NEW PROFILE WIDGETS -->
+        <!-- PROFILE WIDGETS -->
         <div class="profile-widgets-row">
            <div class="p-widget">
              <div class="p-widget-val" id="profileLevel">1</div>
@@ -257,11 +259,11 @@
         <!-- ADMIN PANEL (Hidden) -->
         <div id="adminPanel" class="admin-panel">
           <h3 style="margin:0 0 10px 0; color:var(--gold);">🛠️ Control Panel</h3>
-          <p style="font-size:12px; opacity:0.8;">Vous êtes connecté en tant qu'administrateur système.</p>
-          <div style="display:flex; gap:10px; margin-top:10px;">
-            <button class="btn" style="background:#333; color:white; font-size:12px; padding:10px;">Nettoyer Suggestions</button>
-            <button class="btn" style="background:#333; color:white; font-size:12px; padding:10px;" onclick="addPoints(1000)">+1000 Pts</button>
+          <p style="font-size:12px; opacity:0.8; margin-bottom:15px;">Gestion Membres & Points</p>
+          <div style="display:flex; gap:10px; margin-bottom:15px;">
+             <button class="btn btn-mini" style="background:#333; color:white;" onclick="loadAllUsers()">Charger Membres</button>
           </div>
+          <div id="adminUserList" style="max-height:300px; overflow-y:auto; background:#111; padding:10px; border-radius:12px;"></div>
         </div>
 
         <div style="font-weight:700; opacity:0.6; font-size:12px; margin-bottom:10px;">BOUTIQUE</div>
@@ -336,14 +338,7 @@ function initApp() {
   $('displayCode').textContent = userCode.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
   $('displayPoints').textContent = userPoints;
   
-  // ADMIN CHECK
-  if(userCode === ADMIN_ID) {
-    $('adminBadge').style.display = 'inline-block';
-    $('adminPanel').classList.add('visible');
-    $('adminControlsArea').style.display = 'block';
-  }
-
-  // WIDGETS
+  if(userCode === ADMIN_ID) { $('adminBadge').style.display = 'inline-block'; $('adminPanel').classList.add('visible'); $('adminControlsArea').style.display = 'block'; }
   $('profileLevel').textContent = Math.floor(userPoints/500) + 1;
   $('profilePlaceCount').textContent = places.length;
 
@@ -352,7 +347,7 @@ function initApp() {
   show(v, false); startGPS();
 }
 
-/* SENSORS & GPS */
+/* SENSORS */
 function requestSensors() {
   startGPS();
   if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -443,51 +438,58 @@ function applySettings() { document.body.setAttribute('data-theme', settings.the
 $('toggleTheme').onchange = (e) => { settings.theme=e.target.checked?'dark':'light'; localStorage.setItem('cc_theme', settings.theme); applySettings(); updateMapTiles(); };
 
 function renderPlaces() {
-  // Favorites
   $('placesList').innerHTML = places.length ? places.map(p=>`<div class="place-card" onclick="tempMapPoint={lat:${p.lat},lon:${p.lon},name:'${p.name}'}; confirmMapAction('go')">📍 <div style="font-weight:600;">${p.name}</div></div>`).join('') : '<div style="opacity:0.5;text-align:center;">Vide</div>';
-  // Suggestions (Global)
   $('suggestionsList').innerHTML = globalSuggestions.length ? globalSuggestions.map(p=>`<div class="suggestion-card" onclick="tempMapPoint={lat:${p.lat},lon:${p.lon},name:'${p.name}'}; confirmMapAction('go')">🌟 <div style="font-weight:600;">${p.name}</div></div>`).join('') : '<div style="opacity:0.5;text-align:center;">Chargement...</div>';
-  // Update Widget
   $('profilePlaceCount').textContent = places.length;
 }
 
 async function loadData() { 
   if(!userCode)return;
-  // Load Personal Favorites
   let { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode);
   if(data) places = data.map(d=>d.place_data);
-  // Load Admin Suggestions
   let { data: adminData } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', ADMIN_ID);
   if(adminData) globalSuggestions = adminData.map(d=>d.place_data);
 }
 
-function confirmMapAction(action) {
-  if (action === 'save') { 
-    places.push(tempMapPoint); 
-    supabaseClient.from('user_favorites').insert([{user_id:userCode, place_data:tempMapPoint}]);
-    renderPlaces();
-  } else if (action === 'publish') {
-    // Admin only
-    if(userCode === ADMIN_ID) {
-      if(confirm("Publier ce lieu pour tous les utilisateurs ?")) {
-        globalSuggestions.push(tempMapPoint);
-        supabaseClient.from('user_favorites').insert([{user_id:ADMIN_ID, place_data:tempMapPoint}]);
-        renderPlaces();
-        alert("Lieu publié !");
-      }
-    }
-  } else { 
-    currentDest=tempMapPoint; $('navDestName').textContent=currentDest.name; show('viewNav'); 
-  } 
-  closeMapSheet(); 
+// ADMIN FEATURES
+function startPublishFlow() {
+  if(userCode !== ADMIN_ID) return;
+  const newName = prompt("Nom du lieu public :", tempMapPoint.name);
+  if(!newName) return;
+  tempMapPoint.name = newName;
+  if(confirm(`Publier "${newName}" pour tous les utilisateurs ?`)) {
+    globalSuggestions.push(tempMapPoint);
+    supabaseClient.from('user_favorites').insert([{user_id:ADMIN_ID, place_data:tempMapPoint}]);
+    renderPlaces(); alert("Lieu publié !"); closeMapSheet();
+  }
+}
+async function loadAllUsers() {
+  if(userCode !== ADMIN_ID) return;
+  const { data } = await supabaseClient.from('users').select('*');
+  const l = $('adminUserList'); l.innerHTML = '';
+  data.forEach(u => {
+    l.innerHTML += `<div class="admin-user-row">
+      <div style="font-family:monospace;">${u.id.substring(0,4)}...</div>
+      <div>${u.points} pts</div>
+      <div>
+        <button class="btn-mini" style="background:#444;" onclick="modUserPoints('${u.id}', 100)">+100</button>
+        <button class="btn-mini" style="background:#222;" onclick="modUserPoints('${u.id}', -100)">-100</button>
+      </div>
+    </div>`;
+  });
+}
+async function modUserPoints(uid, amount) {
+  const { data } = await supabaseClient.from('users').select('points').eq('id', uid).single();
+  const newP = (data.points || 0) + amount;
+  await supabaseClient.from('users').update({points: newP}).eq('id', uid);
+  loadAllUsers(); // refresh
 }
 
-// Admin Utils
-async function addPoints(n) {
-  if(userCode !== ADMIN_ID) return;
-  userPoints += n;
-  await supabaseClient.from('users').update({points: userPoints}).eq('id', userCode);
-  $('displayPoints').textContent = userPoints;
+function confirmMapAction(action) {
+  if (action === 'save') { 
+    places.push(tempMapPoint); supabaseClient.from('user_favorites').insert([{user_id:userCode, place_data:tempMapPoint}]); renderPlaces();
+  } else { currentDest=tempMapPoint; $('navDestName').textContent=currentDest.name; show('viewNav'); } 
+  closeMapSheet(); 
 }
 
 function show(id, save=true) { document.querySelectorAll('.view').forEach(v => { if(v.id!=='viewLogin') v.classList.remove('active'); }); $(id).classList.add('active'); document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active')); if(id==='viewDiscover') { $('navBar').children[0].classList.add('active'); setTimeout(()=>{initMap(); mapInstance.invalidateSize();}, 50); } if(id==='viewPlaces') { $('navBar').children[1].classList.add('active'); renderPlaces(); } if(id==='viewNav') $('navBar').children[2].classList.add('active'); if(id==='viewAccount') $('navBar').children[3].classList.add('active'); if(save) localStorage.setItem('cc_current_view', id); }
