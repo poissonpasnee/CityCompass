@@ -24,27 +24,26 @@
       --bg-blur: rgba(255, 255, 255, 0.90);
       --text-primary: #000000; --text-secondary: #8E8E93;
       --separator: rgba(60, 60, 67, 0.12);
-      --accent: #007AFF; --accent-gradient: linear-gradient(135deg, #007AFF, #00C7BE);
+      --accent: #007AFF; --accent-rgb: 0, 122, 255;
       --danger: #FF3B30; --success: #34C759;
-      --radius-l: 24px; --radius-m: 16px;
+      --radius-l: 22px; --radius-m: 14px;
       --nav-height: 85px;
       --safe-top: env(safe-area-inset-top);
       --safe-bottom: env(safe-area-inset-bottom);
       --shadow-soft: 0 8px 30px rgba(0,0,0,0.08);
-      --shadow-hard: 0 10px 40px rgba(0,0,0,0.2);
     }
     [data-theme="dark"] {
       --bg-body: #000000; --bg-card: #1C1C1E; --bg-input: rgba(118, 118, 128, 0.24);
       --bg-blur: rgba(30, 30, 30, 0.90);
       --text-primary: #FFFFFF; --text-secondary: #98989D;
       --separator: rgba(84, 84, 88, 0.4);
-      --accent: #0A84FF;
+      --accent: #0A84FF; --accent-rgb: 10, 132, 255;
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
     body {
       margin: 0; padding: 0; height: 100dvh; overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg-body); color: var(--text-primary);
       transition: background 0.3s ease, color 0.3s ease;
       font-size: 17px;
@@ -56,106 +55,102 @@
     .view.active { display: block; opacity: 1; z-index: 1; }
     #viewLogin { bottom: 0; z-index: 2000; background: var(--bg-body); }
     #viewDiscover { padding: 0 !important; }
-    #map { width: 100%; height: 100%; z-index: 1; background: var(--bg-input); }
     .scroll-container { height: 100%; overflow-y: auto; overflow-x: hidden; padding: max(20px, var(--safe-top)) 20px 40px 20px; }
 
-    /* FLOATING MAP UI */
+    /* MAP UI & MARKERS */
+    #map { width: 100%; height: 100%; z-index: 1; background: var(--bg-input); }
+    
+    /* Custom Markers */
+    .poi-marker {
+      background: var(--bg-card); border-radius: 50%;
+      border: 1px solid var(--separator);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .poi-marker:active { transform: scale(0.8); }
+    .user-marker-pulse {
+      width: 20px; height: 20px; background: var(--accent);
+      border: 3px solid white; border-radius: 50%;
+      box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.3);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.6); } 70% { box-shadow: 0 0 0 10px rgba(var(--accent-rgb), 0); } 100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0); } }
+
+    /* FLOATING SEARCH & CONTROLS */
     .floating-search {
       position: absolute; top: max(20px, var(--safe-top)); left: 16px; right: 16px;
-      background: var(--bg-blur); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-      border-radius: 100px; padding: 6px; z-index: 1000;
+      background: var(--bg-blur); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-radius: var(--radius-l); padding: 8px; z-index: 1000;
       box-shadow: var(--shadow-soft); border: 1px solid var(--separator);
+      display: flex; flex-direction: column; gap: 8px;
     }
-    .search-input-box { display: flex; align-items: center; padding: 0 16px; height: 44px; }
-    .search-input-box input { border: none; background: transparent; height: 100%; width: 100%; font-size: 17px; font-weight: 500; color: var(--text-primary); }
-    .suggestions-float { margin-top: 12px; background: var(--bg-card); border-radius: var(--radius-m); overflow: hidden; display: none; box-shadow: var(--shadow-hard); margin-left: 10px; margin-right: 10px; }
-    .suggestion-item { padding: 14px 16px; border-bottom: 1px solid var(--separator); display: flex; gap: 12px; align-items: center; cursor: pointer; }
-
-    /* FAB (Floating Action Button) for Re-center */
-    .fab-locate {
-      position: absolute; bottom: 120px; right: 20px;
-      width: 50px; height: 50px; border-radius: 50%;
-      background: var(--bg-card); color: var(--accent);
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: var(--shadow-hard); z-index: 1000;
-      font-size: 24px; cursor: pointer; border: 1px solid var(--separator);
-      transition: transform 0.2s;
+    .search-input-box { display: flex; align-items: center; background: var(--bg-input); border-radius: 14px; padding: 0 12px; height: 44px; }
+    .search-input-box input { border: none; background: transparent; height: 100%; width: 100%; font-size: 17px; color: var(--text-primary); }
+    
+    .map-controls {
+      position: absolute; right: 16px; bottom: 120px;
+      display: flex; flex-direction: column; gap: 10px; z-index: 900;
     }
-    .fab-locate:active { transform: scale(0.9); }
+    .map-btn {
+      width: 44px; height: 44px; border-radius: 50%; background: var(--bg-card);
+      box-shadow: var(--shadow-soft); border: 1px solid var(--separator);
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+      cursor: pointer;
+    }
 
-    /* BOTTOM SHEET (Improved) */
+    /* BOTTOM SHEET */
     .map-sheet {
       position: absolute; bottom: 20px; left: 16px; right: 16px;
-      background: var(--bg-blur); backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px);
-      border-radius: 28px; padding: 24px; z-index: 1000;
-      box-shadow: var(--shadow-hard); border: 1px solid var(--separator);
-      transform: translateY(150%); transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-      display: flex; flex-direction: column; gap: 16px;
+      background: var(--bg-blur); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+      border-radius: var(--radius-l); padding: 20px; z-index: 1000;
+      box-shadow: var(--shadow-soft); border: 1px solid var(--separator);
+      transform: translateY(150%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      display: flex; flex-direction: column; gap: 12px;
     }
     .map-sheet.active { transform: translateY(0); }
-    .sheet-handle { width: 40px; height: 5px; background: var(--separator); border-radius: 10px; margin: -10px auto 10px auto; }
-    .sheet-hero { display: flex; gap: 16px; align-items: center; }
-    .sheet-thumb { width: 60px; height: 60px; background: var(--bg-input); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
 
-    /* CUSTOM MARKERS */
-    .user-marker { position: relative; }
-    .user-marker-pulse {
-      width: 20px; height: 20px; background: var(--accent); border: 3px solid white; border-radius: 50%;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 2; position: relative;
-    }
-    .user-marker-halo {
-      position: absolute; top: -10px; left: -10px; width: 40px; height: 40px;
-      background: var(--accent); opacity: 0.3; border-radius: 50%;
-      animation: pulse-halo 2s infinite; z-index: 1;
-    }
-    @keyframes pulse-halo { 0% { transform: scale(0.5); opacity: 0.5; } 100% { transform: scale(1.2); opacity: 0; } }
+    /* BOUSSOLE UI */
+    .compass-wrapper { position: relative; width: 260px; height: 260px; margin: 30px auto; display: flex; align-items: center; justify-content: center; }
+    .compass-face { width: 90%; height: 90%; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--separator); display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 30px rgba(0,0,0,0.02); z-index: 2; }
+    .arrow-container { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; will-change: transform; }
+    .arrow-svg { width: 64px; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.15)); }
+    .progress-ring { position: absolute; inset: 0; transform: rotate(-90deg); pointer-events: none; }
+    .nav-widget-pill { background: rgba(0,0,0,0.05); padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px; backdrop-filter: blur(10px); }
 
-    /* POI MARKERS (Suggestions) */
-    .poi-marker {
-      background: var(--bg-card); color: var(--text-primary);
-      padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15); border: 1px solid var(--separator);
-      display: flex; align-items: center; gap: 6px; white-space: nowrap;
-      transition: transform 0.2s; cursor: pointer;
+    /* SHOP GRID & EXPANDABLE */
+    .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; transition: max-height 0.4s ease; overflow: hidden; max-height: 340px; } /* Limits to ~2 rows */
+    .shop-grid.expanded { max-height: 2000px; }
+    .shop-card { 
+      background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%); 
+      padding: 16px; border-radius: 18px; text-align: center; position: relative; overflow: hidden; 
+      border: 1px solid var(--separator); transition: transform 0.1s;
     }
-    .poi-marker:active { transform: scale(0.95); }
-    .poi-icon { color: var(--accent); font-size: 14px; }
-
-    /* OTHER UI */
-    .placeCard { background: var(--bg-card); padding: 16px; border-radius: var(--radius-l); display: flex; align-items: center; gap: 16px; margin-bottom: 12px; border: 1px solid var(--separator); cursor:pointer;}
-    .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .shop-card { background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%); padding: 16px; border-radius: 18px; text-align: center; position: relative; overflow: hidden; border: 1px solid var(--separator); }
+    .shop-card:active { transform: scale(0.96); }
     .shop-icon { font-size: 32px; margin-bottom: 8px; }
-    .shop-cost { background: var(--bg-input); color: var(--accent); padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 800; display: inline-block; margin-top: 8px; }
+    .shop-status { 
+      background: var(--bg-input); color: var(--accent); padding: 4px 12px; 
+      border-radius: 100px; font-size: 11px; font-weight: 800; display: inline-block; margin-top: 8px;
+    }
+    .shop-card.active-item { border: 2px solid var(--accent); background: rgba(var(--accent-rgb), 0.05); }
+
+    /* BUTTONS & GENERAL */
     .btn { width: 100%; padding: 16px; border-radius: var(--radius-l); border: none; font-weight: 700; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--bg-card); color: var(--text-primary); }
     .btn-primary { background: var(--accent); color: white; }
-    
-    /* NAV & ACCOUNT */
-    .compass-wrapper { position: relative; width: 260px; height: 260px; margin: 40px auto; display: flex; align-items: center; justify-content: center; }
-    .progress-ring { position: absolute; inset: 0; transform: rotate(-90deg); pointer-events: none; }
-    .account-hero { background: var(--accent-gradient); padding: 30px; border-radius: 24px; color: white; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 40px -10px var(--accent); }
-    
+    .btn-small { padding: 8px 16px; font-size: 13px; width: auto; display: inline-flex; }
+    .label { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); font-weight: 700; margin: 30px 0 10px 6px; }
+
+    /* NAVBAR */
     .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: var(--bg-blur); backdrop-filter: blur(20px); border-top: 1px solid var(--separator); display: flex; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); z-index: 2000; }
     .nav-tab { background: none; border: none; color: var(--text-secondary); font-size: 10px; font-weight: 600; display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; }
     .nav-tab.active { color: var(--accent); }
     .nav-icon { font-size: 24px; margin-bottom: 4px; }
-    
-    /* LOGIN ANIM */
+
+    /* LOGIN ANIMATION */
     .login-compass-anim { width: 80px; height: 80px; margin: 40px auto; border: 4px solid var(--accent); border-radius: 50%; position: relative; animation: breathe 3s ease-in-out infinite; }
     .login-compass-needle { position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; margin-left: -30px; margin-top: -30px; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23007AFF' d='M12 2L4.5 20.29C4.24 21.06 5.12 21.73 5.8 21.31L12 17.5L18.2 21.31C18.88 21.73 19.76 21.06 19.5 20.29L12 2Z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; animation: compassSpin 4s ease-in-out infinite alternate; }
     @keyframes compassSpin { 0% { transform: rotate(-45deg); } 100% { transform: rotate(45deg); } }
     @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } }
-    
-    /* TOGGLES */
-    .settings-row { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 16px; margin-bottom: 1px; }
-    .settings-row:first-of-type { border-top-left-radius: var(--radius-l); border-top-right-radius: var(--radius-l); }
-    .settings-row:last-of-type { border-bottom-left-radius: var(--radius-l); border-bottom-right-radius: var(--radius-l); margin-bottom: 20px; }
-    .switch { position: relative; width: 50px; height: 30px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; inset: 0; background: var(--bg-input); border-radius: 34px; transition: .4s; }
-    .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background: white; border-radius: 50%; transition: .4s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-    input:checked + .slider { background: var(--success); }
-    input:checked + .slider:before { transform: translateX(20px); }
 
   </style>
 </head>
@@ -168,112 +163,114 @@
       <div class="scroll-container">
         <div style="height:40px;"></div>
         <h2 style="text-align:center; font-size:32px; margin-bottom:10px;">City Compass</h2>
-        <p style="text-align:center; opacity:0.6; margin-bottom:40px;">Explorer le monde, simplement.</p>
+        <p style="text-align:center; opacity:0.6; margin-bottom:40px;">Explorateur Urbain.</p>
         
-        <div class="account-hero">
-          <div style="font-weight:700; font-size:18px;">Commencer l'aventure</div>
-          <button class="btn" id="btnCreateAccount" style="background:white; color:var(--accent); margin-top:15px;">Créer un profil</button>
+        <div style="background: var(--accent-gradient); padding: 30px; border-radius: 24px; color: white; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 40px -10px var(--accent);">
+          <div style="font-weight:700; font-size:18px;">Nouveau Voyage</div>
+          <button class="btn" id="btnCreateAccount" style="background:white; color:var(--accent); margin-top:15px;">Créer Profil</button>
         </div>
-        
-        <div style="text-align:center; margin:30px 0; font-size:12px; font-weight:700; opacity:0.5;">CONNEXION RAPIDE</div>
-        <input id="inputLoginCode" placeholder="Code secret" style="text-align:center; letter-spacing:2px; font-family:monospace; background:var(--bg-input); padding:16px; border-radius:12px; width:100%; border:none; color: var(--text-primary);" maxlength="19" inputmode="numeric" />
+
+        <input id="inputLoginCode" placeholder="Code secret (16 chiffres)" style="text-align:center; letter-spacing:2px; font-family:monospace; background:var(--bg-input); padding:16px; border-radius:12px; width:100%; border:none; color: var(--text-primary);" maxlength="19" inputmode="numeric" />
         <button class="btn btn-primary" id="btnLogin" style="margin-top:16px;">Connexion</button>
-        <p id="loginError" style="color:var(--danger); text-align:center; margin-top:10px; min-height:20px; font-size:14px;"></p>
+        <p id="loginError" style="color:var(--danger); text-align:center; margin-top:10px; font-size:14px; min-height:20px;"></p>
         
         <div class="login-compass-anim"><div class="login-compass-needle"></div></div>
       </div>
     </div>
 
-    <!-- MAP VIEW (Google Style) -->
+    <!-- MAP EXPLORER -->
     <div class="view" id="viewDiscover">
       <div class="floating-search">
         <div class="search-input-box">
           <span style="margin-right:8px; font-size:18px;">🔍</span>
           <input id="addrInput" placeholder="Où aller ?" autocomplete="off" />
         </div>
-        <div id="suggestions" class="suggestions-float"></div>
+        <div id="suggestions" style="display:none; background:var(--bg-card); border-radius:12px; margin-top:4px;"></div>
       </div>
       
       <div id="map"></div>
 
-      <!-- Recenter FAB -->
-      <div class="fab-locate" onclick="recenterMap()">📍</div>
-
-      <div id="gpsPermissionBlock" style="position:absolute; bottom:180px; left:20px; right:20px; background:var(--bg-card); padding:20px; border-radius:20px; text-align:center; display:none; z-index:1500; box-shadow:var(--shadow-hard);">
-         <b>⚠️ GPS requis</b>
-         <p style="font-size:14px; opacity:0.7; margin:10px 0;">Activez la localisation pour voir les lieux autour de vous.</p>
-         <button class="btn btn-primary" id="btnGrantGPS">Activer</button>
+      <!-- Controls on Map -->
+      <div class="map-controls">
+        <div class="map-btn" onclick="startGPS(true)">📍</div>
+        <div class="map-btn" onclick="refreshPOIs()">🔄</div>
       </div>
 
-      <!-- Enhanced Bottom Sheet -->
+      <!-- Bottom Sheet -->
       <div class="map-sheet" id="mapSheet">
-        <div class="sheet-handle"></div>
-        <div class="sheet-hero">
-          <div class="sheet-thumb" id="sheetIcon">📍</div>
-          <div>
-            <div style="font-weight:700; font-size:20px;" id="sheetTitle">Lieu</div>
-            <div style="font-size:13px; opacity:0.6; font-family:monospace;" id="sheetCoords">...</div>
-          </div>
+        <div style="font-weight:700; font-size:20px;" id="sheetTitle">Lieu</div>
+        <div style="font-size:13px; opacity:0.6;" id="sheetDesc">Description du lieu</div>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+          <button class="btn btn-primary" onclick="confirmMapAction('go')">🚀 Go</button>
+          <button class="btn" style="background:var(--bg-input);" onclick="confirmMapAction('save')">⭐ Sauver</button>
         </div>
-        <div style="display:flex; gap:10px;">
-          <button class="btn btn-primary" onclick="confirmMapAction('go')">🚀 Y Aller</button>
-          <button class="btn" style="background:var(--bg-input);" onclick="confirmMapAction('save')">❤️ Enregistrer</button>
-        </div>
-        <button class="btn" style="padding:12px; background:transparent; font-size:14px; opacity:0.6;" onclick="closeMapSheet()">Fermer</button>
+        <button class="btn" style="margin-top:5px; padding:10px; background:transparent; font-size:14px;" onclick="closeMapSheet()">Fermer</button>
       </div>
     </div>
 
-    <!-- PLACES -->
+    <!-- PLACES TAB -->
     <div class="view" id="viewPlaces">
       <div class="scroll-container">
-        <h2 style="margin-bottom:20px;">Mes Lieux</h2>
+        <h2>Mes Lieux</h2>
         <div class="label">Favoris</div>
         <div id="placesList"></div>
-        <div class="label">Historique Récents</div>
+        <div class="label">Historique</div>
         <div id="historyList"></div>
-        <button class="btn" style="margin-top:20px; background:var(--bg-input); font-size:14px;" onclick="clearHistory()">Effacer tout</button>
+        <button class="btn btn-small" style="margin-top:20px; background:var(--bg-input);" onclick="clearHistory()">Effacer Historique</button>
       </div>
     </div>
 
-    <!-- NAV -->
+    <!-- NAV COMPASS -->
     <div class="view" id="viewNav">
       <div class="scroll-container">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <button class="btn" style="width:40px; padding:0; background:var(--bg-card);" id="btnBackNav">✕</button>
+          <button class="btn" style="width:40px; padding:0; background:var(--bg-card);" onclick="show('viewDiscover')">✕</button>
           <div style="font-weight:700;" id="navDestName">Destination</div>
           <div style="width:40px;"></div>
         </div>
+
         <div class="compass-wrapper">
-          <svg class="progress-ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="none" stroke="var(--separator)" stroke-width="2"></circle><circle id="ringProg" cx="50" cy="50" r="48" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-dasharray="301" stroke-dashoffset="301"></circle></svg>
+          <svg class="progress-ring" viewBox="0 0 100 100">
+             <circle cx="50" cy="50" r="48" fill="none" stroke="var(--separator)" stroke-width="2"></circle>
+             <circle id="ringProg" cx="50" cy="50" r="48" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-dasharray="301" stroke-dashoffset="301"></circle>
+          </svg>
           <div class="compass-face">
             <div class="arrow-container" id="arrowContainer">
               <svg class="arrow-svg" viewBox="0 0 24 24"><path fill="var(--text-primary)" d="M12 2L4.5 20.29C4.24 21.06 5.12 21.73 5.8 21.31L12 17.5L18.2 21.31C18.88 21.73 19.76 21.06 19.5 20.29L12 2Z"></path></svg>
             </div>
           </div>
         </div>
-        <button id="btnCalibrate" class="btn" style="padding:10px; width:auto; margin:0 auto 20px auto; display:none; background:var(--bg-input); font-size:14px;">📡 Calibrer</button>
-        <div class="metrics-grid">
-          <div class="metric-box"><div class="metric-lbl">Distance</div><div class="metric-val" id="distVal">--</div></div>
-          <div class="metric-box"><div class="metric-lbl">Cap</div><div class="metric-val" id="capVal">--°</div></div>
+        
+        <div style="text-align:center; margin-bottom:20px;">
+          <div style="font-size:32px; font-weight:800; color:var(--accent);" id="distVal">--</div>
+          <div style="font-size:13px; opacity:0.6; font-weight:700; text-transform:uppercase;">Distance</div>
         </div>
-        <div id="navWidgetsArea" style="margin-top:20px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;"></div>
+
+        <div id="navWidgetsArea" style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;"></div>
       </div>
     </div>
 
-    <!-- ACCOUNT -->
+    <!-- ACCOUNT & SHOP -->
     <div class="view" id="viewAccount">
       <div class="scroll-container">
-        <div class="account-hero">
-          <div style="font-size:12px; font-weight:700; opacity:0.8;">SOLDE</div>
+        <div style="background:var(--accent-gradient); padding:24px; border-radius:24px; color:white; text-align:center; box-shadow:0 10px 30px -10px var(--accent);">
+          <div style="font-size:12px; font-weight:700; opacity:0.8;">POINTS</div>
           <div style="font-size:42px; font-weight:800;" id="displayPoints">0</div>
-          <div style="font-family:monospace; background:rgba(255,255,255,0.2); padding:8px; border-radius:8px; margin-top:10px; display:inline-block; font-size:14px;" id="displayCode">...</div>
+          <div style="font-family:monospace; background:rgba(255,255,255,0.2); padding:6px 12px; border-radius:8px; margin-top:10px; display:inline-block; font-size:14px; user-select:all;" id="displayCode">...</div>
         </div>
-        <div class="label">Boutique & Personnalisation</div>
+
+        <div class="label" style="display:flex; justify-content:space-between; align-items:center;">
+          Boutique
+          <span style="font-size:11px; color:var(--accent); cursor:pointer;" onclick="toggleShopExpand()" id="shopExpandBtn">Voir Tout</span>
+        </div>
         <div class="shop-grid" id="shopGrid"></div>
+
         <div class="label">Réglages</div>
-        <div class="settings-row"><span>Mode Sombre 🌙</span><label class="switch"><input type="checkbox" id="toggleTheme"><span class="slider"></span></label></div>
-        <div class="settings-row"><span>Vibrations</span><label class="switch"><input type="checkbox" id="toggleVib"><span class="slider"></span></label></div>
-        <button class="btn btn-primary" id="btnLogout" style="background:var(--danger); margin-top:30px;">Déconnexion</button>
+        <div style="background:var(--bg-card); border-radius:var(--radius-l);">
+            <div class="settings-row" style="padding:16px; display:flex; justify-content:space-between;"><span>Mode Sombre</span><input type="checkbox" id="toggleTheme"></div>
+        </div>
+        
+        <button class="btn" style="background:var(--bg-input); color:var(--danger); margin-top:30px;" id="btnLogout">Déconnexion</button>
       </div>
     </div>
 
@@ -288,238 +285,322 @@
   </div>
 
 <script>
-/* CONFIG */
+/* CONFIGURATION */
 const SUPABASE_URL = 'https://vjlfbcwnfwyrxstfvefq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGZiY3duZnd5cnhzdGZ2ZWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMDc2MjcsImV4cCI6MjA4NDc4MzYyN30.WTuWbxB-8isJOp2lNnq73njQmifDjxTNEWngMgKtmv4';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
 
+// State
 let userCode = localStorage.getItem('cc_user_code');
 let places = [];
 let userPoints = 0;
 let currentDest = null;
 let lastPos = null;
-let mapInstance = null;
-let mapMarker = null;
-let mapTileLayer = null;
-let poiLayerGroup = null; // Groupe pour les POIs
+let mapInstance = null, mapMarker = null, mapTileLayer = null, poiLayerGroup = null;
 let tempMapPoint = null;
 
-let settings = { theme: localStorage.getItem('cc_theme') || 'light', vib: localStorage.getItem('cc_vib') !== 'false' };
+// Settings & Features
+let settings = { theme: localStorage.getItem('cc_theme') || 'light' };
 let ownedItems = JSON.parse(localStorage.getItem('cc_owned_items') || '[]');
-let activeArrowColor = localStorage.getItem('cc_arrow_color') || null;
-let activeMarkerIcon = localStorage.getItem('cc_marker_icon') || 'default';
+let activeFeatures = JSON.parse(localStorage.getItem('cc_active_features') || '{}');
 
+// BOUTIQUE - 12 ITEMS
 const SHOP_ITEMS = [
-  { id: 'arrow_color', name: 'Couleur Flèche', cost: 50, type: 'style', icon:'🎨' },
-  { id: 'marker_car', name: 'Icône Voiture', cost: 150, type: 'marker', icon:'🚗' },
-  { id: 'marker_ufo', name: 'Icône OVNI', cost: 300, type: 'marker', icon:'🛸' },
-  { id: 'map_sat', name: 'Carte Satellite', cost: 500, type: 'map', icon:'🛰️' },
-  { id: 'widget_speed', name: 'Vitesse', cost: 100, type: 'widget', icon:'⚡' },
-  { id: 'widget_weather', name: 'Météo', cost: 200, type: 'widget', icon:'⛅' },
-  { id: 'history_plus', name: 'Historique +', cost: 300, type: 'tool', icon:'📚' },
-  { id: 'export_gpx', name: 'Export GPX', cost: 150, type: 'tool', icon:'📁' }
+  // COSMETICS
+  { id: 'style_arrow_blue', name: 'Flèche Neon', cost: 50, type: 'cosmetic', icon:'🔹' },
+  { id: 'style_marker_car', name: 'Mode Voiture', cost: 150, type: 'marker', icon:'🚗' },
+  { id: 'style_marker_ufo', name: 'Mode OVNI', cost: 300, type: 'marker', icon:'🛸' },
+  { id: 'style_marker_plane', name: 'Mode Avion', cost: 300, type: 'marker', icon:'✈️' },
+  
+  // MAPS
+  { id: 'map_sat', name: 'Vue Satellite', cost: 500, type: 'map', icon:'🛰️' },
+  { id: 'map_retro', name: 'Vue Rétro', cost: 400, type: 'map', icon:'📜' },
+  { id: 'map_dark', name: 'Vue Nuit (Sombre)', cost: 200, type: 'map', icon:'🌃' },
+  
+  // WIDGETS
+  { id: 'wid_speed', name: 'Widget Vitesse', cost: 100, type: 'widget', icon:'⚡' },
+  { id: 'wid_weather', name: 'Widget Météo', cost: 200, type: 'widget', icon:'⛅' },
+  { id: 'wid_altitude', name: 'Widget Altitude', cost: 150, type: 'widget', icon:'⛰️' },
+  
+  // TOOLS
+  { id: 'tool_gpx', name: 'Export GPX', cost: 150, type: 'tool', icon:'📁' },
+  { id: 'tool_history', name: 'Historique +', cost: 250, type: 'tool', icon:'📚' }
 ];
 
-const ARROW_COLORS = ['#000000', '#FF3B30', '#34C759', '#0A84FF', '#FFCC00', '#AF52DE'];
-
-/* --- INIT --- */
+/* --- INIT & LOGIN --- */
 async function login(c) {
-  const clean = c.replace(/\s/g, ''); if(clean.length!==16) { $('loginError').textContent="16 chiffres requis"; return; }
-  $('btnLogin').textContent="..."; $('btnLogin').disabled=true;
+  const clean = c.replace(/\s/g, '');
+  if(clean.length!==16) { $('loginError').textContent = "Code incorrect (16 chiffres)"; return; }
+  $('btnLogin').textContent = "..."; $('btnLogin').disabled=true;
   try {
-    const {data} = await supabaseClient.from('users').select('*').eq('id', clean);
-    if(data && data.length){ userCode=clean; userPoints=data[0].points; localStorage.setItem('cc_user_code',userCode); await loadFavorites(); initApp(); }
-    else { $('loginError').textContent="Inconnu"; $('btnLogin').textContent="Connexion"; $('btnLogin').disabled=false; }
-  } catch(e){ $('loginError').textContent="Erreur"; $('btnLogin').textContent="Connexion"; $('btnLogin').disabled=false; }
+    const { data } = await supabaseClient.from('users').select('*').eq('id', clean);
+    if(data && data.length){ userCode=clean; userPoints=data[0].points; localStorage.setItem('cc_user_code', userCode); await loadFavorites(); initApp(); }
+    else { $('loginError').textContent = "Code inconnu"; $('btnLogin').disabled=false; $('btnLogin').textContent = "Connexion"; }
+  } catch(e) { $('loginError').textContent = "Erreur réseau"; $('btnLogin').disabled=false; }
 }
 async function createAccount() {
-  const n = Array(16).fill(0).map(()=>Math.floor(Math.random()*10)).join('');
-  await supabaseClient.from('users').insert([{id:n, points:200}]);
-  userCode=n; userPoints=200; localStorage.setItem('cc_user_code',n); initApp();
+  const c = Array(16).fill(0).map(()=>Math.floor(Math.random()*10)).join('');
+  await supabaseClient.from('users').insert([{ id: c, points: 200 }]);
+  userCode=c; userPoints=200; localStorage.setItem('cc_user_code', c); initApp();
 }
 
 function initApp() {
-  $('viewLogin').classList.remove('active'); $('navBar').style.display='flex';
-  $('displayCode').textContent = userCode ? userCode.replace(/(\d{4})(?=\d)/g, '$1 ').trim() : '...';
+  $('viewLogin').classList.remove('active');
+  $('navBar').style.display = 'flex';
+  $('displayCode').textContent = userCode.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
   $('displayPoints').textContent = userPoints;
-  applySettings(); renderPlaces(); renderHistory(); renderShop();
-  const v = localStorage.getItem('cc_current_view') || 'viewDiscover'; show(v,false);
-  if(navigator.permissions) navigator.permissions.query({name:'geolocation'}).then(r=>{if(r.state==='granted'){$('gpsPermissionBlock').style.display='none';startGPS();}else $('gpsPermissionBlock').style.display='block';}); else startGPS();
+  
+  applyTheme();
+  renderPlaces();
+  renderShop();
+
+  const v = localStorage.getItem('cc_current_view') || 'viewDiscover';
+  show(v, false);
+  
+  // Init GPS
+  startGPS();
 }
 
-/* --- VIEW --- */
-function show(id,save=true) {
-  document.querySelectorAll('.view').forEach(v=>{if(v.id!=='viewLogin')v.classList.remove('active')});
-  $(id).classList.add('active');
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-  
-  if(id==='viewDiscover') { $('navBar').children[0].classList.add('active'); setTimeout(()=>{initMap(); if(mapInstance)mapInstance.invalidateSize();},100); }
-  if(id==='viewPlaces') $('navBar').children[1].classList.add('active');
-  if(id==='viewNav') { $('navBar').children[2].classList.add('active'); initCompassPermission(); }
-  if(id==='viewAccount') $('navBar').children[3].classList.add('active');
-  
-  if(save) { localStorage.setItem('cc_current_view',id); if(id!=='viewNav') { localStorage.removeItem('cc_current_dest'); currentDest=null; } }
-}
-
-/* --- MAP SYSTEM (Google Style + Suggestions) --- */
+/* --- MAP ENGINE (GOOGLE STYLE) --- */
 function initMap() {
-  if(mapInstance) return;
-  mapInstance = L.map('map', {zoomControl:false, attributionControl:false}).setView([43.6045, 1.4442], 14);
+  if (mapInstance) return; 
+  if (!$('map')) return;
+  
+  // Init Leaflet
+  mapInstance = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.6045, 1.4442], 14);
   updateMapTiles();
-  updateMarkerIcon();
+  
+  // User Marker
+  updateUserMarker();
   
   // POI Layer
   poiLayerGroup = L.layerGroup().addTo(mapInstance);
-  mapInstance.on('moveend', scanForPOIs); // Generer des POIs quand on bouge
   
-  mapInstance.on('contextmenu', e => openMapSheet(e.latlng.lat, e.latlng.lng, "Point repéré"));
-  mapInstance.on('movestart', closeMapSheet);
-}
-
-function updateMapTiles() {
-  if(!mapInstance) return;
-  if(mapTileLayer) mapInstance.removeLayer(mapTileLayer);
-  const isDark = settings.theme === 'dark';
-  // Voyager (Colorful Google-like) vs Dark Matter
-  let url = isDark 
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
-    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-  
-  if(ownedItems.includes('map_sat') && activeMarkerIcon === 'sat') url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-  mapTileLayer = L.tileLayer(url, {maxZoom:19}).addTo(mapInstance);
-}
-
-function updateMarkerIcon() {
-  if(!mapInstance) return;
-  if(mapMarker) mapInstance.removeLayer(mapMarker);
-  let html = `<div class="user-marker-pulse"><div class="user-marker-halo"></div></div>`;
-  if(activeMarkerIcon === 'car') html = `<div style="font-size:24px; filter:drop-shadow(0 2px 5px rgba(0,0,0,0.3));">🚗</div>`;
-  if(activeMarkerIcon === 'ufo') html = `<div style="font-size:24px; filter:drop-shadow(0 2px 5px rgba(0,0,0,0.3));">🛸</div>`;
-  
-  const icon = L.divIcon({ className: 'user-marker', html: html, iconSize: [20,20] });
-  const pos = lastPos ? [lastPos.lat, lastPos.lon] : [43.6045, 1.4442];
-  mapMarker = L.marker(pos, {icon: icon, zIndexOffset:1000}).addTo(mapInstance);
-}
-
-// SIMULATION SUGGESTIONS (Fluidité)
-function scanForPOIs() {
-  if(!mapInstance) return;
-  poiLayerGroup.clearLayers();
-  const center = mapInstance.getCenter();
-  
-  // Générer 3 POIs fake autour du centre pour démo (évite API lente)
-  const pois = [
-    { name: "Café du Coin", type: "Resto", icon:"☕", lat: center.lat + 0.002, lon: center.lng + 0.001 },
-    { name: "Parc Urbain", type: "Parc", icon:"🌳", lat: center.lat - 0.0015, lon: center.lng - 0.002 },
-    { name: "Musée d'Art", type: "Culture", icon:"🏛️", lat: center.lat + 0.001, lon: center.lng - 0.0015 }
-  ];
-
-  pois.forEach(p => {
-    const icon = L.divIcon({
-      className: 'custom-poi',
-      html: `<div class="poi-marker"><span class="poi-icon">${p.icon}</span> ${p.name}</div>`,
-      iconSize: [100, 30], iconAnchor: [50, 15]
-    });
-    L.marker([p.lat, p.lon], {icon: icon}).addTo(poiLayerGroup).on('click', () => {
-      openMapSheet(p.lat, p.lon, p.name, p.icon);
-    });
+  // Events
+  mapInstance.on('moveend', refreshPOIs);
+  mapInstance.on('contextmenu', e => {
+    tempMapPoint = { lat: e.latlng.lat, lon: e.latlng.lng, name: "Point repéré" };
+    $('sheetTitle').textContent = "Point Repéré";
+    $('sheetDesc').textContent = `${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`;
+    $('mapSheet').classList.add('active');
   });
 }
 
-function recenterMap() {
-  if(lastPos && mapInstance) {
-    mapInstance.flyTo([lastPos.lat, lastPos.lon], 16, {duration: 1.5});
-  } else {
-    alert("Position inconnue");
-  }
+function updateMapTiles() {
+  if (!mapInstance) return;
+  if (mapTileLayer) mapInstance.removeLayer(mapTileLayer);
+  
+  let url = settings.theme === 'dark' ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  
+  // Activated Map Styles
+  if(activeFeatures['map_sat']) url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+  if(activeFeatures['map_retro']) url = 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png'; // Simplified retro look
+  
+  mapTileLayer = L.tileLayer(url, { maxZoom: 19 }).addTo(mapInstance);
 }
 
-function openMapSheet(lat, lon, title, icon="📍") {
-  tempMapPoint = { lat, lon, name: title };
-  $('sheetTitle').textContent = title;
-  $('sheetCoords').textContent = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-  $('sheetIcon').textContent = icon;
-  $('mapSheet').classList.add('active');
+function updateUserMarker() {
+  if(!mapInstance) return;
+  if(mapMarker) mapInstance.removeLayer(mapMarker);
+  
+  let html = `<div class="user-marker-pulse"></div>`;
+  if(activeFeatures['style_marker_car']) html = `<div style="font-size:24px;">🚗</div>`;
+  if(activeFeatures['style_marker_ufo']) html = `<div style="font-size:24px;">🛸</div>`;
+  if(activeFeatures['style_marker_plane']) html = `<div style="font-size:24px;">✈️</div>`;
+
+  const icon = L.divIcon({ className: 'custom-user-marker', html: html, iconSize: [24, 24] });
+  mapMarker = L.marker([43.6045, 1.4442], {icon: icon}).addTo(mapInstance);
 }
-function closeMapSheet() { $('mapSheet').classList.remove('active'); }
-function confirmMapAction(act) {
-  if(!tempMapPoint) return;
-  if(act==='save') { addFavorite({name:tempMapPoint.name, fullAddress:"Carte", lat:tempMapPoint.lat, lon:tempMapPoint.lon}); alert("Ajouté aux favoris"); }
-  if(act==='go') { currentDest={...tempMapPoint}; $('navDestName').textContent=currentDest.name; localStorage.setItem('cc_current_dest',JSON.stringify(currentDest)); show('viewNav'); addToHistory(currentDest); }
+
+// REAL SUGGESTIONS (Overpass API)
+let lastPoiFetchCenter = null;
+async function refreshPOIs() {
+  if(!mapInstance) return;
+  const c = mapInstance.getCenter();
+  if(lastPoiFetchCenter && getDist(c.lat, c.lng, lastPoiFetchCenter.lat, lastPoiFetchCenter.lng) < 0.5) return; // Don't refresh if moved little
+  lastPoiFetchCenter = c;
+
+  // Query: Tourism, Amenities around center (Radius 1000m)
+  const query = `
+    [out:json];
+    (
+      node["tourism"~"museum|viewpoint|attraction"](around:1200, ${c.lat}, ${c.lng});
+      node["amenity"~"restaurant|cafe|bar"](around:800, ${c.lat}, ${c.lng});
+      node["leisure"~"park"](around:1200, ${c.lat}, ${c.lng});
+    );
+    out body 15;
+  `;
+  
+  try {
+    const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    
+    poiLayerGroup.clearLayers();
+    data.elements.forEach(el => {
+      if(!el.tags || !el.tags.name) return;
+      
+      let icon = '📍';
+      if(el.tags.amenity === 'restaurant') icon = '🍴';
+      if(el.tags.amenity === 'cafe') icon = '☕';
+      if(el.tags.amenity === 'bar') icon = '🍸';
+      if(el.tags.leisure === 'park') icon = '🌳';
+      if(el.tags.tourism === 'museum') icon = '🏛️';
+
+      const divIcon = L.divIcon({
+        className: '',
+        html: `<div class="poi-marker">${icon}</div>`,
+        iconSize: [32, 32]
+      });
+
+      const m = L.marker([el.lat, el.lon], {icon: divIcon}).addTo(poiLayerGroup);
+      m.on('click', () => {
+        tempMapPoint = { lat: el.lat, lon: el.lon, name: el.tags.name };
+        $('sheetTitle').textContent = el.tags.name;
+        $('sheetDesc').textContent = el.tags.cuisine || el.tags.tourism || "Lieu d'intérêt";
+        $('mapSheet').classList.add('active');
+      });
+    });
+  } catch(e) { console.log("POI Fetch Error", e); }
+}
+
+/* --- NAVIGATION LOGIC --- */
+function startGPS(centerOnUser = false) {
+  if(navigator.geolocation) {
+    navigator.geolocation.watchPosition(pos => {
+      lastPos = { lat: pos.coords.latitude, lon: pos.coords.longitude, speed: pos.coords.speed, alt: pos.coords.altitude };
+      if (mapInstance && mapMarker) {
+        mapMarker.setLatLng([lastPos.lat, lastPos.lon]);
+        if(centerOnUser || !window.hasCentered) { mapInstance.setView([lastPos.lat, lastPos.lon], 15); window.hasCentered=true; }
+      }
+      
+      // Nav Calculation
+      if(currentDest) {
+        const d = getDist(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon);
+        $('distVal').textContent = d < 1 ? Math.round(d*1000) + ' m' : d.toFixed(1) + ' km';
+        const prog = Math.min(Math.max(d/10, 0), 1);
+        $('ringProg').style.strokeDashoffset = 301 * prog;
+        
+        // Render Widgets
+        let wHtml = '';
+        if(activeFeatures['wid_speed']) wHtml += `<div class="nav-widget-pill">⚡ ${Math.round((lastPos.speed||0)*3.6)} km/h</div>`;
+        if(activeFeatures['wid_altitude']) wHtml += `<div class="nav-widget-pill">⛰️ ${Math.round(lastPos.alt||0)} m</div>`;
+        if(activeFeatures['wid_weather']) wHtml += `<div class="nav-widget-pill">🌤️ 19°C</div>`; // Mock weather
+        $('navWidgetsArea').innerHTML = wHtml;
+      }
+    }, null, { enableHighAccuracy: true });
+  }
+}
+function confirmMapAction(action) {
+  if (!tempMapPoint) return;
+  if (action === 'save') { addFavorite(tempMapPoint); }
+  else if (action === 'go') { 
+    currentDest = { ...tempMapPoint }; $('navDestName').textContent = currentDest.name; 
+    localStorage.setItem('cc_current_dest', JSON.stringify(currentDest)); 
+    let h = JSON.parse(localStorage.getItem('cc_history')||'[]'); h.unshift(currentDest); localStorage.setItem('cc_history', JSON.stringify(h));
+    renderPlaces(); show('viewNav'); 
+  }
   closeMapSheet();
 }
 
-/* --- LOGIC --- */
-function startGPS() {
-  navigator.geolocation.watchPosition(pos => {
-    lastPos = {lat:pos.coords.latitude, lon:pos.coords.longitude};
-    if(mapInstance && mapMarker) {
-      mapMarker.setLatLng([lastPos.lat, lastPos.lon]);
-      if(!window.centered) { mapInstance.setView([lastPos.lat, lastPos.lon], 15); window.centered=true; }
-    }
-    if(currentDest) {
-       const d = getDist(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon);
-       $('distVal').textContent = d<1 ? Math.round(d*1000)+' m' : d.toFixed(1)+' km';
-       const prog = Math.min(Math.max(d/10,0),1);
-       $('ringProg').style.strokeDashoffset = 301*prog;
-       if(ownedItems.includes('widget_speed')) $('navWidgetsArea').innerHTML = `<div style="background:var(--bg-input); padding:6px 12px; border-radius:10px; font-weight:700;">⚡ ${Math.round((pos.coords.speed||0)*3.6)} km/h</div>`;
-    }
-  }, null, {enableHighAccuracy:true});
+/* --- SHOP & FEATURES --- */
+function toggleShopExpand() {
+  $('shopGrid').classList.toggle('expanded');
+  $('shopExpandBtn').textContent = $('shopGrid').classList.contains('expanded') ? "Réduire" : "Voir Tout";
 }
-function initCompassPermission() { if(typeof DeviceOrientationEvent!=='undefined' && typeof DeviceOrientationEvent.requestPermission==='function') { $('btnCalibrate').style.display='block'; $('btnCalibrate').onclick=()=>{DeviceOrientationEvent.requestPermission().then(r=>{if(r==='granted'){window.addEventListener('deviceorientation',e=>deviceHeading=e.webkitCompassHeading||0); $('btnCalibrate').style.display='none';}})}; } else window.addEventListener('deviceorientationabsolute',e=>deviceHeading=360-e.alpha,true); }
-let deviceHeading=0, renderedHeading=0;
-function navLoop(){ requestAnimationFrame(navLoop); if(!currentDest||!lastPos)return; const b=getBearing(lastPos.lat,lastPos.lon,currentDest.lat,currentDest.lon); let d=(b-deviceHeading)-renderedHeading; while(d<-180)d+=360; while(d>180)d-=360; renderedHeading+=d*0.1; $('arrowContainer').style.transform=`rotate(${renderedHeading}deg)`; $('capVal').textContent=Math.round(b)+"°"; } navLoop();
 
-function applySettings() {
-  document.body.setAttribute('data-theme',settings.theme); $('toggleTheme').checked=settings.theme==='dark'; $('toggleVib').checked=settings.vib;
-  updateMapTiles();
-  const p=document.querySelector('.arrow-svg path'); if(p)p.style.fill=activeArrowColor||'var(--text-primary)';
-}
-$('toggleTheme').onchange=e=>{settings.theme=e.target.checked?'dark':'light'; localStorage.setItem('cc_theme',settings.theme); applySettings();}
-
-function renderPlaces(){
-  const l=$('placesList'); if(!places.length){l.innerHTML='<div style="text-align:center; opacity:0.5; padding:10px;">Aucun favori</div>'; return;}
-  l.innerHTML=places.map((p,i)=>`<div class="placeCard" onclick="startNavFromList(${i})"><div style="font-size:24px;">⭐</div><div style="flex:1"><div style="font-weight:600;">${p.name}</div></div><button class="btn" style="width:30px; padding:0; background:transparent;" onclick="event.stopPropagation(); deleteFavorite(${i})">✕</button></div>`).join('');
-}
-function renderHistory(){
-  let h=JSON.parse(localStorage.getItem('cc_history')||'[]'); const l=$('historyList');
-  if(!h.length){l.innerHTML='<div style="text-align:center; opacity:0.5; padding:10px;">Vide</div>'; return;}
-  l.innerHTML=h.map(p=>`<div class="placeCard" onclick="currentDest={...p}; show('viewNav');"><div style="font-size:24px;">🕒</div><div style="flex:1"><div style="font-weight:600;">${p.name}</div></div></div>`).join('');
-}
-function startNavFromList(i){ currentDest=places[i]; $('navDestName').textContent=currentDest.name; localStorage.setItem('cc_current_dest',JSON.stringify(currentDest)); show('viewNav'); addToHistory(currentDest); }
-function addToHistory(p){ let h=JSON.parse(localStorage.getItem('cc_history')||'[]'); h.unshift(p); if(h.length>5)h.pop(); localStorage.setItem('cc_history',JSON.stringify(h)); renderHistory(); }
-function clearHistory(){ localStorage.removeItem('cc_history'); renderHistory(); }
-
-function renderShop(){
-  $('shopGrid').innerHTML=SHOP_ITEMS.map(i=>{
-    const o=ownedItems.includes(i.id);
-    return `<div class="shop-card ${!o&&userPoints<i.cost?'locked':''}" onclick="buyItem('${i.id}')"><div class="shop-icon">${i.icon}</div><div style="font-weight:700; font-size:13px;">${i.name}</div><div class="shop-cost">${o?(i.type==='style'||i.type==='marker'?'Activer':'Acquis'):i.cost+' pts'}</div></div>`;
+function renderShop() {
+  $('shopGrid').innerHTML = SHOP_ITEMS.map(item => {
+    const owned = ownedItems.includes(item.id);
+    const active = activeFeatures[item.id];
+    let btnText = item.cost + " pts";
+    if(owned) btnText = active ? "Activé" : "Activer";
+    
+    return `
+      <div class="shop-card ${active ? 'active-item' : ''}" onclick="handleShopItem('${item.id}')">
+        <div class="shop-icon">${item.icon}</div>
+        <div style="font-weight:700; font-size:13px; line-height:1.2;">${item.name}</div>
+        <div class="shop-status" style="${owned ? (active?'background:var(--accent); color:white':'') : ''}">${btnText}</div>
+      </div>
+    `;
   }).join('');
 }
-async function buyItem(id){
-  const i=SHOP_ITEMS.find(x=>x.id===id);
-  if(ownedItems.includes(id)){
-    if(i.type==='style'){let x=ARROW_COLORS.indexOf(activeArrowColor||'#000000'); activeArrowColor=ARROW_COLORS[(x+1)%ARROW_COLORS.length]; localStorage.setItem('cc_arrow_color',activeArrowColor);}
-    if(i.type==='marker'){activeMarkerIcon=(activeMarkerIcon==='default'?'car':(activeMarkerIcon==='car'?'ufo':'default')); localStorage.setItem('cc_marker_icon',activeMarkerIcon); updateMarkerIcon();}
-    applySettings(); return;
+
+async function handleShopItem(id) {
+  const item = SHOP_ITEMS.find(i=>i.id===id);
+  
+  if(!ownedItems.includes(id)) {
+    // BUY
+    if(userPoints < item.cost) return alert("Pas assez de points.");
+    if(!confirm(`Acheter "${item.name}" ?`)) return;
+    userPoints -= item.cost;
+    ownedItems.push(id);
+    localStorage.setItem('cc_owned_items', JSON.stringify(ownedItems));
+    if(userCode) await supabaseClient.from('users').update({points: userPoints}).eq('id', userCode);
+    $('displayPoints').textContent = userPoints;
   }
-  if(userPoints<i.cost)return alert("Pas assez de points"); if(!confirm("Acheter ?"))return;
-  userPoints-=i.cost; ownedItems.push(id); localStorage.setItem('cc_owned_items',JSON.stringify(ownedItems));
-  if(userCode)await supabaseClient.from('users').update({points:userPoints}).eq('id',userCode);
-  $('displayPoints').textContent=userPoints; renderShop();
+  
+  // TOGGLE
+  if(activeFeatures[id]) {
+    delete activeFeatures[id];
+  } else {
+    // Exclusive logic (only 1 map style, only 1 marker style)
+    if(item.type === 'map') Object.keys(activeFeatures).forEach(k => { if(k.startsWith('map_')) delete activeFeatures[k]; });
+    if(item.type === 'marker') Object.keys(activeFeatures).forEach(k => { if(k.startsWith('style_marker_')) delete activeFeatures[k]; });
+    activeFeatures[id] = true;
+  }
+  localStorage.setItem('cc_active_features', JSON.stringify(activeFeatures));
+  
+  // Apply changes
+  updateMapTiles();
+  updateUserMarker();
+  renderShop();
 }
 
-async function loadFavorites(){if(!userCode)return;const{data}=await supabaseClient.from('user_favorites').select('place_data').eq('user_id',userCode); if(data){places=data.map(d=>d.place_data); renderPlaces();}}
-async function addFavorite(p){places.push(p); renderPlaces(); if(userCode)await supabaseClient.from('user_favorites').insert([{user_id:userCode, place_data:p}]);}
-async function deleteFavorite(i){const p=places[i]; places.splice(i,1); renderPlaces(); if(userCode)await supabaseClient.from('user_favorites').delete().match({user_id:userCode}).filter('place_data->>name','eq',p.name);}
-function getDist(lat1,lon1,lat2,lon2){const R=6371;const dLat=(lat2-lat1)*Math.PI/180;const dLon=(lon2-lon1)*Math.PI/180;const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
-function getBearing(lat1,lon1,lat2,lon2){const dL=(lon2-lon1)*Math.PI/180;const l1=lat1*Math.PI/180;const l2=lat2*Math.PI/180;const y=Math.sin(dL)*Math.cos(l2);const x=Math.cos(l1)*Math.sin(l2)-Math.sin(l1)*Math.cos(l2)*Math.cos(dL);return(Math.atan2(y,x)*180/Math.PI+360)%360;}
+/* --- HELPERS --- */
+function show(id, save=true) {
+  document.querySelectorAll('.view').forEach(v => { if(v.id!=='viewLogin') v.classList.remove('active'); });
+  $(id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  
+  if(id==='viewDiscover') { $('navBar').children[0].classList.add('active'); setTimeout(()=>{initMap(); if(mapInstance) mapInstance.invalidateSize();}, 100); }
+  if(id==='viewPlaces') { $('navBar').children[1].classList.add('active'); renderPlaces(); }
+  if(id==='viewNav') $('navBar').children[2].classList.add('active');
+  if(id==='viewAccount') $('navBar').children[3].classList.add('active');
+  
+  if(save) localStorage.setItem('cc_current_view', id);
+}
 
-$('addrInput').addEventListener('input',e=>{const q=e.target.value;if(q.length<3){$('suggestions').style.display='none';return;}fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5&lat=43.6045&lon=1.4442`).then(r=>r.json()).then(d=>{const b=$('suggestions');b.innerHTML='';if(!d.features.length){b.style.display='none';return;}d.features.forEach(f=>{const el=document.createElement('div');el.className='suggestion-item';el.innerHTML=`<div>📍</div><div><div style="font-weight:600;">${f.properties.name}</div><div style="font-size:12px; opacity:0.7;">${f.properties.context}</div></div>`;el.onclick=()=>{const[lo,la]=f.geometry.coordinates;mapInstance.setView([la,lo],16);openMapSheet(la,lo,f.properties.name);b.style.display='none';$('addrInput').value='';};b.appendChild(el);});b.style.display='block';});});
-$('btnLogin').onclick=()=>login($('inputLoginCode').value); $('btnCreateAccount').onclick=createAccount; $('btnLogout').onclick=()=>{localStorage.removeItem('cc_user_code');localStorage.removeItem('cc_current_view');location.reload();}; $('btnBackNav').onclick=()=>show('viewDiscover'); $('btnGrantGPS').onclick=()=>{navigator.geolocation.getCurrentPosition(()=>{ $('gpsPermissionBlock').style.display='none'; startGPS(); },()=>{alert('GPS Requis');},{enableHighAccuracy:true});}; $('inputLoginCode').oninput=e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,16).replace(/(\d{4})(?=\d)/g,'$1 ').trim();};
+function renderPlaces() {
+  const l = $('placesList');
+  if(!places.length) l.innerHTML = '<div style="opacity:0.5; text-align:center; padding:10px;">Aucun favori</div>';
+  else l.innerHTML = places.map((p,i) => `<div class="shop-card" style="text-align:left; display:flex; gap:10px; align-items:center; margin-bottom:10px;" onclick="tempMapPoint=places[${i}]; confirmMapAction('go')"><div>📍</div><div style="flex:1; font-weight:600;">${p.name}</div></div>`).join('');
+  
+  const h = JSON.parse(localStorage.getItem('cc_history')||'[]');
+  const hl = $('historyList');
+  if(!h.length) hl.innerHTML = '<div style="opacity:0.5; text-align:center; padding:10px;">Aucun historique</div>';
+  else hl.innerHTML = h.map(p => `<div class="shop-card" style="text-align:left; display:flex; gap:10px; align-items:center; margin-bottom:10px;" onclick="currentDest={...p}; show('viewNav')"><div>🕒</div><div style="flex:1; font-weight:600;">${p.name}</div></div>`).join('');
+}
 
-if(userCode)login(userCode);
+async function addFavorite(p) { places.push(p); renderPlaces(); if(userCode) await supabaseClient.from('user_favorites').insert([{user_id:userCode, place_data:p}]); }
+async function loadFavorites() { if(!userCode)return; const { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode); if(data) places = data.map(d=>d.place_data); }
+function clearHistory() { localStorage.removeItem('cc_history'); renderPlaces(); }
+
+function applyTheme() {
+  document.body.setAttribute('data-theme', settings.theme);
+  $('toggleTheme').checked = settings.theme === 'dark';
+}
+$('toggleTheme').onchange = (e) => { settings.theme = e.target.checked ? 'dark' : 'light'; localStorage.setItem('cc_theme', settings.theme); applyTheme(); updateMapTiles(); }
+
+function closeMapSheet() { $('mapSheet').classList.remove('active'); }
+function getDist(lat1,lon1,lat2,lon2) { const R=6371; const dLat=(lat2-lat1)*Math.PI/180; const dLon=(lon2-lon1)*Math.PI/180; const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2; return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)); }
+
+$('btnLogin').onclick = ()=>login($('inputLoginCode').value);
+$('btnCreateAccount').onclick = createAccount;
+$('btnLogout').onclick = ()=>{ localStorage.removeItem('cc_user_code'); localStorage.removeItem('cc_current_view'); location.reload(); };
+$('inputLoginCode').oninput = (e)=>{ e.target.value = e.target.value.replace(/\D/g,'').slice(0,16).replace(/(\d{4})(?=\d)/g,'$1 ').trim(); };
+
+if(userCode) login(userCode);
 </script>
 </body>
 </html>
