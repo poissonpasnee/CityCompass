@@ -115,6 +115,7 @@
     .admin-act-btn { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; white-space: nowrap; }
     .btn-green { background: rgba(52, 199, 89, 0.2); color: #34C759; }
     .btn-red { background: rgba(255, 59, 48, 0.2); color: #FF3B30; }
+    .btn-blue { background: rgba(10, 132, 255, 0.2); color: #0A84FF; }
     
     /* LISTS */
     .suggestion-card { background: linear-gradient(135deg, var(--bg-card), var(--bg-input)); border-left: 4px solid var(--gold); padding: 14px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
@@ -289,7 +290,7 @@
       </div>
     </div>
 
-    <!-- NEW FULLSCREEN ADMIN DASHBOARD -->
+    <!-- FULLSCREEN ADMIN DASHBOARD -->
     <div class="admin-dashboard" id="adminDashboard">
       <div class="admin-header">
         <h2 style="margin:0; font-size:20px;">Admin Console</h2>
@@ -298,6 +299,7 @@
       <div class="admin-tabs">
         <div class="admin-tab-pill active" onclick="switchAdminTab('users', this)">👥 Membres</div>
         <div class="admin-tab-pill" onclick="switchAdminTab('content', this)">🌟 Contenu</div>
+        <div class="admin-tab-pill" onclick="switchAdminTab('sys', this)">⚙️ Système</div>
       </div>
       
       <!-- USERS TAB -->
@@ -315,8 +317,25 @@
       <!-- CONTENT TAB -->
       <div class="admin-content" id="adminTabContent" style="display:none;">
         <h3 style="margin-top:0;">Suggestions Publiées</h3>
-        <p style="opacity:0.6; font-size:13px;">Gérez les lieux visibles par tous les utilisateurs.</p>
+        <p style="opacity:0.6; font-size:13px; margin-bottom:20px;">Gérez les lieux visibles par tous les utilisateurs.</p>
         <div id="adminContentList"></div>
+      </div>
+
+      <!-- SYSTEM TAB -->
+      <div class="admin-content" id="adminTabSys" style="display:none;">
+        <h3 style="margin-top:0;">Opérations Globales</h3>
+        <div class="admin-card">
+           <div style="font-weight:700; margin-bottom:10px;">📣 Broadcast Message</div>
+           <input id="broadcastInput" placeholder="Message..." style="width:100%; padding:10px; border-radius:8px; border:none; margin-bottom:10px; background:#333; color:white;">
+           <button class="admin-act-btn btn-blue" style="width:100%;" onclick="alert('Message envoyé à tous les utilisateurs (simulation)');">Envoyer</button>
+        </div>
+        <div class="admin-card" style="display:flex; justify-content:space-between; align-items:center;">
+           <div>
+             <div style="font-weight:700;">Maintenance Mode</div>
+             <div style="font-size:12px; opacity:0.6;">Verrouiller l'accès au site</div>
+           </div>
+           <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+        </div>
       </div>
     </div>
 
@@ -342,17 +361,18 @@ let userCode = localStorage.getItem('cc_user_code');
 let places=[], globalSuggestions=[], currentDest=null, lastPos=null, mapInstance=null, mapMarker=null, mapTileLayer=null, poiLayerGroup=null, tempMapPoint=null, hasCentered=false;
 let settings = { theme: localStorage.getItem('cc_theme') || 'light', highGPS: localStorage.getItem('cc_highgps') === 'true', units: localStorage.getItem('cc_units') === 'true' };
 let ownedItems = JSON.parse(localStorage.getItem('cc_owned_items') || '[]'), activeFeatures = JSON.parse(localStorage.getItem('cc_active_features') || '{}'), userPoints = 0;
-let allUsersCache = []; // Pour l'admin
+let allUsersCache = []; 
 
 const SHOP_ITEMS = [
   { id: 'style_marker_car', name: 'Voiture', cost: 150, type: 'marker', icon:'🚗' },
   { id: 'style_marker_ufo', name: 'OVNI', cost: 300, type: 'marker', icon:'🛸' },
   { id: 'style_marker_plane', name: 'Avion', cost: 300, type: 'marker', icon:'✈️' },
+  { id: 'style_ghost', name: 'Mode Fantôme', cost: 1000, type: 'tool', icon:'👻' },
+  { id: 'pack_urbex', name: 'Icônes Urbex', cost: 500, type: 'tool', icon:'🏭' },
   { id: 'map_sat', name: 'Satellite', cost: 500, type: 'map', icon:'🛰️' },
   { id: 'map_dark', name: 'Nuit', cost: 200, type: 'map', icon:'🌃' },
   { id: 'wid_speed', name: 'Vitesse', cost: 100, type: 'widget', icon:'⚡' },
-  { id: 'wid_weather', name: 'Météo', cost: 200, type: 'widget', icon:'⛅' },
-  { id: 'tool_history', name: 'Historique+', cost: 250, type: 'tool', icon:'📚' }
+  { id: 'wid_weather', name: 'Météo', cost: 200, type: 'widget', icon:'⛅' }
 ];
 
 /* LOGIN */
@@ -428,6 +448,7 @@ function switchAdminTab(tabName, el) {
   document.querySelectorAll('.admin-tab-pill').forEach(t=>t.classList.remove('active')); el.classList.add('active'); 
   $('adminTabUsers').style.display = tabName==='users'?'block':'none';
   $('adminTabContent').style.display = tabName==='content'?'block':'none';
+  $('adminTabSys').style.display = tabName==='sys'?'block':'none';
 }
 
 function startPublishFlow() {
@@ -437,16 +458,12 @@ function startPublishFlow() {
   tempMapPoint.name = newName;
   if(confirm(`Publier "${newName}" pour tous les utilisateurs ?`)) {
     supabaseClient.from('user_favorites').insert([{user_id:ADMIN_ID, place_data:tempMapPoint}])
-      .then(() => { 
-        alert("Lieu publié !"); 
-        loadData().then(renderPlaces); // Refresh local view too
-        closeMapSheet(); 
-      });
+      .then(() => { alert("Lieu publié !"); loadData().then(renderPlaces); closeMapSheet(); });
   }
 }
 
 async function loadAllUsers() {
-  const { data } = await supabaseClient.from('users').select('*').limit(50); // Limit for perf
+  const { data } = await supabaseClient.from('users').select('*').limit(50);
   allUsersCache = data;
   $('statTotalUsers').textContent = data.length;
   renderAdminUsers('');
@@ -462,32 +479,38 @@ function renderAdminUsers(filter) {
         <div style="display:flex; justify-content:space-between;">
            <div>
              <div class="admin-user-id">ID: ${u.id.substring(0,6)}...</div>
-             <div style="font-weight:700; font-size:18px;">${u.points} pts</div>
+             <div style="font-weight:700; font-size:18px; cursor:pointer; color:var(--gold);" onclick="editUserExactPoints('${u.id}', ${u.points})">${u.points} pts ✎</div>
            </div>
            <div>${u.points < 0 ? '⛔ BAN' : '✅'}</div>
         </div>
         <div class="admin-actions-row">
            <button class="admin-act-btn btn-green" onclick="modUserPoints('${u.id}', 500)">+500</button>
            <button class="admin-act-btn btn-red" onclick="modUserPoints('${u.id}', -500)">-500</button>
-           <button class="admin-act-btn btn-red" style="background:#400; color:#f88;" onclick="modUserPoints('${u.id}', -9999)">BANNIR</button>
         </div>
       </div>`;
     }
   });
 }
 
+// EDIT PRECIS
+async function editUserExactPoints(uid, currentVal) {
+  const newVal = prompt("Nouveau solde exact :", currentVal);
+  if(newVal !== null && !isNaN(newVal)) {
+    await supabaseClient.from('users').update({points: parseInt(newVal)}).eq('id', uid);
+    loadAllUsers();
+  }
+}
+
 async function modUserPoints(uid, amount) {
-  if(amount === -9999 && !confirm("Bannir cet utilisateur ?")) return;
   const target = allUsersCache.find(u=>u.id===uid);
   if(target) {
-     const newP = (amount===-9999) ? -1 : (target.points + amount);
+     const newP = target.points + amount;
      await supabaseClient.from('users').update({points: newP}).eq('id', uid);
-     loadAllUsers(); // Refresh UI
+     loadAllUsers(); 
   }
 }
 
 async function loadAdminContent() {
-  // Fetch admin favorites (global suggestions)
   const { data } = await supabaseClient.from('user_favorites').select('id, place_data').eq('user_id', ADMIN_ID);
   const l = $('adminContentList'); l.innerHTML = '';
   if(data && data.length) {
@@ -507,10 +530,10 @@ async function loadAdminContent() {
 }
 
 async function deleteSuggestion(dbId) {
-  if(confirm("Supprimer cette suggestion pour tout le monde ?")) {
+  if(confirm("Supprimer définitivement ?")) {
     await supabaseClient.from('user_favorites').delete().eq('id', dbId);
-    loadAdminContent(); // Refresh Admin List
-    loadData().then(renderPlaces); // Refresh User List
+    loadAdminContent(); // Refresh Admin Panel
+    loadData().then(renderPlaces); // Refresh User UI
   }
 }
 
