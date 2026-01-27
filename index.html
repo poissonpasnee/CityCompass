@@ -86,7 +86,8 @@
       display: flex; align-items: center; justify-content: center; gap: 8px;
     }
     .btn-primary { background: var(--accent); color: white; }
-    .btn-small { padding: 8px 16px; font-size: 14px; width: auto; }
+    .btn-small { padding: 8px 16px; font-size: 14px; width: auto; margin-top: 8px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* Settings Switch */
     .settings-row {
@@ -120,12 +121,14 @@
     }
     .arrow-container {
       width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-      transition: transform 0.1s linear;
+      /* Transition douce */
+      transition: transform 0.1s linear; 
     }
     .arrow-svg {
       width: 60px; height: auto; 
       filter: drop-shadow(0 5px 10px rgba(0,0,0,0.2));
     }
+    .arrow-svg path { transition: fill 0.3s; }
     
     .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px; }
     .metric-box { background: var(--bg-card); padding: 15px; border-radius: var(--radius-m); text-align: center; }
@@ -147,7 +150,7 @@
     .shop-card {
       background: var(--bg-card); padding: 16px; border-radius: var(--radius-m);
       text-align: center; position: relative; overflow: hidden;
-      border: 1px solid var(--separator); cursor: pointer;
+      border: 1px solid var(--separator); cursor: default;
     }
     .shop-icon { font-size: 32px; margin-bottom: 8px; }
     .shop-cost { 
@@ -155,7 +158,7 @@
       padding: 4px 10px; border-radius: 100px; font-size: 12px; font-weight: 700;
       display: inline-block; margin-top: 8px;
     }
-    .shop-card.locked { opacity: 0.6; cursor: not-allowed; }
+    .shop-card.locked { opacity: 0.6; }
     .shop-card.locked::after {
       content: "🔒"; position: absolute; inset:0; background: rgba(0,0,0,0.05);
       display: flex; align-items: center; justify-content: center; font-size: 24px;
@@ -187,7 +190,7 @@
     <div class="topbar">
       <div class="brand">
         <h1>City Compass</h1>
-        <p>Beta v2.1</p>
+        <p>Beta v2.2</p>
       </div>
     </div>
 
@@ -280,31 +283,24 @@
           <div class="big-code" id="displayCode">...</div>
         </div>
 
-        <div class="label">Boutique de Récompenses (Bêta)</div>
-        <div class="shop-grid">
-          <div class="shop-card" onclick="buyItem(500, 'Café Offert')">
-            <div class="shop-icon">☕</div>
-            <div style="font-weight:600; font-size:14px;">Café Offert</div>
-            <div class="shop-cost">500 pts</div>
-          </div>
-          <div class="shop-card" onclick="buyItem(1000, 'Avatar Premium')">
-            <div class="shop-icon">👾</div>
-            <div style="font-weight:600; font-size:14px;">Avatar Pro</div>
-            <div class="shop-cost">1000 pts</div>
-          </div>
-          <div class="shop-card locked">
-            <div class="shop-icon">🎟️</div>
-            <div style="font-weight:600; font-size:14px;">Cinéma -50%</div>
-            <div class="shop-cost">2500 pts</div>
-          </div>
+        <!-- WIDGET DISTANCE (Si acheté) -->
+        <div id="distanceWidget" style="display:none; text-align:center; background:var(--bg-card); padding:16px; border-radius:var(--radius-l); margin-bottom:20px;">
+           <div style="font-size:12px; opacity:0.6; text-transform:uppercase;">Distance Totale Parcourue</div>
+           <div style="font-size:24px; font-weight:800; color:var(--accent); margin-top:5px;"><span id="totalKmVal">0.0</span> km</div>
+        </div>
+
+        <div class="label">Outils & Boutique</div>
+        <div class="shop-grid" id="shopGrid">
+          <!-- Rempli par JS -->
+        </div>
+        <div style="margin-top:10px; text-align:center;">
+          <button class="btn btn-small" id="btnExportGpx" style="display:none; background:var(--bg-input); color:var(--text-primary);" onclick="exportTrackGpx()">
+            📁 Exporter Trajet (GPX)
+          </button>
         </div>
 
         <div class="label">Historique Récent</div>
         <div style="background:var(--bg-card); padding:0 16px; border-radius:var(--radius-l);">
-           <div class="history-item">
-             <span>Exploration (1 km)</span>
-             <span class="history-pts">+10 pts</span>
-           </div>
            <div class="history-item">
              <span>Bienvenue</span>
              <span class="history-pts">+50 pts</span>
@@ -348,60 +344,102 @@ let userPoints = 0;
 let currentDest = null;
 let lastPos = null;
 let debounceTimer = null;
+
+// Settings & Features state
 let settings = {
   theme: localStorage.getItem('cc_theme') || 'light',
   vib: localStorage.getItem('cc_vib') !== 'false'
 };
+let ownedItems = JSON.parse(localStorage.getItem('cc_owned_items') || '[]');
+let trackPoints = JSON.parse(localStorage.getItem('cc_track_points') || '[]');
+let totalKm = parseFloat(localStorage.getItem('cc_total_km') || '0');
+let activeArrowColor = localStorage.getItem('cc_arrow_color') || null;
 
-/* --- BOUSSOLE (Correction iOS pour reload) --- */
+// Shop Config
+const SHOP_ITEMS = [
+  { id: 'arrow_color', name: 'Couleur Flèche', cost: 50, type: 'cosmetic' },
+  { id: 'track_history', name: 'Historique Trajet', cost: 150, type: 'feature' },
+  { id: 'export_gpx', name: 'Export GPX', cost: 200, type: 'feature' },
+  { id: 'distance_widget', name: 'Compteur Km', cost: 100, type: 'widget' }
+];
+const ARROW_COLORS = ['#000000', '#FF3B30', '#34C759', '#0A84FF', '#FFCC00', '#AF52DE'];
+
+
+/* --- 1. BOUSSOLE LISSÉE --- */
 let deviceHeading = 0;
+let smoothedHeading = 0;
+const SMOOTH_FACTOR = 0.15; // Lissage (plus petit = plus lent mais fluide)
 
-// Gestion Permissions iOS (Requis après reload)
 function initCompassPermission() {
   if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    // Sur iOS, après un reload, la permission est perdue. On doit la redemander via click.
     $('btnCalibrate').style.display = 'block';
     $('btnCalibrate').onclick = () => {
-      DeviceOrientationEvent.requestPermission()
-        .then(response => {
-          if (response === 'granted') {
-            window.addEventListener('deviceorientation', handleOrientation);
-            $('btnCalibrate').style.display = 'none';
-          }
-        })
-        .catch(console.error);
+      DeviceOrientationEvent.requestPermission().then(r => {
+        if (r === 'granted') {
+          window.addEventListener('deviceorientation', handleOrientation);
+          $('btnCalibrate').style.display = 'none';
+        }
+      });
     };
   } else {
-    // Android ou Desktop (Pas de permission requise généralement si HTTPS)
     window.addEventListener('deviceorientationabsolute', handleOrientation, true);
     window.addEventListener('deviceorientation', handleOrientation, true);
   }
 }
 
 function handleOrientation(e) {
-  if(e.webkitCompassHeading) deviceHeading = e.webkitCompassHeading; // iOS
-  else if(e.alpha) deviceHeading = 360 - e.alpha; // Android
+  let raw = 0;
+  if(e.webkitCompassHeading) raw = e.webkitCompassHeading;
+  else if(e.alpha) raw = 360 - e.alpha;
+  
+  // Lissage exponentiel pour éviter les sauts
+  // Gestion du passage 359->0 degrés
+  let diff = raw - smoothedHeading;
+  if(diff > 180) diff -= 360;
+  if(diff < -180) diff += 360;
+  
+  smoothedHeading += diff * SMOOTH_FACTOR;
+  // Normaliser 0-360
+  smoothedHeading = (smoothedHeading + 360) % 360; 
+  
+  deviceHeading = smoothedHeading;
   updateCompassUI();
 }
 
 function updateCompassUI() {
   if (!currentDest || !lastPos) return;
   const targetBearing = getBearing(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon);
-  // Rotation de la flèche = Cap cible - Cap téléphone
   let arrowRotation = targetBearing - deviceHeading;
   $('arrowContainer').style.transform = `rotate(${arrowRotation}deg)`;
   $('capVal').textContent = Math.round(targetBearing) + "°";
 }
 
-
-/* --- GPS (Auto-Start au reload) --- */
+/* --- 2. GPS & FEATURES --- */
 function startWatching() {
-  // Option enableHighAccuracy cruciale pour la navigation piétonne
   navigator.geolocation.watchPosition(pos => {
     const lat = pos.coords.latitude;
     const lon = pos.coords.longitude;
+    const ts = Date.now();
     
-    // Update Dest
+    // Feature: Track History
+    if (ownedItems.includes('track_history')) {
+      trackPoints.push({ lat, lon, ts });
+      if(trackPoints.length > 5000) trackPoints.shift(); // Limit memory
+      localStorage.setItem('cc_track_points', JSON.stringify(trackPoints));
+    }
+
+    // Feature: Total Distance
+    if (lastPos) {
+       const step = getDist(lastPos.lat, lastPos.lon, lat, lon);
+       // Ignorer petits sauts GPS < 5m
+       if (step > 0.005) {
+         totalKm += step;
+         localStorage.setItem('cc_total_km', totalKm.toFixed(3));
+         if(ownedItems.includes('distance_widget')) updateWidgetUI();
+       }
+    }
+
+    // Navigation logic
     if (currentDest) {
       const d = getDist(lat, lon, currentDest.lat, currentDest.lon);
       $('distVal').textContent = d < 1 ? Math.round(d*1000) + ' m' : d.toFixed(1) + ' km';
@@ -410,63 +448,131 @@ function startWatching() {
       updateCompassUI();
     }
     
-    // Update Points logic (Mock 1km)
-    if(lastPos) {
-       // Logique accumulation distance ici
-    }
     lastPos = {lat, lon};
-    
   }, err => console.warn(err), { enableHighAccuracy: true });
 }
 
 function checkAutoStartGPS() {
   if (navigator.permissions) {
     navigator.permissions.query({name:'geolocation'}).then(r => {
-      if (r.state === 'granted') {
-        $('gpsPermissionBlock').style.display = 'none';
-        startWatching(); // Démarrage auto silencieux
-      } else {
-        $('gpsPermissionBlock').style.display = 'block';
-      }
+      if (r.state === 'granted') { $('gpsPermissionBlock').style.display = 'none'; startWatching(); }
+      else $('gpsPermissionBlock').style.display = 'block';
     });
-  } else {
-    // Fallback vieux navigateurs
-    startWatching();
-  }
+  } else startWatching();
 }
 
 
-/* --- PERSISTANCE D'ÉTAT (RELOAD) --- */
-function restoreSession() {
-  // 1. Restaurer la vue
-  const savedView = localStorage.getItem('cc_current_view');
+/* --- 3. SHOP & FEATURES LOGIC --- */
+function renderShop() {
+  const grid = $('shopGrid');
+  grid.innerHTML = SHOP_ITEMS.map(item => {
+    const owned = ownedItems.includes(item.id);
+    const locked = !owned && userPoints < item.cost;
+    const label = owned ? (item.id==='arrow_color'?'Changer':'Acquis') : `${item.cost} pts`;
+    
+    // Icon
+    let icon = '🎁';
+    if(item.type==='cosmetic') icon='🎨';
+    if(item.type==='feature') icon='🛠️';
+    if(item.type==='widget') icon='📊';
+
+    return `
+      <div class="shop-card ${locked?'locked':''}" onclick="buyItem('${item.id}')">
+        <div class="shop-icon">${icon}</div>
+        <div style="font-weight:600; font-size:14px;">${item.name}</div>
+        <div class="shop-cost">${label}</div>
+      </div>
+    `;
+  }).join('');
   
-  // 2. Restaurer la destination si on était en nav
-  const savedDest = localStorage.getItem('cc_current_dest');
-  
-  if (savedView === 'viewNav' && savedDest) {
-    currentDest = JSON.parse(savedDest);
-    $('navDestName').textContent = currentDest.name;
-    show('viewNav', false); // false = ne pas resauvegarder tout de suite
-  } else if (savedView) {
-    show(savedView, false);
-  } else {
-    show('viewDiscover', false);
+  // Show/Hide features based on ownership
+  if(ownedItems.includes('export_gpx')) $('btnExportGpx').style.display = 'inline-block';
+  if(ownedItems.includes('distance_widget')) {
+     $('distanceWidget').style.display = 'block';
+     updateWidgetUI();
+  }
+}
+
+async function buyItem(id) {
+  const item = SHOP_ITEMS.find(i=>i.id===id);
+  if(!item) return;
+
+  // Si déjà possédé
+  if(ownedItems.includes(id)) {
+    if(id === 'arrow_color') cycleArrowColor();
+    return;
   }
 
-  // 3. Restaurer GPS
-  checkAutoStartGPS();
+  // Achat
+  if(userPoints < item.cost) { alert(`Pas assez de points !`); return; }
+  if(!confirm(`Acheter "${item.name}" pour ${item.cost} pts ?`)) return;
 
-  // 4. Initialiser la boussole (bouton s'affichera si nécessaire)
-  initCompassPermission();
+  userPoints -= item.cost;
+  updatePointsUI();
+  ownedItems.push(id);
+  localStorage.setItem('cc_owned_items', JSON.stringify(ownedItems));
+  
+  if(userCode) await supabaseClient.from('users').update({points: userPoints}).eq('id', userCode);
+  
+  alert(`"${item.name}" débloqué !`);
+  renderShop();
+  
+  // Activation immédiate
+  if(id==='arrow_color') cycleArrowColor();
+}
+
+function cycleArrowColor() {
+  if(!ownedItems.includes('arrow_color')) return;
+  
+  // Find current index
+  let idx = ARROW_COLORS.indexOf(activeArrowColor || '#000000');
+  if(idx === -1) idx = 0;
+  
+  // Next color
+  idx = (idx + 1) % ARROW_COLORS.length;
+  activeArrowColor = ARROW_COLORS[idx];
+  localStorage.setItem('cc_arrow_color', activeArrowColor);
+  
+  applyArrowColor();
+  alert(`Couleur changée !`);
+}
+
+function applyArrowColor() {
+  const path = document.querySelector('.arrow-svg path');
+  // En mode sombre par défaut c'est blanc, sinon noir.
+  // Si custom color défini, on l'utilise
+  if(activeArrowColor) path.style.fill = activeArrowColor;
+  else path.style.fill = 'var(--text-primary)';
+}
+
+function updateWidgetUI() {
+  $('totalKmVal').textContent = totalKm.toFixed(1);
+}
+
+function exportTrackGpx() {
+  if(trackPoints.length < 2) { alert("Pas assez de données GPS enregistrées."); return; }
+  
+  const header = `<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="CityCompass"><trk><name>Trajet CityCompass</name><trkseg>`;
+  const body = trackPoints.map(p => `<trkpt lat="${p.lat}" lon="${p.lon}"><time>${new Date(p.ts).toISOString()}</time></trkpt>`).join('');
+  const footer = `</trkseg></trk></gpx>`;
+  
+  const blob = new Blob([header + body + footer], { type: 'application/gpx+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `trajet-${new Date().toISOString().slice(0,10)}.gpx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 
-/* --- GENERAL LOGIC --- */
+/* --- CORE APP LOGIC --- */
 function applySettings() {
   document.body.setAttribute('data-theme', settings.theme);
   $('toggleTheme').checked = settings.theme === 'dark';
   $('toggleVib').checked = settings.vib;
+  applyArrowColor();
 }
 applySettings();
 
@@ -476,6 +582,11 @@ $('toggleTheme').onchange = (e) => {
   applySettings();
 };
 
+function updatePointsUI() {
+  $('displayPoints').textContent = userPoints;
+}
+
+/* Account & Login */
 function generateCode() { let c='';for(let i=0;i<16;i++)c+=Math.floor(Math.random()*10); return c; }
 function formatCode(c) { return c ? c.replace(/(\d{4})(?=\d)/g, '$1 ').trim() : ""; }
 
@@ -483,9 +594,9 @@ async function createAccount() {
   const btn = $('btnCreateAccount'); const old=btn.innerHTML; btn.innerHTML="..."; btn.disabled=true;
   try {
     const newCode = generateCode();
-    await supabaseClient.from('users').insert([{ id: newCode, points: 50 }]);
-    alert("Compte créé ! +50 points offerts.");
-    userCode=newCode; userPoints=50; localStorage.setItem('cc_user_code', userCode);
+    await supabaseClient.from('users').insert([{ id: newCode, points: 100 }]); // Bonus start 100
+    alert("Compte créé ! +100 points offerts.");
+    userCode=newCode; userPoints=100; localStorage.setItem('cc_user_code', userCode);
     initApp();
   } catch(e) { alert("Erreur: "+e.message); } finally { btn.innerHTML=old; btn.disabled=false; }
 }
@@ -515,25 +626,31 @@ async function deleteFavorite(i) {
   const p = places[i]; places.splice(i,1); renderPlaces();
   if(userCode) await supabaseClient.from('user_favorites').delete().match({user_id:userCode}).filter('place_data->>name','eq',p.name);
 }
-async function buyItem(cost, name) {
-  if(userPoints >= cost) {
-    if(confirm(`Acheter "${name}" pour ${cost} points ?`)) {
-      userPoints -= cost; $('displayPoints').textContent = userPoints;
-      if(userCode) await supabaseClient.from('users').update({points: userPoints}).eq('id', userCode);
-      alert(`🎉 Félicitations ! "${name}" débloqué.`);
-    }
-  } else alert(`Pas assez de points !`);
-}
 
 function initApp() {
   $('viewLogin').classList.remove('active');
   $('navBar').style.display = 'flex';
   $('displayCode').textContent = formatCode(userCode);
-  $('displayPoints').textContent = userPoints;
+  updatePointsUI();
   renderPlaces();
+  renderShop();
   
-  // Restaure la session (Vue + GPS + Boussole)
-  restoreSession();
+  // Restore Session
+  const savedView = localStorage.getItem('cc_current_view');
+  const savedDest = localStorage.getItem('cc_current_dest');
+  if (savedView === 'viewNav' && savedDest) {
+    currentDest = JSON.parse(savedDest);
+    $('navDestName').textContent = currentDest.name;
+    show('viewNav', false);
+  } else if (savedView) {
+    show(savedView, false);
+  } else {
+    show('viewDiscover', false);
+  }
+
+  checkAutoStartGPS();
+  initCompassPermission();
+  applyArrowColor();
 }
 
 function renderPlaces() {
@@ -553,30 +670,20 @@ function renderPlaces() {
 function show(id, save = true) {
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   $(id).classList.add('active');
-  
-  // Update Navbar
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   if(id==='viewDiscover')$('navBar').children[0].classList.add('active');
   if(id==='viewNav')$('navBar').children[1].classList.add('active');
   if(id==='viewAccount')$('navBar').children[2].classList.add('active');
-
-  // Save State
   if (save) {
     localStorage.setItem('cc_current_view', id);
-    if(id !== 'viewNav') {
-      localStorage.removeItem('cc_current_dest'); // Clear dest if we leave nav
-      currentDest = null;
-    }
+    if(id !== 'viewNav') { localStorage.removeItem('cc_current_dest'); currentDest = null; }
   }
 }
 
 function startNav(i) {
   currentDest = places[i]; 
   $('navDestName').textContent = currentDest.name; 
-  
-  // Save Destination for reload
   localStorage.setItem('cc_current_dest', JSON.stringify(currentDest));
-  
   show('viewNav');
   updateCompassUI();
 }
