@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#000000" />
-  <title>City Compass</title>
+  <title>City Compass v16</title>
 
   <!-- LEAFLET CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -70,6 +70,7 @@
     .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--separator); }
     .btn-admin { background: linear-gradient(135deg, #111, #333); color: var(--gold); border: 1px solid var(--gold); margin-bottom: 20px; }
     .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; width: auto; display: inline-flex; cursor:pointer; }
+    .badge-beta { background: var(--accent); color: white; font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 800; vertical-align: middle; }
 
     /* LOGIN */
     .login-container { width: 100%; max-width: 400px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
@@ -132,7 +133,6 @@
         background: var(--bg-card); width: 85%; max-width: 320px; border-radius: 24px; padding: 30px;
         text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
     }
-    .broadcast-overlay.active .broadcast-card { transform: scale(1); }
     
     /* CAMERA & AR */
     #videoFeed { width: 100%; height: 100%; object-fit: cover; }
@@ -193,7 +193,7 @@
           <div class="compass-anim-arrow"></div>
         </div>
         <h1 style="font-size:28px; font-weight:800; margin-bottom:8px;">City Compass</h1>
-        <p style="opacity:0.6; margin-bottom:40px;">Exploration Urbaine v15</p>
+        <p style="opacity:0.6; margin-bottom:40px;">Exploration Urbaine v16</p>
         <input id="inputLoginCode" placeholder="Code (16 chiffres)" maxlength="19" inputmode="numeric" class="login-input" />
         <button class="btn btn-primary" id="btnLogin" style="margin-bottom:12px;">Connexion</button>
         <button class="btn btn-secondary" id="btnCreateAccount">Créer Profil</button>
@@ -244,15 +244,15 @@
     <div class="view" id="viewPlaces">
       <div class="scroll-container">
         <div style="display:flex; margin-bottom:20px; background:var(--bg-input); padding:4px; border-radius:12px;">
-           <button class="nav-tab active" onclick="$('tabPlaces').style.display='block';$('tabLeader').style.display='none'; this.style.color=var(--accent); this.nextElementSibling.style.color=var(--text-secondary);" style="flex:1; padding:10px;">Lieux</button>
-           <button class="nav-tab" onclick="$('tabPlaces').style.display='none';$('tabLeader').style.display='block'; loadLeaderboard(); this.style.color=var(--accent); this.previousElementSibling.style.color=var(--text-secondary);" style="flex:1; padding:10px;">🏆 Classement</button>
+           <button class="nav-tab active" onclick="$('tabPlaces').style.display='block';$('tabLeader').style.display='none'; document.querySelectorAll('.nav-tab').forEach(b=>b.style.color=var(--text-secondary)); this.style.color=var(--accent);" style="flex:1; padding:10px;">Lieux</button>
+           <button class="nav-tab" onclick="$('tabPlaces').style.display='none';$('tabLeader').style.display='block'; loadLeaderboard(); document.querySelectorAll('.nav-tab').forEach(b=>b.style.color=var(--text-secondary)); this.style.color=var(--accent);" style="flex:1; padding:10px;">🏆 Classement <span class="badge-beta">BETA</span></button>
         </div>
         <div id="tabPlaces">
             <h2>Bibliothèque</h2>
             <div class="label" style="color:var(--gold);">🌟 Suggestions du Chef</div>
-            <div id="suggestionsList"></div>
+            <div id="suggestionsList"><div style="opacity:0.5; padding:20px; text-align:center;">Chargement...</div></div>
             <div class="label" style="margin-top:20px;">Mes Favoris</div>
-            <div id="placesList"></div>
+            <div id="placesList"><div style="opacity:0.5; padding:20px; text-align:center;">Vide</div></div>
         </div>
         <div id="tabLeader" style="display:none;">
             <h2>Top Explorateurs</h2>
@@ -387,31 +387,37 @@ let settings = { theme: localStorage.getItem('cc_theme') || 'light', highGPS: lo
 let ownedItems = JSON.parse(localStorage.getItem('cc_owned_items') || '[]'), activeFeatures = JSON.parse(localStorage.getItem('cc_active_features') || '{}'), userPoints = 0;
 let allUsersCache = [], hiddenShopItems = []; 
 let audioCtx = null, rulerCircle = null;
+let shopConfigLoaded = false;
 
 const SHOP_ITEMS = [
-  // Markers
   { id: 'style_marker_car', name: 'Voiture', cost: 150, type: 'marker', icon:'🚗' },
   { id: 'style_marker_ufo', name: 'OVNI', cost: 300, type: 'marker', icon:'🛸' },
   { id: 'style_marker_plane', name: 'Avion', cost: 300, type: 'marker', icon:'✈️' },
   { id: 'style_beam', name: 'Lampe Torche', cost: 250, type: 'marker', icon:'🔦' },
   { id: 'style_footprint', name: 'Empreintes', cost: 150, type: 'marker', icon:'👣' },
-  // Maps
   { id: 'map_sat', name: 'Satellite', cost: 500, type: 'map', icon:'🛰️' },
   { id: 'map_dark', name: 'Carte Nuit', cost: 200, type: 'map', icon:'🌃' },
   { id: 'map_retro', name: 'Plan Bleu', cost: 400, type: 'map', icon:'🗺️' },
-  // Tools
   { id: 'tool_trace', name: 'Laisser Trace', cost: 50, type: 'tool', icon:'🖌️' },
   { id: 'tool_ghost', name: 'Mode Fantôme', cost: 1000, type: 'tool', icon:'👻' },
   { id: 'tool_ruler', name: 'Règle 1km', cost: 200, type: 'tool', icon:'📏' },
   { id: 'tool_cam_night', name: 'Vision Nuit', cost: 500, type: 'tool', icon:'🟩' },
   { id: 'tool_cam_term', name: 'Vision Term.', cost: 800, type: 'tool', icon:'🟥' },
   { id: 'tool_sonar', name: 'Sonar Audio', cost: 300, type: 'tool', icon:'🔊' },
-  // Widgets
   { id: 'wid_speed', name: 'Vitesse', cost: 100, type: 'widget', icon:'⚡' },
   { id: 'wid_alt', name: 'Altimètre', cost: 250, type: 'widget', icon:'⛰️' },
   { id: 'wid_weather', name: 'Météo', cost: 200, type: 'widget', icon:'⛅' },
   { id: 'wid_coords', name: 'GPS Brut', cost: 150, type: 'widget', icon:'📍' }
 ];
+
+/* FAST INIT */
+window.onload = function() {
+    initMap(); // Force map init immediately
+    renderShop(); // Show shop immediately even if offline
+    if(userCode) login(userCode);
+    const v = localStorage.getItem('cc_current_view') || 'viewDiscover';
+    show(v, false);
+};
 
 /* LOGIN */
 async function login(c) {
@@ -419,7 +425,7 @@ async function login(c) {
   $('btnLogin').textContent="Connexion..."; $('btnLogin').disabled=true;
   try {
     const { data } = await supabaseClient.from('users').select('*').eq('id', clean);
-    if(data && data.length){ userCode=clean; userPoints=data[0].points; localStorage.setItem('cc_user_code', userCode); await loadData(); initApp(); }
+    if(data && data.length){ userCode=clean; userPoints=data[0].points; localStorage.setItem('cc_user_code', userCode); initApp(); }
     else { $('loginError').textContent="Profil introuvable"; $('btnLogin').disabled=false; }
   } catch(e) { $('loginError').textContent="Erreur connexion"; $('btnLogin').disabled=false; }
 }
@@ -435,20 +441,36 @@ function initApp() {
   $('displayPoints').textContent = userPoints;
   if(userCode === ADMIN_ID) { $('btnAdminTrigger').style.display = 'block'; $('adminControlsArea').style.display = 'block'; }
   $('profileLevel').textContent = Math.floor(userPoints/500) + 1;
-  $('profilePlaceCount').textContent = places.length;
-  applySettings(); renderPlaces(); renderShop();
-  const v = localStorage.getItem('cc_current_view') || 'viewDiscover';
-  show(v, false); startGPS(); checkBroadcasts(); setInterval(checkBroadcasts, 15000);
+  applySettings(); 
+  
+  // Async Loaders
+  loadData(); 
+  loadShopConfig();
+  checkBroadcasts(); 
+  setInterval(checkBroadcasts, 15000);
+  setInterval(loadShopConfig, 10000); // Poll shop config updates
 }
 
-/* MAP & SENSORS */
-function requestSensors() { startGPS(); if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') { DeviceOrientationEvent.requestPermission().then(r => { if(r==='granted') window.addEventListener('deviceorientation', handleOrientation); }); } else window.addEventListener('deviceorientationabsolute', handleOrientation, true); $('btnReqSensors').style.display='none'; }
-function handleOrientation(e) { let heading = e.webkitCompassHeading || (e.alpha ? 360 - e.alpha : 0); if(currentDest && lastPos) { const bearing = getBearing(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon); $('arrowContainer').style.transform = `rotate(${bearing - heading}deg)`; } else $('arrowContainer').style.transform = `rotate(${-heading}deg)`; }
+/* MAP */
+function initMap() { 
+    if (mapInstance) return; if (!$('map')) return; 
+    mapInstance = L.map('map', { zoomControl: false, attributionControl: false }).setView([48.8566, 2.3522], 6); // Defaut Paris
+    updateMapTiles(); 
+    poiLayerGroup = L.layerGroup().addTo(mapInstance);
+    traceLayerGroup = L.layerGroup().addTo(mapInstance);
+    mapInstance.on('moveend', () => refreshPOIs(false)); 
+    mapInstance.on('contextmenu', e => { tempMapPoint = { lat: e.latlng.lat, lon: e.latlng.lng, name: "Point repéré" }; $('sheetTitle').textContent = "Point Repéré"; $('sheetDesc').textContent = "Coordonnées GPS"; $('mapSheet').classList.add('active'); }); 
+    startGPS();
+}
 function startGPS() { 
+    if(!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(pos => {
+         if(!hasCentered && mapInstance) { mapInstance.setView([pos.coords.latitude, pos.coords.longitude], 16); hasCentered = true; }
+    });
     navigator.geolocation.watchPosition(pos => { 
         lastPos = { lat: pos.coords.latitude, lon: pos.coords.longitude, speed: pos.coords.speed, alt: pos.coords.altitude }; 
-        if (mapInstance && mapMarker) { 
-            mapMarker.setLatLng([lastPos.lat, lastPos.lon]); 
+        if (mapInstance) { 
+            updateUserMarker();
             if(!hasCentered) { mapInstance.setView([lastPos.lat, lastPos.lon], 16); hasCentered = true; } 
             if(activeFeatures['tool_ruler']) updateRuler();
         }
@@ -457,17 +479,6 @@ function startGPS() {
     }, null, { enableHighAccuracy: settings.highGPS, maximumAge: 10000 }); 
 }
 
-function initMap() { 
-    if (mapInstance) return; if (!$('map')) return; 
-    mapInstance = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.6045, 1.4442], 14); 
-    updateMapTiles(); updateUserMarker(); 
-    poiLayerGroup = L.layerGroup().addTo(mapInstance);
-    traceLayerGroup = L.layerGroup().addTo(mapInstance);
-    mapInstance.on('moveend', () => refreshPOIs(false)); 
-    mapInstance.on('contextmenu', e => { tempMapPoint = { lat: e.latlng.lat, lon: e.latlng.lng, name: "Point repéré" }; $('sheetTitle').textContent = "Point Repéré"; $('sheetDesc').textContent = "Coordonnées GPS"; $('mapSheet').classList.add('active'); }); 
-    loadGlobalTraces();
-}
-function centerMap() { if(lastPos) mapInstance.flyTo([lastPos.lat, lastPos.lon], 16); }
 function updateMapTiles() { 
     if (!mapInstance) return; if (mapTileLayer) mapInstance.removeLayer(mapTileLayer); 
     let url = settings.theme === 'dark' ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'; 
@@ -477,14 +488,14 @@ function updateMapTiles() {
     mapTileLayer = L.tileLayer(url, { maxZoom: 19 }).addTo(mapInstance); 
 }
 function updateUserMarker() { 
-    if(!mapInstance) return; if(mapMarker) mapInstance.removeLayer(mapMarker); 
+    if(!mapInstance || !lastPos) return; if(mapMarker) mapInstance.removeLayer(mapMarker); 
     let html = `<div class="user-marker-pulse"></div>`; 
     if(activeFeatures['style_marker_car']) html = `<div style="font-size:24px;">🚗</div>`; 
     if(activeFeatures['style_marker_ufo']) html = `<div style="font-size:24px;">🛸</div>`; 
     if(activeFeatures['style_marker_plane']) html = `<div style="font-size:24px;">✈️</div>`; 
     if(activeFeatures['style_beam']) html = `<div style="font-size:32px; transform:rotate(-45deg);">🔦</div>`;
     if(activeFeatures['style_footprint']) html = `<div style="font-size:24px;">👣</div>`;
-    mapMarker = L.marker([43.6045, 1.4442], {icon: L.divIcon({ className: '', html: html, iconSize: [24, 24] }) }).addTo(mapInstance); 
+    mapMarker = L.marker([lastPos.lat, lastPos.lon], {icon: L.divIcon({ className: '', html: html, iconSize: [24, 24] }) }).addTo(mapInstance); 
 }
 function updateRuler() {
     if(!mapInstance) return; if(rulerCircle) mapInstance.removeLayer(rulerCircle);
@@ -492,31 +503,34 @@ function updateRuler() {
 }
 async function refreshPOIs(force) { if(!mapInstance) return; const b = mapInstance.getBounds(); const q = `[out:json][timeout:5];(node["amenity"~"restaurant|cafe|bar"](${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()});node["tourism"](${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()}););out 15;`; try { const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`); const data = await res.json(); poiLayerGroup.clearLayers(); data.elements.forEach(el => { let icon = '📍'; if(el.tags.amenity==='restaurant')icon='🍴'; if(el.tags.amenity==='bar')icon='🍸'; L.marker([el.lat, el.lon], { icon: L.divIcon({ className: 'poi-marker', html: icon, iconSize:[32,32] }) }).addTo(poiLayerGroup).on('click', () => { tempMapPoint = { lat: el.lat, lon: el.lon, name: el.tags.name||"Lieu" }; $('sheetTitle').textContent = tempMapPoint.name; $('sheetDesc').textContent = el.tags.cuisine||"Lieu d'intérêt"; $('mapSheet').classList.add('active'); }); }); } catch(e){} }
 
-/* TRACES */
-async function leaveTrace() {
-    if(!lastPos) return alert("GPS requis");
-    if(userPoints < 10) return alert("Coût: 10 points");
-    if(!confirm("Laisser une trace ?")) return;
-    userPoints -= 10; await supabaseClient.from('users').update({points: userPoints}).eq('id', userCode); $('displayPoints').textContent = userPoints;
-    const trace = { lat: lastPos.lat, lon: lastPos.lon, type: 'trace', timestamp: Date.now(), name: 'Trace' };
-    await supabaseClient.from('user_favorites').insert([{ user_id: ADMIN_ID, place_data: trace }]); 
-    alert("Trace laissée !"); loadGlobalTraces();
-}
-async function loadGlobalTraces() {
-    if(!mapInstance) return;
-    const { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', ADMIN_ID);
-    traceLayerGroup.clearLayers();
-    if(data) {
-        data.forEach(d => {
-            const p = d.place_data;
-            if(p.type === 'trace' && Date.now() - p.timestamp < 86400000) {
-                L.marker([p.lat, p.lon], { icon: L.divIcon({ className: 'trace-marker', html: '👣', iconSize:[20,20] }) }).addTo(traceLayerGroup);
-            }
-        });
-    }
+/* DATA LOADING */
+async function loadData() { 
+  if(!userCode)return;
+  // Load Favorites
+  try {
+      let { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode);
+      if(data) places = data.map(d=>d.place_data).filter(p => p.type !== 'trace');
+      // Load Global
+      let { data: adminData } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', ADMIN_ID);
+      if(adminData) {
+         globalSuggestions = adminData.map(d=>d.place_data).filter(p => (!p.type || p.type !== 'broadcast') && p.type !== 'trace' && p.type !== 'shop_config');
+      }
+      renderPlaces();
+      loadGlobalTraces();
+  } catch(e) { console.error(e); }
 }
 
-/* SHOP */
+/* SHOP LOGIC */
+async function loadShopConfig() {
+    try {
+        const { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', ADMIN_ID).contains('place_data', { type: 'shop_config' });
+        if(data && data.length) {
+            hiddenShopItems = data[0].place_data.hidden || [];
+        } else { hiddenShopItems = []; }
+        renderShop();
+    } catch(e) {}
+}
+
 function toggleShop() { $('shopContainer').classList.toggle('expanded'); $('btnExpandShop').textContent = $('shopContainer').classList.contains('expanded') ? "Réduire" : "Voir tout"; }
 function renderShop() { 
     $('shopGrid').innerHTML = SHOP_ITEMS.filter(i => !hiddenShopItems.includes(i.id)).map(item => { 
@@ -549,45 +563,18 @@ async function handleShop(id) {
     updateMapTiles(); updateUserMarker(); renderShop(); updateNavDisplay();
 }
 
-/* DATA & ADMIN */
-async function loadData() { 
-  if(!userCode)return;
-  let { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode);
-  if(data) places = data.map(d=>d.place_data).filter(p => p.type !== 'trace');
-  let { data: adminData } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', ADMIN_ID);
-  if(adminData) {
-     globalSuggestions = adminData.map(d=>d.place_data).filter(p => (!p.type || p.type !== 'broadcast') && p.type !== 'trace' && p.type !== 'shop_config');
-     const config = adminData.find(d => d.place_data.type === 'shop_config');
-     if(config) hiddenShopItems = config.place_data.hidden || [];
-  }
-}
-
-function openAdminPanel() { $('adminDashboard').classList.add('active'); loadAllUsers(); loadAdminContent(); renderAdminShop(); }
-function closeAdminPanel() { $('adminDashboard').classList.remove('active'); }
-function switchAdminTab(tabName, el) { 
-  document.querySelectorAll('.admin-tab-pill').forEach(t=>t.classList.remove('active')); el.classList.add('active'); 
-  $('adminTabUsers').style.display = tabName==='users'?'block':'none';
-  $('adminTabContent').style.display = tabName==='content'?'block':'none';
-  $('adminTabSys').style.display = tabName==='sys'?'block':'none';
-  $('adminTabShop').style.display = tabName==='shop'?'block':'none';
-}
-
-async function loadAllUsers() { const { data } = await supabaseClient.from('users').select('*').limit(50); allUsersCache = data; $('statTotalUsers').textContent = data.length; renderAdminUsers(''); }
-function renderAdminUsers(filter) {
-  const list = $('adminUserList'); list.innerHTML = '';
-  allUsersCache.forEach(u => { if(u.id.includes(filter)) list.innerHTML += `<div class="admin-card"><div class="admin-user-id">${u.id}</div><div>${u.points} pts</div></div>`; });
-}
-
+/* ADMIN LOGIC */
 async function loadAdminContent() {
   const { data } = await supabaseClient.from('user_favorites').select('id, place_data').eq('user_id', ADMIN_ID);
   const l = $('adminContentList'); l.innerHTML = '';
   if(data) {
     data.forEach(item => {
       if(item.place_data.type !== 'broadcast' && item.place_data.type !== 'shop_config') {
+          // Pass the JSON object as string to avoid quote issues, or just ID
           l.innerHTML += `<div class="admin-card" style="display:flex; justify-content:space-between; align-items:center;">
              <div><div style="font-weight:700;">${item.place_data.name}</div><div style="font-size:12px; opacity:0.6;">${item.place_data.type||'Lieu'}</div></div>
              <div class="admin-actions-row">
-               <button class="admin-act-btn btn-gold" onclick="editSuggestion(${item.id}, '${item.place_data.name}', '${item.place_data.desc||''}')">Edit</button>
+               <button class="admin-act-btn btn-gold" onclick="triggerEdit('${item.id}')">Edit</button>
                <button class="admin-act-btn btn-red" onclick="deleteSuggestion(${item.id})">Suppr</button>
              </div>
           </div>`;
@@ -595,62 +582,50 @@ async function loadAdminContent() {
     });
   }
 }
-async function editSuggestion(id, oldName, oldDesc) {
-    const newName = prompt("Nouveau Nom:", oldName); if(!newName) return;
-    const newDesc = prompt("Nouvelle Description:", oldDesc);
-    await supabaseClient.from('user_favorites').update({ place_data: { ...tempMapPoint, name: newName, desc: newDesc, lat:0, lon:0 } }).eq('id', id); // Note: preserving lat/lon needs fetch, simplified for demo
-    alert("Modifié (reload requis pour voir lat/lon)"); loadAdminContent(); 
-}
-async function deleteSuggestion(id) { if(confirm("Supprimer ?")) { await supabaseClient.from('user_favorites').delete().eq('id', id); loadAdminContent(); } }
-
-function renderAdminShop() {
-    const l = $('adminShopList'); l.innerHTML = '';
-    SHOP_ITEMS.forEach(item => {
-        const isHidden = hiddenShopItems.includes(item.id);
-        l.innerHTML += `<div class="admin-card" style="display:flex; justify-content:space-between;">
-           <span>${item.icon} ${item.name}</span>
-           <label class="switch"><input type="checkbox" ${isHidden?'checked':''} onchange="toggleShopItem('${item.id}')"><span class="slider"></span></label>
-        </div>`;
-    });
-}
-async function toggleShopItem(id) {
-    if(hiddenShopItems.includes(id)) hiddenShopItems = hiddenShopItems.filter(i => i !== id); else hiddenShopItems.push(id);
-    // Save to DB (overwrite previous config row or create new)
-    // We first delete old config to be clean
-    const { data } = await supabaseClient.from('user_favorites').select('id').eq('user_id', ADMIN_ID).contains('place_data', { type: 'shop_config' });
-    if(data && data.length) await supabaseClient.from('user_favorites').delete().eq('id', data[0].id);
-    await supabaseClient.from('user_favorites').insert([{ user_id: ADMIN_ID, place_data: { type: 'shop_config', hidden: hiddenShopItems } }]);
-}
-
-async function sendBroadcast() { const m = $('broadcastInput').value; if(m && confirm("Envoyer ?")) { await supabaseClient.from('user_favorites').insert([{ user_id: ADMIN_ID, place_data: { type: 'broadcast', text: m, date: Date.now() } }]); alert('Envoyé'); } }
-async function checkBroadcasts() {
-    const { data } = await supabaseClient.from('user_favorites').select('id, place_data').eq('user_id', ADMIN_ID).order('created_at', { ascending: false }).limit(5); 
+// New Edit Function that fetches current data first to avoid overwriting lat/lon
+async function triggerEdit(dbId) {
+    const { data } = await supabaseClient.from('user_favorites').select('place_data').eq('id', dbId).single();
     if(data) {
-        const b = data.find(d => d.place_data.type === 'broadcast');
-        if(b && localStorage.getItem('cc_last_broadcast_id') != b.id) { $('broadcastText').textContent = b.place_data.text; $('broadcastOverlay').classList.add('active'); localStorage.setItem('cc_last_broadcast_id', b.id); }
+        const current = data.place_data;
+        const newName = prompt("Nom:", current.name);
+        if(newName) {
+            const newDesc = prompt("Description:", current.desc || "");
+            // Merge new info with existing data (lat, lon, etc)
+            const updated = { ...current, name: newName, desc: newDesc };
+            await supabaseClient.from('user_favorites').update({ place_data: updated }).eq('id', dbId);
+            alert("Mis à jour !"); loadAdminContent();
+        }
     }
 }
+function centerMap() { if(lastPos) mapInstance.flyTo([lastPos.lat, lastPos.lon], 16); }
 
-/* UI UTILS */
+/* Standard Functions */
+function openAdminPanel() { $('adminDashboard').classList.add('active'); loadAllUsers(); loadAdminContent(); renderAdminShop(); }
+function closeAdminPanel() { $('adminDashboard').classList.remove('active'); }
+function switchAdminTab(tabName, el) { document.querySelectorAll('.admin-tab-pill').forEach(t=>t.classList.remove('active')); el.classList.add('active'); $('adminTabUsers').style.display = tabName==='users'?'block':'none'; $('adminTabContent').style.display = tabName==='content'?'block':'none'; $('adminTabSys').style.display = tabName==='sys'?'block':'none'; $('adminTabShop').style.display = tabName==='shop'?'block':'none'; }
+async function loadAllUsers() { const { data } = await supabaseClient.from('users').select('*').limit(50); allUsersCache = data; $('statTotalUsers').textContent = data.length; renderAdminUsers(''); }
+function renderAdminUsers(filter) { const list = $('adminUserList'); list.innerHTML = ''; allUsersCache.forEach(u => { if(u.id.includes(filter)) list.innerHTML += `<div class="admin-card"><div class="admin-user-id">${u.id}</div><div>${u.points} pts</div></div>`; }); }
+async function deleteSuggestion(id) { if(confirm("Supprimer ?")) { await supabaseClient.from('user_favorites').delete().eq('id', id); loadAdminContent(); } }
+function renderAdminShop() { const l = $('adminShopList'); l.innerHTML = ''; SHOP_ITEMS.forEach(item => { const isHidden = hiddenShopItems.includes(item.id); l.innerHTML += `<div class="admin-card" style="display:flex; justify-content:space-between;"><span>${item.icon} ${item.name}</span><label class="switch"><input type="checkbox" ${isHidden?'checked':''} onchange="toggleShopItem('${item.id}')"><span class="slider"></span></label></div>`; }); }
+async function toggleShopItem(id) { if(hiddenShopItems.includes(id)) hiddenShopItems = hiddenShopItems.filter(i => i !== id); else hiddenShopItems.push(id); const { data } = await supabaseClient.from('user_favorites').select('id').eq('user_id', ADMIN_ID).contains('place_data', { type: 'shop_config' }); if(data && data.length) await supabaseClient.from('user_favorites').delete().eq('id', data[0].id); await supabaseClient.from('user_favorites').insert([{ user_id: ADMIN_ID, place_data: { type: 'shop_config', hidden: hiddenShopItems } }]); }
+async function sendBroadcast() { const m = $('broadcastInput').value; if(m && confirm("Envoyer ?")) { await supabaseClient.from('user_favorites').insert([{ user_id: ADMIN_ID, place_data: { type: 'broadcast', text: m, date: Date.now() } }]); alert('Envoyé'); } }
+async function checkBroadcasts() { const { data } = await supabaseClient.from('user_favorites').select('id, place_data').eq('user_id', ADMIN_ID).order('created_at', { ascending: false }).limit(5); if(data) { const b = data.find(d => d.place_data.type === 'broadcast'); if(b && localStorage.getItem('cc_last_broadcast_id') != b.id) { $('broadcastText').textContent = b.place_data.text; $('broadcastOverlay').classList.add('active'); localStorage.setItem('cc_last_broadcast_id', b.id); } } }
+function renderPlaces() { let parkingHtml = localStorage.getItem('cc_parking') ? `<div class="place-card" style="border-color:var(--accent);" onclick="findParking()">🅿️ <div style="font-weight:600;">Retrouver Voiture</div></div>` : ''; $('placesList').innerHTML = parkingHtml + (places.length ? places.map(p=>`<div class="place-card" onclick="tempMapPoint={lat:${p.lat},lon:${p.lon},name:'${p.name}'}; confirmMapAction('go')">📍 <div style="font-weight:600;">${p.name}</div></div>`).join('') : '<div style="opacity:0.5;text-align:center;">Vide</div>'); $('suggestionsList').innerHTML = globalSuggestions.length ? globalSuggestions.map(p=>`<div class="suggestion-card" onclick="tempMapPoint={lat:${p.lat},lon:${p.lon},name:'${p.name}'}; confirmMapAction('go')">🌟 <div style="font-weight:600;">${p.name}</div></div>`).join('') : '<div style="opacity:0.5;text-align:center;">Vide</div>'; $('profilePlaceCount').textContent = places.length; }
 function startPublishFlow() { if(userCode !== ADMIN_ID) return; const n = prompt("Nom:", tempMapPoint.name); if(n) { tempMapPoint.name = n; supabaseClient.from('user_favorites').insert([{user_id:ADMIN_ID, place_data:tempMapPoint}]).then(()=>{alert("Publié"); loadData().then(renderPlaces);}); } }
 function confirmMapAction(action) { if (action === 'save') { places.push(tempMapPoint); supabaseClient.from('user_favorites').insert([{user_id:userCode, place_data:tempMapPoint}]); renderPlaces(); } else { currentDest=tempMapPoint; $('navDestName').textContent=currentDest.name; show('viewNav'); if(activeFeatures['tool_sonar'] && audioCtx && audioCtx.state==='suspended') audioCtx.resume(); } closeMapSheet(); }
 function saveParking() { if(lastPos) { localStorage.setItem('cc_parking', JSON.stringify(lastPos)); alert("Parking mémorisé"); } }
+function findParking() { const saved = JSON.parse(localStorage.getItem('cc_parking')); if(saved) { currentDest = { lat: saved.lat, lon: saved.lon, name: "Ma Voiture" }; $('navDestName').textContent = "Ma Voiture"; show('viewNav'); } }
+function leaveTrace() { if(!lastPos) return alert("GPS requis"); if(userPoints < 10) return alert("Coût: 10 points"); if(!confirm("Laisser une trace ?")) return; userPoints -= 10; supabaseClient.from('users').update({points: userPoints}).eq('id', userCode); $('displayPoints').textContent = userPoints; const trace = { lat: lastPos.lat, lon: lastPos.lon, type: 'trace', timestamp: Date.now(), name: 'Trace' }; supabaseClient.from('user_favorites').insert([{ user_id: ADMIN_ID, place_data: trace }]); alert("Trace laissée !"); loadGlobalTraces(); }
+async function loadGlobalTraces() { if(!mapInstance) return; const { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', ADMIN_ID); traceLayerGroup.clearLayers(); if(data) { data.forEach(d => { const p = d.place_data; if(p.type === 'trace' && Date.now() - p.timestamp < 86400000) { L.marker([p.lat, p.lon], { icon: L.divIcon({ className: 'trace-marker', html: '👣', iconSize:[20,20] }) }).addTo(traceLayerGroup); } }); } }
 function playSonarBeep() { if(!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type = 'sine'; o.frequency.value = 1200; g.gain.value = 0.1; o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.1); }
-function updateNavDisplay() { 
-    const d = getDist(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon); 
-    if($('toggleHotCold').checked) { $('distDisplayArea').style.display='none'; $('arrowContainer').style.display='none'; $('ringProg').style.stroke = d<0.05?'var(--danger)':(d<0.2?'var(--gold)':'var(--accent)'); $('ringProg').style.strokeDashoffset=0; }
-    else { $('distDisplayArea').style.display='block'; $('arrowContainer').style.display='flex'; $('distVal').textContent = d<1?Math.round(d*1000)+'m':d.toFixed(1)+'km'; $('ringProg').style.strokeDashoffset = 301 * Math.min(Math.max(d/10, 0), 1); }
-    let wHtml = ''; if(activeFeatures['wid_speed']) wHtml+=`<div class="nav-widget-pill">⚡ ${Math.round((lastPos.speed||0)*3.6)} km/h</div>`; if(activeFeatures['wid_alt']) wHtml+=`<div class="nav-widget-pill">⛰️ ${(lastPos.alt||0).toFixed(0)}m</div>`; if(activeFeatures['wid_coords']) wHtml+=`<div class="nav-widget-pill">📍 ${lastPos.lat.toFixed(3)}</div>`; $('navWidgetsArea').innerHTML = wHtml;
-    if(activeFeatures['tool_sonar'] && d < 0.05) playSonarBeep(); 
-}
-function show(id, save=true) { document.querySelectorAll('.view').forEach(v => { if(v.id!=='viewLogin') v.classList.remove('active'); }); $(id).classList.add('active'); document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active')); if(id==='viewDiscover') { setTimeout(()=>{initMap(); mapInstance.invalidateSize();}, 50); if(activeFeatures['tool_trace']) $('btnTrace').style.display='flex'; } if(id==='viewPlaces') renderPlaces(); if(save) localStorage.setItem('cc_current_view', id); }
+function updateNavDisplay() { const d = getDist(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon); if($('toggleHotCold').checked) { $('distDisplayArea').style.display='none'; $('arrowContainer').style.display='none'; $('ringProg').style.stroke = d<0.05?'var(--danger)':(d<0.2?'var(--gold)':'var(--accent)'); $('ringProg').style.strokeDashoffset=0; } else { $('distDisplayArea').style.display='block'; $('arrowContainer').style.display='flex'; $('distVal').textContent = d<1?Math.round(d*1000)+'m':d.toFixed(1)+'km'; $('ringProg').style.strokeDashoffset = 301 * Math.min(Math.max(d/10, 0), 1); } let wHtml = ''; if(activeFeatures['wid_speed']) wHtml+=`<div class="nav-widget-pill">⚡ ${Math.round((lastPos.speed||0)*3.6)} km/h</div>`; if(activeFeatures['wid_alt']) wHtml+=`<div class="nav-widget-pill">⛰️ ${(lastPos.alt||0).toFixed(0)}m</div>`; if(activeFeatures['wid_coords']) wHtml+=`<div class="nav-widget-pill">📍 ${lastPos.lat.toFixed(3)}</div>`; $('navWidgetsArea').innerHTML = wHtml; if(activeFeatures['tool_sonar'] && d < 0.05) playSonarBeep(); }
+function show(id, save=true) { document.querySelectorAll('.view').forEach(v => { if(v.id!=='viewLogin') v.classList.remove('active'); }); $(id).classList.add('active'); if(id==='viewDiscover') { if(mapInstance) mapInstance.invalidateSize(); if(activeFeatures['tool_trace']) $('btnTrace').style.display='flex'; } if(id==='viewPlaces') renderPlaces(); if(save) localStorage.setItem('cc_current_view', id); }
 function closeMapSheet() { $('mapSheet').classList.remove('active'); } function closeBroadcast() { $('broadcastOverlay').classList.remove('active'); } function openCamera(f) { $('viewCam').classList.add('active'); $('videoFeed').className=f; navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(s=>$('videoFeed').srcObject=s); } function closeCamera() { $('viewCam').classList.remove('active'); const s = $('videoFeed').srcObject; if(s) s.getTracks().forEach(t=>t.stop()); }
 function getDist(lat1,lon1,lat2,lon2) { const R=6371; const dLat=(lat2-lat1)*Math.PI/180; const dLon=(lon2-lon1)*Math.PI/180; const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2; return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)); }
 function getBearing(lat1,lon1,lat2,lon2) { const dL=(lon2-lon1)*Math.PI/180; const l1=lat1*Math.PI/180; const l2=lat2*Math.PI/180; const y=Math.sin(dL)*Math.cos(l2); const x=Math.cos(l1)*Math.sin(l2)-Math.sin(l1)*Math.cos(l2)*Math.cos(dL); return (Math.atan2(y,x)*180/Math.PI+360)%360; }
 function applySettings() { document.body.setAttribute('data-theme', settings.theme); $('toggleTheme').checked = settings.theme==='dark'; $('toggleHighGPS').checked = settings.highGPS; }
 $('toggleTheme').onchange = (e) => { settings.theme=e.target.checked?'dark':'light'; localStorage.setItem('cc_theme', settings.theme); applySettings(); updateMapTiles(); };
 $('btnLogin').onclick = ()=>login($('inputLoginCode').value); $('btnCreateAccount').onclick = createAccount; $('btnLogout').onclick = ()=>{ localStorage.removeItem('cc_user_code'); location.reload(); }; $('inputLoginCode').oninput = (e)=>{ e.target.value = e.target.value.replace(/\D/g,'').slice(0,16).replace(/(\d{4})(?=\d)/g,'$1 ').trim(); };
-if(userCode) login(userCode);
 </script>
 </body>
 </html>
