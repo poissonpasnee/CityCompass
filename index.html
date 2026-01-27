@@ -49,51 +49,24 @@
     }
     .app { display: flex; flex-direction: column; height: 100%; position: relative; }
 
-    /* VIEW MANAGER (FIXED Z-INDEX ISSUE) */
+    /* VIEW MANAGER */
     .view { 
-      display: none; /* Hidden by default */
-      position: absolute; top: 0; left: 0; right: 0; bottom: var(--nav-height); 
-      overflow: hidden; opacity: 0; transition: opacity 0.3s ease;
-      z-index: 0; pointer-events: none; /* Prevent clicks when hidden */
+      display: none; position: absolute; top: 0; left: 0; right: 0; bottom: var(--nav-height); 
+      overflow: hidden; opacity: 0; transition: opacity 0.3s ease; z-index: 0; pointer-events: none;
     }
-    .view.active { 
-      display: block; opacity: 1; z-index: 10; pointer-events: auto; 
-    }
+    .view.active { display: block; opacity: 1; z-index: 10; pointer-events: auto; }
     
-    /* Login Specifics */
-    #viewLogin { 
-      bottom: 0; z-index: 3000; background: var(--bg-body); 
-      /* display controlled by .active class now */
-    }
+    #viewLogin { bottom: 0; z-index: 3000; background: var(--bg-body); }
     #viewLogin.active { display: flex; flex-direction: column; justify-content: center; padding: 30px; }
     
     #viewDiscover { padding: 0 !important; }
     .scroll-container { height: 100%; overflow-y: auto; overflow-x: hidden; padding: max(20px, var(--safe-top)) 20px 40px 20px; }
 
-    /* MAP UI */
-    #map { width: 100%; height: 100%; z-index: 1; background: var(--bg-input); }
-
-    .map-controls-right {
-      position: absolute; right: 16px; bottom: 40%; transform: translateY(50%);
-      display: flex; flex-direction: column; gap: 16px; z-index: 900; pointer-events: auto;
-    }
-    .map-fab {
-      width: 50px; height: 50px; background: var(--bg-glass);
-      backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-      border-radius: 18px; display: flex; align-items: center; justify-content: center;
-      font-size: 22px; box-shadow: var(--shadow-float); border: 1px solid rgba(255,255,255,0.1);
-      cursor: pointer; transition: transform 0.2s;
-    }
-    .map-fab:active { transform: scale(0.9); }
-
-    .floating-search {
-      position: absolute; top: max(20px, var(--safe-top)); left: 16px; right: 16px;
-      background: var(--bg-glass); backdrop-filter: blur(20px);
-      border-radius: var(--radius-l); padding: 10px; z-index: 1000;
-      box-shadow: var(--shadow-float); border: 1px solid var(--separator);
-    }
-    .search-input-box { display: flex; align-items: center; background: var(--bg-input); border-radius: 14px; padding: 0 12px; height: 44px; }
-    .search-input-box input { border: none; background: transparent; height: 100%; width: 100%; font-size: 17px; color: var(--text-primary); }
+    /* UI COMPONENTS */
+    .btn { width: 100%; padding: 18px; border-radius: 18px; border: none; font-weight: 700; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: var(--shadow-float); transition: transform 0.1s; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--separator); }
 
     /* LOGIN STYLES */
     .login-container { width: 100%; max-width: 400px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
@@ -102,22 +75,28 @@
     .compass-anim-arrow { position: absolute; inset: 15px; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23007AFF' d='M12 2L4.5 20.29C4.24 21.06 5.12 21.73 5.8 21.31L12 17.5L18.2 21.31C18.88 21.73 19.76 21.06 19.5 20.29L12 2Z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; background-size: contain; animation: breatheArrow 3s ease-in-out infinite; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
     @keyframes breatheArrow { 0%, 100% { transform: rotate(-10deg) scale(1); } 50% { transform: rotate(10deg) scale(1.1); } }
-    
     .login-input { background: var(--bg-card); border: 1px solid var(--separator); border-radius: 16px; padding: 20px; font-size: 20px; letter-spacing: 3px; font-family: monospace; text-align: center; width: 100%; color: var(--text-primary); margin-bottom: 16px; box-shadow: var(--shadow-float); }
 
-    /* GENERAL UI */
-    .btn { width: 100%; padding: 18px; border-radius: 18px; border: none; font-weight: 700; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: var(--shadow-float); }
-    .btn-primary { background: var(--accent); color: white; }
-    .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--separator); }
-
-    /* SHEET & NAVBAR */
+    /* MAP STYLES */
+    #map { width: 100%; height: 100%; z-index: 1; background: var(--bg-input); }
+    .map-controls-right { position: absolute; right: 16px; bottom: 40%; transform: translateY(50%); display: flex; flex-direction: column; gap: 16px; z-index: 900; pointer-events: auto; }
+    .map-fab { width: 50px; height: 50px; background: var(--bg-glass); backdrop-filter: blur(15px); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: var(--shadow-float); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: transform 0.2s; }
+    .map-fab:active { transform: scale(0.9); }
+    
+    .floating-search { position: absolute; top: max(20px, var(--safe-top)); left: 16px; right: 16px; background: var(--bg-glass); backdrop-filter: blur(20px); border-radius: var(--radius-l); padding: 10px; z-index: 1000; box-shadow: var(--shadow-float); border: 1px solid var(--separator); }
+    .search-input-box { display: flex; align-items: center; background: var(--bg-input); border-radius: 14px; padding: 0 12px; height: 44px; }
+    .search-input-box input { border: none; background: transparent; height: 100%; width: 100%; font-size: 17px; color: var(--text-primary); }
+    
     .map-sheet { position: absolute; bottom: 20px; left: 16px; right: 16px; background: var(--bg-glass); backdrop-filter: blur(30px); border-radius: var(--radius-l); padding: 24px; z-index: 1000; box-shadow: var(--shadow-float); transform: translateY(120%); transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1); display: flex; flex-direction: column; gap: 12px; }
     .map-sheet.active { transform: translateY(0); }
 
-    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: var(--bg-glass); backdrop-filter: blur(20px); border-top: 1px solid var(--separator); display: flex; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); z-index: 2000; }
-    .nav-tab { background: none; border: none; color: var(--text-secondary); font-size: 10px; font-weight: 600; display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; }
-    .nav-tab.active { color: var(--accent); }
-    .nav-icon { font-size: 24px; margin-bottom: 4px; }
+    /* BOUSSOLE */
+    .compass-wrapper { position: relative; width: 260px; height: 260px; margin: 30px auto; display: flex; align-items: center; justify-content: center; }
+    .compass-face { width: 90%; height: 90%; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--separator); display: flex; align-items: center; justify-content: center; }
+    .arrow-container { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; will-change: transform; transition: transform 0.1s ease-out; }
+    .arrow-svg { width: 64px; } 
+    .progress-ring { position: absolute; inset: 0; transform: rotate(-90deg); pointer-events: none; }
+    .nav-widget-pill { background: var(--bg-input); padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px; color: var(--text-primary); }
 
     /* SHOP & SETTINGS */
     .shop-container { position: relative; overflow: hidden; max-height: 320px; transition: max-height 0.4s ease; }
@@ -126,7 +105,8 @@
     .shop-container.expanded .shop-blur-overlay { opacity: 0; }
     .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-bottom: 20px; }
     .shop-card { background: var(--bg-card); padding: 16px; border-radius: 18px; text-align: center; border: 1px solid var(--separator); }
-    
+    .shop-status { background: var(--bg-input); color: var(--accent); padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 800; display: inline-block; margin-top: 8px; }
+
     .settings-row { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 16px; border-bottom: 1px solid var(--separator); }
     .switch { position: relative; width: 50px; height: 30px; }
     .switch input { opacity: 0; width: 0; height: 0; }
@@ -135,15 +115,15 @@
     input:checked + .slider { background: var(--success); }
     input:checked + .slider:before { transform: translateX(20px); }
 
-    /* COMPASS */
-    .compass-wrapper { position: relative; width: 260px; height: 260px; margin: 30px auto; display: flex; align-items: center; justify-content: center; }
-    .compass-face { width: 90%; height: 90%; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--separator); display: flex; align-items: center; justify-content: center; }
-    .arrow-svg { width: 64px; } .progress-ring { position: absolute; inset: 0; transform: rotate(-90deg); pointer-events: none; }
+    /* NAVBAR */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: var(--bg-glass); backdrop-filter: blur(20px); border-top: 1px solid var(--separator); display: flex; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); z-index: 2000; }
+    .nav-tab { background: none; border: none; color: var(--text-secondary); font-size: 10px; font-weight: 600; display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; }
+    .nav-tab.active { color: var(--accent); }
+    .nav-icon { font-size: 24px; margin-bottom: 4px; }
     
     .user-marker-pulse { width: 20px; height: 20px; background: var(--accent); border: 3px solid white; border-radius: 50%; box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.3); animation: mapPulse 2s infinite; }
     @keyframes mapPulse { 0% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.6); } 70% { box-shadow: 0 0 0 15px rgba(var(--accent-rgb), 0); } 100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0); } }
     .poi-marker { background: var(--bg-card); border-radius: 50%; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; }
-
   </style>
 </head>
 
@@ -175,14 +155,11 @@
         </div>
         <div id="suggestions" style="display:none; background:var(--bg-card); border-radius:12px; margin-top:4px;"></div>
       </div>
-      
       <div id="map"></div>
-
       <div class="map-controls-right">
         <div class="map-fab" onclick="centerMap()">📍</div>
         <div class="map-fab" onclick="refreshPOIs(true)">🔄</div>
       </div>
-
       <div class="map-sheet" id="mapSheet">
         <div style="font-weight:700; font-size:22px;" id="sheetTitle">Lieu</div>
         <div style="font-size:14px; opacity:0.6; margin-bottom:10px;" id="sheetDesc">Description</div>
@@ -205,7 +182,7 @@
       </div>
     </div>
 
-    <!-- NAV -->
+    <!-- NAV (With Permission Button) -->
     <div class="view" id="viewNav">
       <div class="scroll-container">
         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -213,10 +190,15 @@
           <div style="font-weight:700;" id="navDestName">Destination</div>
           <div style="width:40px;"></div>
         </div>
+
         <div class="compass-wrapper">
           <svg class="progress-ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="none" stroke="var(--separator)" stroke-width="2"></circle><circle id="ringProg" cx="50" cy="50" r="48" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-dasharray="301" stroke-dashoffset="301"></circle></svg>
           <div class="compass-face"><div class="arrow-container" id="arrowContainer"><svg class="arrow-svg" viewBox="0 0 24 24"><path fill="var(--text-primary)" d="M12 2L4.5 20.29C4.24 21.06 5.12 21.73 5.8 21.31L12 17.5L18.2 21.31C18.88 21.73 19.76 21.06 19.5 20.29L12 2Z"></path></svg></div></div>
         </div>
+        
+        <!-- NEW PERMISSION BUTTON -->
+        <button class="btn btn-primary" id="btnReqSensors" onclick="requestSensors()" style="margin-bottom:20px; display:flex;">📡 Activer Capteurs</button>
+
         <div style="text-align:center; margin-bottom:20px;"><div style="font-size:36px; font-weight:800; color:var(--accent);" id="distVal">--</div><div style="font-size:13px; opacity:0.6; font-weight:700; text-transform:uppercase;">Distance</div></div>
         <div id="navWidgetsArea" style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;"></div>
       </div>
@@ -302,6 +284,55 @@ function initApp() {
   show(v, false); startGPS();
 }
 
+/* SENSORS & GPS */
+function requestSensors() {
+  // GPS
+  startGPS();
+  // COMPASS (iOS 13+)
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(response => {
+        if (response === 'granted') {
+          window.addEventListener('deviceorientation', handleOrientation);
+          $('btnReqSensors').style.display = 'none';
+        } else {
+          alert('Permission refusée');
+        }
+      })
+      .catch(console.error);
+  } else {
+    // Android/Desktop
+    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    $('btnReqSensors').style.display = 'none';
+  }
+}
+
+function handleOrientation(e) {
+  let heading = e.webkitCompassHeading || (e.alpha ? 360 - e.alpha : 0);
+  if(currentDest && lastPos) {
+    const bearing = getBearing(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon);
+    // On tourne la flèche vers la destination relative au nord magnétique
+    // heading = où regarde le tel. bearing = où est la cible.
+    // rotation = bearing - heading
+    const rot = bearing - heading;
+    $('arrowContainer').style.transform = `rotate(${rot}deg)`;
+  } else {
+     // Mode boussole simple (pointe le Nord)
+     $('arrowContainer').style.transform = `rotate(${-heading}deg)`;
+  }
+}
+
+function startGPS() {
+  navigator.geolocation.watchPosition(pos => {
+    lastPos = { lat: pos.coords.latitude, lon: pos.coords.longitude, speed: pos.coords.speed };
+    if (mapInstance && mapMarker) {
+      mapMarker.setLatLng([lastPos.lat, lastPos.lon]);
+      if(!hasCentered) { mapInstance.setView([lastPos.lat, lastPos.lon], 16); hasCentered = true; }
+    }
+    if(currentDest) updateNavDisplay();
+  }, null, { enableHighAccuracy: settings.highGPS, maximumAge: 10000 });
+}
+
 /* MAP */
 function initMap() {
   if (mapInstance) return; if (!$('map')) return;
@@ -314,16 +345,6 @@ function initMap() {
   });
 }
 function centerMap() { if(lastPos) mapInstance.flyTo([lastPos.lat, lastPos.lon], 16); }
-function startGPS() {
-  navigator.geolocation.watchPosition(pos => {
-    lastPos = { lat: pos.coords.latitude, lon: pos.coords.longitude, speed: pos.coords.speed };
-    if (mapInstance && mapMarker) {
-      mapMarker.setLatLng([lastPos.lat, lastPos.lon]);
-      if(!hasCentered) { mapInstance.setView([lastPos.lat, lastPos.lon], 16); hasCentered = true; }
-    }
-    if(currentDest) updateNavDisplay();
-  }, null, { enableHighAccuracy: settings.highGPS, maximumAge: 10000 });
-}
 function updateMapTiles() {
   if (!mapInstance) return; if (mapTileLayer) mapInstance.removeLayer(mapTileLayer);
   let url = settings.theme === 'dark' ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
@@ -385,6 +406,7 @@ function show(id, save=true) { document.querySelectorAll('.view').forEach(v => {
 function updateNavDisplay() { const d = getDist(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon); const distText = settings.units ? (d * 0.621371).toFixed(1) + ' mi' : (d < 1 ? Math.round(d*1000)+'m' : d.toFixed(1)+'km'); $('distVal').textContent = distText; const prog = Math.min(Math.max(d/10, 0), 1); $('ringProg').style.strokeDashoffset = 301 * prog; let wHtml = ''; if(activeFeatures['wid_speed']) wHtml += `<div class="nav-widget-pill">⚡ ${Math.round((lastPos.speed||0)*3.6)} km/h</div>`; if(activeFeatures['wid_weather']) wHtml += `<div class="nav-widget-pill">🌤️ 19°C</div>`; $('navWidgetsArea').innerHTML = wHtml; }
 function closeMapSheet() { $('mapSheet').classList.remove('active'); } function clearHistory() { localStorage.removeItem('cc_history'); renderPlaces(); }
 function getDist(lat1,lon1,lat2,lon2) { const R=6371; const dLat=(lat2-lat1)*Math.PI/180; const dLon=(lon2-lon1)*Math.PI/180; const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2; return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)); }
+function getBearing(lat1,lon1,lat2,lon2) { const dL=(lon2-lon1)*Math.PI/180; const l1=lat1*Math.PI/180; const l2=lat2*Math.PI/180; const y=Math.sin(dL)*Math.cos(l2); const x=Math.cos(l1)*Math.sin(l2)-Math.sin(l1)*Math.cos(l2)*Math.cos(dL); return (Math.atan2(y,x)*180/Math.PI+360)%360; }
 
 $('btnLogin').onclick = ()=>login($('inputLoginCode').value);
 $('btnCreateAccount').onclick = createAccount;
