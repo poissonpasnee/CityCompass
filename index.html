@@ -17,7 +17,7 @@
 
   <style>
     /* =========================
-       1. VARIABLES & THEME
+       VARIABLES & THEME
        ========================== */
     :root {
       --bg-body: #F2F2F7;
@@ -59,236 +59,142 @@
 
     .app { display: flex; flex-direction: column; height: 100%; position: relative; }
 
-    /* =========================
-       2. MAP & FLOATING UI
-       ========================== */
-    /* La vue Discover devient un container plein écran pour la map */
-    #viewDiscover {
-      padding: 0 !important; /* Reset padding for map */
-      position: relative;
-      height: 100%;
-      overflow: hidden;
+    /* VIEW MANAGEMENT */
+    .view { 
+        display: none; 
+        position: absolute; top: 0; left: 0; right: 0; bottom: var(--nav-height); /* Prend tout l'espace sauf nav */
+        overflow: hidden; 
+        opacity: 0; transition: opacity 0.3s;
     }
+    .view.active { display: block; opacity: 1; z-index: 1; }
+    
+    /* Z-Index fix for Login to be on top */
+    #viewLogin { bottom: 0; z-index: 2000; background: var(--bg-body); }
+    #viewLogin.active { display: block; }
 
-    #map {
-      width: 100%; height: 100%;
-      z-index: 1;
-      background: var(--bg-body); /* Couleur de fond avant chargement tuiles */
-    }
+    /* MAP CONTAINER */
+    #viewDiscover { padding: 0 !important; }
+    #map { width: 100%; height: 100%; z-index: 1; background: var(--bg-input); }
 
-    /* Barre de recherche flottante */
+    /* FLOATING UI */
     .floating-search {
-      position: absolute; 
-      top: max(20px, var(--safe-top)); 
-      left: 16px; right: 16px;
-      background: var(--bg-blur);
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border-radius: var(--radius-l);
-      padding: 10px;
-      z-index: 1000; /* Au dessus de la map */
-      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-      border: 1px solid var(--separator);
+      position: absolute; top: max(20px, var(--safe-top)); left: 16px; right: 16px;
+      background: var(--bg-blur); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-radius: var(--radius-l); padding: 10px; z-index: 1000;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12); border: 1px solid var(--separator);
     }
+    .search-input-box { display: flex; align-items: center; background: var(--bg-input); border-radius: 12px; padding: 0 12px; height: 44px; }
+    .search-input-box input { border: none; background: transparent; height: 100%; width: 100%; font-size: 17px; color: var(--text-primary); }
+    
+    .suggestions-float { margin-top: 8px; background: var(--bg-card); border-radius: 12px; overflow: hidden; display: none; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .suggestion-item { padding: 14px 16px; border-bottom: 1px solid var(--separator); display: flex; gap: 12px; align-items: center; cursor: pointer; }
 
-    .search-input-box {
-      display: flex; align-items: center;
-      background: var(--bg-input);
-      border-radius: 12px; padding: 0 12px;
-      height: 44px;
-    }
-    .search-input-box input {
-      border: none; background: transparent; height: 100%; width: 100%;
-      font-size: 17px; color: var(--text-primary);
-    }
-
-    /* Suggestions sous la barre flottante */
-    .suggestions-float {
-      margin-top: 8px;
-      background: var(--bg-card);
-      border-radius: 12px;
-      overflow: hidden;
-      display: none;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    }
-
-    /* Menu contextuel (Bottom Sheet) pour la map */
+    /* BOTTOM SHEET */
     .map-sheet {
-      position: absolute; bottom: calc(var(--nav-height) + 20px); left: 16px; right: 16px;
-      background: var(--bg-blur);
-      backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
-      border-radius: var(--radius-l);
-      padding: 20px;
-      z-index: 1000;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-      border: 1px solid var(--separator);
+      position: absolute; bottom: 20px; left: 16px; right: 16px;
+      background: var(--bg-blur); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+      border-radius: var(--radius-l); padding: 20px; z-index: 1000;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3); border: 1px solid var(--separator);
       transform: translateY(150%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
       display: flex; flex-direction: column; gap: 12px;
     }
     .map-sheet.active { transform: translateY(0); }
-    .sheet-title { font-weight: 700; font-size: 18px; margin-bottom: 4px; }
-    .sheet-coords { font-size: 13px; color: var(--text-secondary); font-family: monospace; }
-    .sheet-actions { display: flex; gap: 10px; margin-top: 10px; }
 
+    /* SCROLLABLE CONTENT (Nav & Account) */
+    .scroll-container { height: 100%; overflow-y: auto; overflow-x: hidden; padding: max(20px, var(--safe-top)) 20px 40px 20px; }
 
-    /* =========================
-       3. OTHER VIEWS
-       ========================== */
-    .view { display: none; opacity: 0; transform: translateY(10px); transition: 0.3s; height: 100%; }
-    .view.active { display: block; opacity: 1; transform: translateY(0); }
-    
-    /* Scroll container pour Nav et Account */
-    .scroll-container {
-      height: 100%; overflow-y: auto; overflow-x: hidden;
-      padding: max(20px, var(--safe-top)) 20px 140px 20px;
-    }
-
-    /* BOUSSOLE */
-    .compass-wrapper {
-      position: relative; width: 280px; height: 280px; margin: 40px auto;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .compass-face {
-      width: 86%; height: 86%; border-radius: 50%;
-      background: var(--bg-card); border: 1px solid var(--separator);
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: inset 0 0 30px rgba(0,0,0,0.02);
-      z-index: 2;
-    }
+    /* BOUSSOLE UI */
+    .compass-wrapper { position: relative; width: 280px; height: 280px; margin: 40px auto; display: flex; align-items: center; justify-content: center; }
+    .compass-face { width: 86%; height: 86%; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--separator); display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 30px rgba(0,0,0,0.02); z-index: 2; }
     .arrow-container { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; will-change: transform; }
     .arrow-svg { width: 64px; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.15)); }
-    .arrow-svg path { transition: fill 0.3s; }
     .progress-ring { position: absolute; inset: 0; transform: rotate(-90deg); pointer-events: none; }
-
-    /* METRICS */
     .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
-    .metric-box { 
-      background: var(--bg-card); padding: 14px; border-radius: var(--radius-m); 
-      text-align: center; border: 1px solid var(--separator);
-    }
+    .metric-box { background: var(--bg-card); padding: 14px; border-radius: var(--radius-m); text-align: center; border: 1px solid var(--separator); }
     .metric-val { font-size: 22px; font-weight: 800; color: var(--accent); }
-    .metric-lbl { font-size: 11px; opacity: 0.6; text-transform: uppercase; font-weight: 700; }
 
-    /* SHOP CARDS (Improved) */
+    /* SHOP & GENERIC */
     .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .shop-card {
-      background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%);
-      padding: 16px; border-radius: 18px;
-      text-align: center; position: relative; overflow: hidden;
-      border: 1px solid var(--separator);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-    }
-    .shop-card:active { transform: scale(0.96); transition: 0.1s; }
-    .shop-icon { font-size: 32px; margin-bottom: 8px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1)); }
-    .shop-cost { 
-      background: var(--bg-input); color: var(--accent); 
-      padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 800;
-      display: inline-block; margin-top: 8px;
-    }
-    .shop-card.locked { opacity: 0.5; filter: grayscale(0.8); }
-
-    /* GENERAL UI */
-    .btn {
-      width: 100%; padding: 16px; border-radius: var(--radius-l); border: none;
-      font-weight: 700; font-size: 17px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      background: var(--bg-card); color: var(--text-primary);
-    }
-    .btn-primary { background: var(--accent); color: white; box-shadow: 0 8px 20px -6px rgba(0,0,0,0.3); }
-    .label { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); font-weight: 700; margin: 30px 0 10px 6px; }
+    .shop-card { background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%); padding: 16px; border-radius: 18px; text-align: center; position: relative; overflow: hidden; border: 1px solid var(--separator); }
+    .shop-icon { font-size: 32px; margin-bottom: 8px; }
+    .shop-cost { background: var(--bg-input); color: var(--accent); padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 800; display: inline-block; margin-top: 8px; }
     
-    .account-hero {
-      background: var(--accent-gradient); padding: 30px; border-radius: 24px;
-      color: white; text-align: center; margin-bottom: 30px;
-      box-shadow: 0 10px 40px -10px var(--accent);
-    }
+    .btn { width: 100%; padding: 16px; border-radius: var(--radius-l); border: none; font-weight: 700; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--bg-card); color: var(--text-primary); }
+    .btn-primary { background: var(--accent); color: white; }
+    .account-hero { background: var(--accent-gradient); padding: 30px; border-radius: 24px; color: white; text-align: center; margin-bottom: 30px; box-shadow: 0 10px 40px -10px var(--accent); }
+    .label { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); font-weight: 700; margin: 30px 0 10px 6px; }
 
-    /* NAV BAR */
-    .bottom-nav {
-      position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height);
-      background: var(--bg-blur); backdrop-filter: blur(20px);
-      border-top: 1px solid var(--separator); display: flex; justify-content: space-around;
-      padding-bottom: env(safe-area-inset-bottom); z-index: 2000;
-    }
+    /* NAVBAR */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: var(--bg-blur); backdrop-filter: blur(20px); border-top: 1px solid var(--separator); display: flex; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); z-index: 2000; }
     .nav-tab { background: none; border: none; color: var(--text-secondary); font-size: 10px; font-weight: 600; display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; }
     .nav-tab.active { color: var(--accent); }
-    .nav-icon { font-size: 24px; margin-bottom: 4px; transition: transform 0.2s; }
-    .nav-tab.active .nav-icon { transform: translateY(-3px); }
+    .nav-icon { font-size: 24px; margin-bottom: 4px; }
 
-    /* Switch */
+    /* TOGGLES */
+    .settings-row { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 16px; margin-bottom: 1px; }
+    .settings-row:first-of-type { border-top-left-radius: var(--radius-l); border-top-right-radius: var(--radius-l); }
+    .settings-row:last-of-type { border-bottom-left-radius: var(--radius-l); border-bottom-right-radius: var(--radius-l); margin-bottom: 20px; }
     .switch { position: relative; width: 50px; height: 30px; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; inset: 0; background: var(--bg-input); border-radius: 34px; transition: .4s; }
     .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background: white; border-radius: 50%; transition: .4s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     input:checked + .slider { background: var(--success); }
     input:checked + .slider:before { transform: translateX(20px); }
-    
-    /* Settings Row */
-    .settings-row {
-      display: flex; justify-content: space-between; align-items: center;
-      background: var(--bg-card); padding: 16px; margin-bottom: 1px;
-    }
-    .settings-row:first-of-type { border-top-left-radius: var(--radius-l); border-top-right-radius: var(--radius-l); }
-    .settings-row:last-of-type { border-bottom-left-radius: var(--radius-l); border-bottom-right-radius: var(--radius-l); margin-bottom: 20px; }
-
   </style>
 </head>
 
 <body>
   <div class="app">
     
-    <!-- VIEW: LOGIN -->
+    <!-- LOGIN -->
     <div class="view active" id="viewLogin">
       <div class="scroll-container">
         <div style="height:40px;"></div>
         <h2 style="text-align:center; font-size:32px; margin-bottom:10px;">City Compass</h2>
-        <p style="text-align:center; opacity:0.6; margin-bottom:40px;">Navigation immersive & récompenses.</p>
+        <p style="text-align:center; opacity:0.6; margin-bottom:40px;">Votre guide urbain connecté.</p>
         
         <div class="account-hero">
-          <div style="font-weight:700; font-size:18px;">Commencer l'aventure</div>
+          <div style="font-weight:700; font-size:18px;">Commencer</div>
           <button class="btn" id="btnCreateAccount" style="background:white; color:var(--accent); margin-top:15px;">Créer un profil</button>
         </div>
 
-        <div style="text-align:center; margin:30px 0; font-size:12px; font-weight:700; opacity:0.5;">DÉJÀ MEMBRE ?</div>
-        <input id="inputLoginCode" placeholder="Code secret" style="text-align:center; letter-spacing:2px; font-family:monospace; background:var(--bg-card); padding:16px; border-radius:12px; width:100%; border:none;" maxlength="19" inputmode="numeric" />
+        <div style="text-align:center; margin:30px 0; font-size:12px; font-weight:700; opacity:0.5;">CONNEXION</div>
+        <input id="inputLoginCode" placeholder="Code secret" style="text-align:center; letter-spacing:2px; font-family:monospace; background:var(--bg-input); padding:16px; border-radius:12px; width:100%; border:none; color: var(--text-primary);" maxlength="19" inputmode="numeric" />
         <button class="btn btn-primary" id="btnLogin" style="margin-top:16px;">Connexion</button>
+        <p id="loginError" style="color:var(--danger); text-align:center; margin-top:10px; min-height:20px; font-size:14px;"></p>
       </div>
     </div>
 
-    <!-- VIEW: MAP (DISCOVER) -->
+    <!-- MAP -->
     <div class="view" id="viewDiscover">
-      <!-- Floating Search Bar -->
       <div class="floating-search">
         <div class="search-input-box">
           <span style="margin-right:8px; font-size:18px;">🔍</span>
-          <input id="addrInput" placeholder="Rechercher un lieu..." autocomplete="off" />
+          <input id="addrInput" placeholder="Rechercher..." autocomplete="off" />
         </div>
         <div id="suggestions" class="suggestions-float"></div>
       </div>
-
-      <!-- Leaflet Map Container -->
+      
       <div id="map"></div>
 
-      <!-- GPS Permission Prompt (Overlay) -->
-      <div id="gpsPermissionBlock" style="position:absolute; bottom:120px; left:20px; right:20px; background:var(--bg-card); padding:20px; border-radius:20px; text-align:center; display:none; z-index:1500; box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+      <div id="gpsPermissionBlock" style="position:absolute; bottom:100px; left:20px; right:20px; background:var(--bg-card); padding:20px; border-radius:20px; text-align:center; display:none; z-index:1500; box-shadow:0 10px 40px rgba(0,0,0,0.3);">
          <b>⚠️ GPS requis</b>
-         <p style="font-size:14px; opacity:0.7; margin:10px 0;">Activez la localisation pour voir votre position sur la carte.</p>
+         <p style="font-size:14px; opacity:0.7; margin:10px 0;">Nécessaire pour le guidage.</p>
          <button class="btn btn-primary" id="btnGrantGPS">Activer</button>
       </div>
 
-      <!-- Map Bottom Sheet (Long Press Menu) -->
       <div class="map-sheet" id="mapSheet">
-        <div class="sheet-title" id="sheetTitle">Point Repéré</div>
-        <div class="sheet-coords" id="sheetCoords">43.6045, 1.4442</div>
-        <div class="sheet-actions">
+        <div style="font-weight:700; font-size:18px;" id="sheetTitle">Point Repéré</div>
+        <div style="font-size:13px; opacity:0.6; font-family:monospace;" id="sheetCoords">...</div>
+        <div style="display:flex; gap:10px; margin-top:10px;">
           <button class="btn btn-primary" onclick="confirmMapAction('go')">🚀 Y Aller</button>
-          <button class="btn" style="background:var(--bg-input);" onclick="confirmMapAction('save')">⭐ Enregistrer</button>
+          <button class="btn" style="background:var(--bg-input);" onclick="confirmMapAction('save')">⭐ Sauver</button>
         </div>
-        <button class="btn" style="margin-top:10px; padding:10px; background:transparent; color:var(--text-secondary); font-size:14px;" onclick="closeMapSheet()">Annuler</button>
+        <button class="btn" style="margin-top:10px; padding:10px; background:transparent; font-size:14px;" onclick="closeMapSheet()">Fermer</button>
       </div>
     </div>
 
-
-    <!-- VIEW: NAV (COMPASS) -->
+    <!-- NAV -->
     <div class="view" id="viewNav">
       <div class="scroll-container">
         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -304,64 +210,45 @@
           </svg>
           <div class="compass-face">
             <div class="arrow-container" id="arrowContainer">
-              <svg class="arrow-svg" viewBox="0 0 24 24">
-                <path fill="var(--text-primary)" d="M12 2L4.5 20.29C4.24 21.06 5.12 21.73 5.8 21.31L12 17.5L18.2 21.31C18.88 21.73 19.76 21.06 19.5 20.29L12 2Z"></path>
-              </svg>
+              <svg class="arrow-svg" viewBox="0 0 24 24"><path fill="var(--text-primary)" d="M12 2L4.5 20.29C4.24 21.06 5.12 21.73 5.8 21.31L12 17.5L18.2 21.31C18.88 21.73 19.76 21.06 19.5 20.29L12 2Z"></path></svg>
             </div>
           </div>
         </div>
-
+        
         <button id="btnCalibrate" class="btn" style="padding:10px; width:auto; margin:0 auto 20px auto; display:none; background:var(--bg-input); font-size:14px;">📡 Activer Boussole</button>
 
         <div class="metrics-grid">
-          <div class="metric-box">
-            <div class="metric-lbl">Distance</div>
-            <div class="metric-val" id="distVal">--</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-lbl">Cap</div>
-            <div class="metric-val" id="capVal">--°</div>
-          </div>
+          <div class="metric-box"><div class="metric-lbl">Distance</div><div class="metric-val" id="distVal">--</div></div>
+          <div class="metric-box"><div class="metric-lbl">Cap</div><div class="metric-val" id="capVal">--°</div></div>
         </div>
-
-        <!-- Widgets Area -->
         <div id="navWidgetsArea" style="margin-top:20px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;"></div>
       </div>
     </div>
 
-
-    <!-- VIEW: ACCOUNT -->
+    <!-- ACCOUNT -->
     <div class="view" id="viewAccount">
       <div class="scroll-container">
         <div class="account-hero">
-          <div style="font-size:12px; font-weight:700; opacity:0.8;">SOLDE</div>
+          <div style="font-size:12px; font-weight:700; opacity:0.8;">POINTS</div>
           <div style="font-size:42px; font-weight:800;" id="displayPoints">0</div>
-          <div style="font-family:monospace; background:rgba(255,255,255,0.2); padding:8px; border-radius:8px; margin-top:10px; display:inline-block; font-size:14px;" id="displayCode">...</div>
+          <div style="font-family:monospace; background:rgba(255,255,255,0.2); padding:8px; border-radius:8px; margin-top:10px; display:inline-block; font-size:14px; user-select:all;" id="displayCode">...</div>
         </div>
         
-        <div id="profileWidgetsArea"></div>
+        <div class="label">Mes Lieux</div>
+        <div id="placesList"></div>
 
-        <div class="label">Mes Lieux Enregistrés</div>
-        <div id="placesList" style="margin-bottom:30px;"></div>
-
-        <div class="label">Boutique & Améliorations</div>
+        <div class="label">Boutique</div>
         <div class="shop-grid" id="shopGrid"></div>
 
-        <div class="label">Réglages</div>
-        <div class="settings-row">
-          <span>Mode Sombre 🌙</span>
-          <label class="switch"><input type="checkbox" id="toggleTheme"><span class="slider"></span></label>
-        </div>
-        <div class="settings-row">
-          <span>Vibrations</span>
-          <label class="switch"><input type="checkbox" id="toggleVib"><span class="slider"></span></label>
-        </div>
+        <div class="label">Paramètres</div>
+        <div class="settings-row"><span>Mode Sombre 🌙</span><label class="switch"><input type="checkbox" id="toggleTheme"><span class="slider"></span></label></div>
+        <div class="settings-row"><span>Vibrations</span><label class="switch"><input type="checkbox" id="toggleVib"><span class="slider"></span></label></div>
 
         <button class="btn btn-primary" id="btnLogout" style="background:var(--danger); margin-top:30px;">Déconnexion</button>
       </div>
     </div>
 
-    <!-- NAVBAR -->
+    <!-- NAV BAR -->
     <div class="bottom-nav" id="navBar" style="display:none;">
       <button class="nav-tab active" onclick="show('viewDiscover')"><span class="nav-icon">🗺️</span>Carte</button>
       <button class="nav-tab" onclick="show('viewNav')"><span class="nav-icon">🧭</span>Boussole</button>
@@ -371,9 +258,7 @@
   </div>
 
 <script>
-/* =========================================
-   CORE CONFIG
-   ========================================= */
+/* CONFIG */
 const SUPABASE_URL = 'https://vjlfbcwnfwyrxstfvefq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGZiY3duZnd5cnhzdGZ2ZWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMDc2MjcsImV4cCI6MjA4NDc4MzYyN30.WTuWbxB-8isJOp2lNnq73njQmifDjxTNEWngMgKtmv4';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -387,7 +272,7 @@ let lastPos = null;
 let mapInstance = null;
 let mapMarker = null;
 let mapTileLayer = null;
-let tempMapPoint = null; // Point temporaire lors d'un long press
+let tempMapPoint = null;
 
 let settings = { theme: localStorage.getItem('cc_theme') || 'light', vib: localStorage.getItem('cc_vib') !== 'false' };
 let ownedItems = JSON.parse(localStorage.getItem('cc_owned_items') || '[]');
@@ -395,29 +280,133 @@ let activeArrowColor = localStorage.getItem('cc_arrow_color') || null;
 
 const SHOP_ITEMS = [
   { id: 'arrow_color', name: 'Couleur Flèche', cost: 50, type: 'style', icon:'🎨' },
-  { id: 'map_pro', name: 'Carte Pro (Bientôt)', cost: 500, type: 'tool', icon:'🗺️' },
-  { id: 'export_gpx', name: 'Export GPX', cost: 200, type: 'tool', icon:'📁' },
-  { id: 'widget_speed', name: 'Vitesse', cost: 100, type: 'widget', icon:'⚡' }
+  { id: 'widget_speed', name: 'Vitesse (Widget)', cost: 100, type: 'widget', icon:'⚡' },
+  { id: 'map_pro', name: 'Carte Satellite', cost: 500, type: 'map', icon:'🛰️' }
 ];
-
 const ARROW_COLORS = ['#000000', '#FF3B30', '#34C759', '#0A84FF', '#FFCC00'];
 
-/* =========================================
-   1. MAP SYSTEM (LEAFLET)
-   ========================================= */
+/* --- INIT & LOGIN FLOW --- */
+async function login(c) {
+  const clean = c.replace(/\s/g, '');
+  if(clean.length!==16) { $('loginError').textContent = "Le code doit faire 16 chiffres"; return; }
+  
+  $('btnLogin').textContent = "Connexion...";
+  $('btnLogin').disabled = true;
+
+  try {
+    const { data, error } = await supabaseClient.from('users').select('*').eq('id', clean);
+    
+    if (error) throw error;
+    if (data && data.length > 0) {
+      userCode = clean;
+      userPoints = data[0].points;
+      localStorage.setItem('cc_user_code', userCode);
+      await loadFavorites();
+      initApp();
+    } else {
+      $('loginError').textContent = "Code introuvable.";
+      $('btnLogin').textContent = "Connexion";
+      $('btnLogin').disabled = false;
+    }
+  } catch (err) {
+    $('loginError').textContent = "Erreur de connexion. Réessayez.";
+    $('btnLogin').textContent = "Connexion";
+    $('btnLogin').disabled = false;
+  }
+}
+
+async function createAccount() {
+  const btn = $('btnCreateAccount'); btn.textContent="..."; btn.disabled=true;
+  const newCode = Array(16).fill(0).map(()=>Math.floor(Math.random()*10)).join('');
+  
+  try {
+    await supabaseClient.from('users').insert([{ id: newCode, points: 200 }]);
+    userCode = newCode; 
+    userPoints = 200; 
+    localStorage.setItem('cc_user_code', newCode);
+    initApp();
+  } catch(e) {
+    alert("Erreur création: " + e.message);
+    btn.textContent="Créer un profil"; btn.disabled=false;
+  }
+}
+
+function initApp() {
+  // Hide Login
+  $('viewLogin').classList.remove('active');
+  $('navBar').style.display = 'flex';
+  
+  // Update UI
+  $('displayCode').textContent = userCode ? userCode.replace(/(\d{4})(?=\d)/g, '$1 ').trim() : '...';
+  $('displayPoints').textContent = userPoints;
+  
+  applySettings();
+  renderPlaces();
+  renderShop();
+
+  // Restore Last View
+  const v = localStorage.getItem('cc_current_view') || 'viewDiscover';
+  const d = localStorage.getItem('cc_current_dest');
+  
+  if (v === 'viewNav' && d) {
+    currentDest = JSON.parse(d);
+    $('navDestName').textContent = currentDest.name;
+    show('viewNav', false);
+  } else {
+    show(v, false);
+  }
+
+  // Start GPS
+  if (navigator.permissions) {
+    navigator.permissions.query({name:'geolocation'}).then(r => {
+      if (r.state === 'granted') { $('gpsPermissionBlock').style.display='none'; startGPS(); }
+      else $('gpsPermissionBlock').style.display='block';
+    });
+  } else startGPS();
+}
+
+/* --- VIEW MANAGER --- */
+function show(id, save=true) {
+  // Hide all views
+  document.querySelectorAll('.view').forEach(v => {
+    if(v.id !== 'viewLogin') v.classList.remove('active');
+  });
+  
+  // Show target view
+  const target = $(id);
+  if(target) target.classList.add('active');
+
+  // Update Navbar
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  if(id==='viewDiscover') {
+    $('navBar').children[0].classList.add('active');
+    // Important: Leaflet needs visible container to size correctly
+    setTimeout(() => { 
+      initMap(); 
+      if(mapInstance) mapInstance.invalidateSize(); 
+    }, 100);
+  }
+  if(id==='viewNav') {
+    $('navBar').children[1].classList.add('active');
+    initCompassPermission();
+  }
+  if(id==='viewAccount') $('navBar').children[2].classList.add('active');
+
+  // Save State
+  if(save) {
+    localStorage.setItem('cc_current_view', id);
+    if(id!=='viewNav') { localStorage.removeItem('cc_current_dest'); currentDest=null; }
+  }
+}
+
+/* --- MAP SYSTEM --- */
 function initMap() {
-  if (mapInstance) return; // Déjà init
+  if (mapInstance) return; 
+  if (!$('map')) return;
 
-  // Centré sur Toulouse par défaut
-  mapInstance = L.map('map', { 
-    zoomControl: false, 
-    attributionControl: false 
-  }).setView([43.6045, 1.4442], 13);
-
-  // Ajout des tuiles (Thème dynamique)
+  mapInstance = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.6045, 1.4442], 13);
   updateMapTiles();
-
-  // Marqueur utilisateur
+  
   const icon = L.divIcon({
     className: 'user-marker',
     html: `<div style="width:16px; height:16px; background:var(--accent); border:3px solid white; border-radius:50%; box-shadow:0 2px 5px rgba(0,0,0,0.3);"></div>`,
@@ -425,58 +414,29 @@ function initMap() {
   });
   mapMarker = L.marker([43.6045, 1.4442], {icon: icon}).addTo(mapInstance);
 
-  // GESTION APPUI LONG (Context Menu)
   mapInstance.on('contextmenu', function(e) {
     tempMapPoint = { lat: e.latlng.lat, lon: e.latlng.lng, name: "Point repéré" };
-    
-    // Affichage Bottom Sheet
     $('sheetCoords').textContent = `${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`;
     $('sheetTitle').textContent = "Point sélectionné";
     $('mapSheet').classList.add('active');
-    
-    // Reverse Geocoding (Optionnel pour le nom)
-    fetch(`https://api-adresse.data.gouv.fr/reverse/?lat=${e.latlng.lat}&lon=${e.latlng.lng}`)
-      .then(r => r.json())
-      .then(d => {
-        if(d.features && d.features.length) {
-          tempMapPoint.name = d.features[0].properties.name;
-          tempMapPoint.fullAddress = d.features[0].properties.label;
-          $('sheetTitle').textContent = tempMapPoint.name;
-        }
-      });
   });
-
-  // Fermer sheet si on bouge la carte
   mapInstance.on('movestart', closeMapSheet);
 }
 
 function updateMapTiles() {
   if (!mapInstance) return;
   if (mapTileLayer) mapInstance.removeLayer(mapTileLayer);
-
   const isDark = settings.theme === 'dark';
-  const url = isDark 
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
-    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-  
+  const url = isDark ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
   mapTileLayer = L.tileLayer(url, { maxZoom: 19 }).addTo(mapInstance);
 }
 
-function closeMapSheet() {
-  $('mapSheet').classList.remove('active');
-}
-
+function closeMapSheet() { $('mapSheet').classList.remove('active'); }
 function confirmMapAction(action) {
   if (!tempMapPoint) return;
-  
   if (action === 'save') {
-    addFavorite({
-      name: tempMapPoint.name,
-      fullAddress: tempMapPoint.fullAddress || "Point sur la carte",
-      lat: tempMapPoint.lat,
-      lon: tempMapPoint.lon
-    });
-    alert("Lieu enregistré !");
+    addFavorite({ name: tempMapPoint.name, fullAddress: "Carte", lat: tempMapPoint.lat, lon: tempMapPoint.lon });
+    alert("Enregistré !");
   } else if (action === 'go') {
     currentDest = { ...tempMapPoint };
     $('navDestName').textContent = currentDest.name;
@@ -486,28 +446,41 @@ function confirmMapAction(action) {
   closeMapSheet();
 }
 
-
-/* =========================================
-   2. BOUSSOLE & NAV
-   ========================================= */
+/* --- NAVIGATION & SENSORS --- */
 let deviceHeading = 0, renderedHeading = 0;
 function navLoop() {
   requestAnimationFrame(navLoop);
   if(!currentDest || !lastPos) return;
-
   const targetBearing = getBearing(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon);
-  let targetAngle = targetBearing - deviceHeading;
-  
-  // Shortest path interpolation
-  let delta = targetAngle - renderedHeading;
+  let delta = (targetBearing - deviceHeading) - renderedHeading;
   while(delta < -180) delta += 360;
   while(delta > 180) delta -= 360;
-  renderedHeading += delta * 0.1; // Smooth factor
-
+  renderedHeading += delta * 0.1;
   $('arrowContainer').style.transform = `rotate(${renderedHeading}deg)`;
   $('capVal').textContent = Math.round(targetBearing) + "°";
 }
-navLoop(); // Start loop
+navLoop();
+
+function startGPS() {
+  navigator.geolocation.watchPosition(pos => {
+    lastPos = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+    if (mapInstance && mapMarker) {
+      mapMarker.setLatLng([lastPos.lat, lastPos.lon]);
+      if(!window.hasCentered) { mapInstance.setView([lastPos.lat, lastPos.lon], 15); window.hasCentered=true; }
+    }
+    if (currentDest) {
+      const d = getDist(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon);
+      $('distVal').textContent = d < 1 ? Math.round(d*1000) + ' m' : d.toFixed(1) + ' km';
+      const prog = Math.min(Math.max(d/10, 0), 1);
+      $('ringProg').style.strokeDashoffset = 301 * prog;
+      
+      if(ownedItems.includes('widget_speed')) {
+        const kmh = Math.round((pos.coords.speed || 0) * 3.6);
+        $('navWidgetsArea').innerHTML = `<div style="background:var(--bg-input); padding:6px 12px; border-radius:10px; font-weight:700;">⚡ ${kmh} km/h</div>`;
+      }
+    }
+  }, null, { enableHighAccuracy: true });
+}
 
 function initCompassPermission() {
   if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -515,145 +488,58 @@ function initCompassPermission() {
     $('btnCalibrate').onclick = () => {
       DeviceOrientationEvent.requestPermission().then(r => {
         if (r === 'granted') {
-          window.addEventListener('deviceorientation', e => {
-            deviceHeading = e.webkitCompassHeading || 0;
-          });
+          window.addEventListener('deviceorientation', e => deviceHeading = e.webkitCompassHeading || 0);
           $('btnCalibrate').style.display = 'none';
         }
       });
     };
   } else {
-    window.addEventListener('deviceorientationabsolute', e => {
-      deviceHeading = 360 - e.alpha;
-    }, true);
+    window.addEventListener('deviceorientationabsolute', e => deviceHeading = 360 - e.alpha, true);
   }
 }
 
-
-/* =========================================
-   3. LOGIQUE GÉNÉRALE
-   ========================================= */
-function initApp() {
-  $('viewLogin').classList.remove('active');
-  $('navBar').style.display = 'flex';
-  $('displayCode').textContent = userCode.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
-  $('displayPoints').textContent = userPoints;
-  
-  applySettings();
-  renderPlaces();
-  renderShop();
-  
-  // GPS & Map
-  if (navigator.permissions) {
-    navigator.permissions.query({name:'geolocation'}).then(r => {
-      if (r.state === 'granted') { $('gpsPermissionBlock').style.display='none'; startGPS(); }
-      else $('gpsPermissionBlock').style.display='block';
-    });
-  } else startGPS();
-
-  // Restore State
-  const v = localStorage.getItem('cc_current_view') || 'viewDiscover';
-  show(v, false);
-}
-
-function startGPS() {
-  navigator.geolocation.watchPosition(pos => {
-    const { latitude: lat, longitude: lon, speed } = pos.coords;
-    lastPos = { lat, lon };
-    
-    // Update Map
-    if (mapInstance && mapMarker) {
-      mapMarker.setLatLng([lat, lon]);
-      // First fix center
-      if(!window.hasCenteredMap) { mapInstance.setView([lat, lon], 15); window.hasCenteredMap = true; }
-    }
-
-    // Update Nav
-    if (currentDest) {
-      const d = getDist(lat, lon, currentDest.lat, currentDest.lon);
-      $('distVal').textContent = d < 1 ? Math.round(d*1000) + ' m' : d.toFixed(1) + ' km';
-      const prog = Math.min(Math.max(d/10, 0), 1);
-      $('ringProg').style.strokeDashoffset = 301 * prog;
-      
-      // Widget Vitesse
-      const widgets = $('navWidgetsArea');
-      if(ownedItems.includes('widget_speed')) {
-        const kmh = Math.round((speed || 0) * 3.6);
-        widgets.innerHTML = `<div style="background:var(--bg-input); padding:6px 12px; border-radius:10px; font-weight:700; font-size:13px;">⚡ ${kmh} km/h</div>`;
-      }
-    }
-  }, null, { enableHighAccuracy: true });
-}
-
-/* SEARCH BAR */
-$('addrInput').addEventListener('input', (e) => {
-  const q = e.target.value;
-  if (q.length < 3) { $('suggestions').style.display='none'; return; }
-  
-  fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5&lat=43.6045&lon=1.4442`)
-    .then(r => r.json())
-    .then(d => {
-      const box = $('suggestions');
-      box.innerHTML = '';
-      if (!d.features.length) { box.style.display='none'; return; }
-      
-      d.features.forEach(f => {
-        const div = document.createElement('div');
-        div.className = 'suggestion-item';
-        div.innerHTML = `<div>📍</div><div><div style="font-weight:600;">${f.properties.name}</div><div style="font-size:12px; opacity:0.7;">${f.properties.context}</div></div>`;
-        div.onclick = () => {
-          // Centrer la carte sur le résultat
-          const [lon, lat] = f.geometry.coordinates;
-          if(mapInstance) mapInstance.setView([lat, lon], 16);
-          
-          // Proposer d'ajouter
-          tempMapPoint = { lat, lon, name: f.properties.name, fullAddress: f.properties.label };
-          $('sheetTitle').textContent = f.properties.name;
-          $('sheetCoords').textContent = f.properties.context;
-          $('mapSheet').classList.add('active');
-          
-          $('suggestions').style.display='none';
-          $('addrInput').value = '';
-        };
-        box.appendChild(div);
-      });
-      box.style.display = 'block';
-    });
-});
-
-
-/* SETTINGS & SHOP */
+/* --- SETTINGS & HELPERS --- */
 function applySettings() {
   document.body.setAttribute('data-theme', settings.theme);
   $('toggleTheme').checked = settings.theme === 'dark';
   $('toggleVib').checked = settings.vib;
   updateMapTiles();
-  
-  // Arrow Color
   const path = document.querySelector('.arrow-svg path');
   if(path) path.style.fill = activeArrowColor || 'var(--text-primary)';
 }
-
 $('toggleTheme').onchange = (e) => {
   settings.theme = e.target.checked ? 'dark' : 'light';
   localStorage.setItem('cc_theme', settings.theme);
   applySettings();
 }
 
+function renderPlaces() {
+  const l = $('placesList');
+  if(!places.length) { l.innerHTML='<div style="text-align:center; opacity:0.5; padding:20px;">Vide</div>'; return; }
+  l.innerHTML = places.map((p,i) => `
+    <div class="placeCard" onclick="startNavFromList(${i})">
+      <div style="font-size:24px;">📍</div>
+      <div style="flex:1"><div style="font-weight:600;">${p.name}</div><div style="font-size:12px; opacity:0.7;">${p.fullAddress||'Saved'}</div></div>
+      <button class="btn" style="width:30px; padding:0; background:transparent;" onclick="event.stopPropagation(); deleteFavorite(${i})">✕</button>
+    </div>`).join('');
+}
+function startNavFromList(i) {
+  currentDest = places[i];
+  $('navDestName').textContent = currentDest.name;
+  localStorage.setItem('cc_current_dest', JSON.stringify(currentDest));
+  show('viewNav');
+}
+
 function renderShop() {
   $('shopGrid').innerHTML = SHOP_ITEMS.map(item => {
     const owned = ownedItems.includes(item.id);
-    const locked = !owned && userPoints < item.cost;
-    return `
-      <div class="shop-card ${locked?'locked':''}" onclick="buyItem('${item.id}')">
+    return `<div class="shop-card ${!owned && userPoints < item.cost ? 'locked' : ''}" onclick="buyItem('${item.id}')">
         <div class="shop-icon">${item.icon}</div>
-        <div style="font-weight:700; font-size:13px; margin-bottom:4px;">${item.name}</div>
+        <div style="font-weight:700; font-size:13px;">${item.name}</div>
         <div class="shop-cost">${owned ? (item.type==='style'?'Changer':'Acquis') : item.cost+' pts'}</div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 }
-
 async function buyItem(id) {
   const item = SHOP_ITEMS.find(i=>i.id===id);
   if(ownedItems.includes(id)) {
@@ -666,56 +552,31 @@ async function buyItem(id) {
     return;
   }
   if(userPoints < item.cost) return alert("Pas assez de points");
-  if(!confirm(`Acheter ${item.name}?`)) return;
-  
+  if(!confirm("Acheter ?")) return;
   userPoints -= item.cost;
   ownedItems.push(id);
   localStorage.setItem('cc_owned_items', JSON.stringify(ownedItems));
   if(userCode) await supabaseClient.from('users').update({points: userPoints}).eq('id', userCode);
-  
   $('displayPoints').textContent = userPoints;
   renderShop();
 }
 
-/* DATA & NAVIGATION */
-function renderPlaces() {
-  const l = $('placesList');
-  if(!places.length) { l.innerHTML='<div style="text-align:center; opacity:0.5; padding:20px;">Aucun favori</div>'; return; }
-  l.innerHTML = places.map((p,i) => `
-    <div class="placeCard" onclick="startNavFromList(${i})">
-      <div style="font-size:24px;">📍</div>
-      <div style="flex:1"><div style="font-weight:600;">${p.name}</div><div style="font-size:12px; opacity:0.7;">${p.fullAddress||'Lieu enregistré'}</div></div>
-      <button class="btn" style="width:30px; padding:0; background:transparent; color:#888;" onclick="event.stopPropagation(); deleteFavorite(${i})">✕</button>
-    </div>`).join('');
+/* DATABASE */
+async function loadFavorites() {
+  if(!userCode)return;
+  const { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode);
+  if(data) { places = data.map(d=>d.place_data); renderPlaces(); }
 }
-function startNavFromList(i) {
-  currentDest = places[i];
-  $('navDestName').textContent = currentDest.name;
-  localStorage.setItem('cc_current_dest', JSON.stringify(currentDest));
-  show('viewNav');
+async function addFavorite(p) {
+  places.push(p); renderPlaces();
+  if(userCode) await supabaseClient.from('user_favorites').insert([{user_id:userCode, place_data:p}]);
 }
-function show(id, save=true) {
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  $(id).classList.add('active');
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-  
-  if(id==='viewDiscover') {
-    $('navBar').children[0].classList.add('active');
-    setTimeout(()=>{ if(mapInstance) mapInstance.invalidateSize(); }, 100); // Fix Leaflet resize
-  }
-  if(id==='viewNav') {
-    $('navBar').children[1].classList.add('active');
-    initCompassPermission();
-  }
-  if(id==='viewAccount') $('navBar').children[2].classList.add('active');
-
-  if(save) {
-    localStorage.setItem('cc_current_view', id);
-    if(id!=='viewNav') { localStorage.removeItem('cc_current_dest'); currentDest=null; }
-  }
+async function deleteFavorite(i) {
+  const p = places[i]; places.splice(i,1); renderPlaces();
+  if(userCode) await supabaseClient.from('user_favorites').delete().match({user_id:userCode}).filter('place_data->>name','eq',p.name);
 }
 
-/* UTILS */
+/* MATH */
 function getDist(lat1,lon1,lat2,lon2) {
   const R=6371; const dLat=(lat2-lat1)*Math.PI/180; const dLon=(lon2-lon1)*Math.PI/180;
   const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
@@ -726,33 +587,38 @@ function getBearing(lat1,lon1,lat2,lon2) {
   const y=Math.sin(dL)*Math.cos(l2); const x=Math.cos(l1)*Math.sin(l2)-Math.sin(l1)*Math.cos(l2)*Math.cos(dL);
   return (Math.atan2(y,x)*180/Math.PI+360)%360;
 }
-async function addFavorite(p) {
-  places.push(p); renderPlaces();
-  if(userCode) await supabaseClient.from('user_favorites').insert([{user_id:userCode, place_data:p}]);
-}
-async function deleteFavorite(i) {
-  const p = places[i]; places.splice(i,1); renderPlaces();
-  if(userCode) await supabaseClient.from('user_favorites').delete().match({user_id:userCode}).filter('place_data->>name','eq',p.name);
-}
-$('btnGrantGPS').onclick = ()=>{ navigator.geolocation.getCurrentPosition(()=>{ $('gpsPermissionBlock').style.display='none'; startGPS(); }, ()=>{alert('GPS Requis');}, {enableHighAccuracy:true}); };
+
+$('addrInput').addEventListener('input', (e) => {
+  const q = e.target.value;
+  if(q.length<3) { $('suggestions').style.display='none'; return; }
+  fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5&lat=43.6045&lon=1.4442`)
+    .then(r=>r.json()).then(d=>{
+      const b=$('suggestions'); b.innerHTML='';
+      if(!d.features.length) { b.style.display='none'; return; }
+      d.features.forEach(f=>{
+        const el=document.createElement('div'); el.className='suggestion-item';
+        el.innerHTML=`<div>📍</div><div><div style="font-weight:600;">${f.properties.name}</div><div style="font-size:12px; opacity:0.7;">${f.properties.context}</div></div>`;
+        el.onclick=()=>{
+          const [lo,la]=f.geometry.coordinates;
+          mapInstance.setView([la,lo],16);
+          tempMapPoint={lat:la,lon:lo,name:f.properties.name};
+          $('sheetTitle').textContent=f.properties.name;
+          $('sheetCoords').textContent=f.properties.context;
+          $('mapSheet').classList.add('active');
+          b.style.display='none'; $('addrInput').value='';
+        };
+        b.appendChild(el);
+      });
+      b.style.display='block';
+    });
+});
+
 $('btnLogin').onclick = ()=>login($('inputLoginCode').value);
 $('btnCreateAccount').onclick = createAccount;
 $('btnLogout').onclick = ()=>{ localStorage.removeItem('cc_user_code'); localStorage.removeItem('cc_current_view'); location.reload(); };
 $('btnBackNav').onclick = ()=>show('viewDiscover');
+$('btnGrantGPS').onclick = ()=>{ navigator.geolocation.getCurrentPosition(()=>{ $('gpsPermissionBlock').style.display='none'; startGPS(); }, ()=>{alert('GPS Requis');}, {enableHighAccuracy:true}); };
 $('inputLoginCode').oninput = (e)=>{ e.target.value = e.target.value.replace(/\D/g,'').slice(0,16).replace(/(\d{4})(?=\d)/g,'$1 ').trim(); };
-
-async function createAccount() {
-  const c = Array(16).fill(0).map(()=>Math.floor(Math.random()*10)).join('');
-  await supabaseClient.from('users').insert([{ id: c, points: 200 }]);
-  userCode=c; userPoints=200; localStorage.setItem('cc_user_code', c); initApp();
-}
-async function login(c) {
-  const clean = c.replace(/\s/g, '');
-  if(clean.length!==16) return alert("Code invalide");
-  const { data } = await supabaseClient.from('users').select('*').eq('id', clean);
-  if(data && data.length){ userCode=clean; userPoints=data[0].points; localStorage.setItem('cc_user_code', userCode); await loadFavorites(); initApp(); } 
-  else alert("Inconnu");
-}
 
 if(userCode) login(userCode);
 </script>
