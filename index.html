@@ -67,8 +67,7 @@
     .btn:active { transform: scale(0.98); }
     .btn-primary { background: var(--accent); color: white; }
     .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--separator); }
-    .btn-admin { background: var(--text-primary); color: var(--bg-body); border: 1px solid var(--gold); }
-    .btn-mini { padding: 8px 12px; font-size: 12px; border-radius: 10px; width: auto; display: inline-block; }
+    .btn-admin { background: linear-gradient(135deg, #111, #333); color: var(--gold); border: 1px solid var(--gold); margin-bottom: 20px; }
 
     /* LOGIN */
     .login-container { width: 100%; max-width: 400px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
@@ -79,7 +78,7 @@
     @keyframes breatheArrow { 0%, 100% { transform: rotate(-10deg) scale(1); } 50% { transform: rotate(10deg) scale(1.1); } }
     .login-input { background: var(--bg-card); border: 1px solid var(--separator); border-radius: 16px; padding: 20px; font-size: 18px; letter-spacing: 2px; font-family: monospace; text-align: center; width: 100%; color: var(--text-primary); margin-bottom: 16px; box-shadow: var(--shadow-float); }
 
-    /* MAP */
+    /* MAP UI */
     #map { width: 100%; height: 100%; z-index: 1; background: var(--bg-input); }
     .map-controls-right { position: absolute; right: 16px; bottom: 40%; transform: translateY(50%); display: flex; flex-direction: column; gap: 16px; z-index: 900; pointer-events: auto; }
     .map-fab { width: 50px; height: 50px; background: var(--bg-glass); backdrop-filter: blur(15px); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: var(--shadow-float); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: transform 0.2s; }
@@ -96,12 +95,27 @@
     .p-widget-val { font-size: 18px; font-weight: 800; color: var(--accent); }
     .p-widget-lbl { font-size: 10px; text-transform: uppercase; opacity: 0.6; font-weight: 700; margin-top: 4px; }
 
-    /* ADMIN PANEL */
-    .admin-panel { background: #1a1a1a; color: #fff; padding: 16px; border-radius: 18px; margin-top: 20px; border: 1px solid var(--gold); display: none; margin-bottom: 20px; }
-    .admin-panel.visible { display: block; }
-    .admin-user-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 10px 0; font-size: 13px; }
-    .admin-badge { background: var(--gold); color: black; padding: 4px 8px; border-radius: 8px; font-size: 10px; font-weight: 800; display: inline-block; vertical-align: middle; margin-left: 8px; }
-
+    /* === NEW ADMIN DASHBOARD === */
+    .admin-dashboard {
+      position: fixed; inset: 0; background: #000; color: white; z-index: 4000;
+      transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .admin-dashboard.active { transform: translateY(0); }
+    .admin-header { padding: max(20px, var(--safe-top)) 20px 10px 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(20,20,20,0.9); border-bottom: 1px solid #333; }
+    .admin-tabs { display: flex; padding: 10px 20px; gap: 10px; background: #111; overflow-x: auto; }
+    .admin-tab-pill { padding: 8px 16px; background: #222; border-radius: 20px; font-size: 13px; color: #888; white-space: nowrap; cursor: pointer; }
+    .admin-tab-pill.active { background: var(--gold); color: black; font-weight: 700; }
+    .admin-content { flex: 1; overflow-y: auto; padding: 20px; background: #000; }
+    
+    .admin-card { background: #1C1C1E; border: 1px solid #333; border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+    .admin-stat-big { font-size: 32px; font-weight: 800; color: var(--gold); }
+    .admin-user-id { font-family: monospace; font-size: 14px; opacity: 0.7; margin-bottom: 8px; }
+    .admin-actions-row { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; }
+    .admin-act-btn { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; white-space: nowrap; }
+    .btn-green { background: rgba(52, 199, 89, 0.2); color: #34C759; }
+    .btn-red { background: rgba(255, 59, 48, 0.2); color: #FF3B30; }
+    
     /* LISTS */
     .suggestion-card { background: linear-gradient(135deg, var(--bg-card), var(--bg-input)); border-left: 4px solid var(--gold); padding: 14px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
     .place-card { background: var(--bg-card); padding: 14px; border-radius: 12px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; border: 1px solid var(--separator); }
@@ -112,7 +126,7 @@
     .nav-tab.active { color: var(--accent); }
     .nav-icon { font-size: 24px; margin-bottom: 4px; }
 
-    /* SHOP */
+    /* SHOP & MISC */
     .shop-container { position: relative; overflow: hidden; max-height: 320px; transition: max-height 0.4s ease; }
     .shop-container.expanded { max-height: 2000px; }
     .shop-blur-overlay { position: absolute; bottom: 0; left: 0; right: 0; height: 100px; background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, var(--bg-body) 90%); pointer-events: none; transition: opacity 0.3s; }
@@ -121,7 +135,6 @@
     .shop-card { background: var(--bg-card); padding: 16px; border-radius: 18px; text-align: center; border: 1px solid var(--separator); }
     .shop-status { background: var(--bg-input); color: var(--accent); padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 800; display: inline-block; margin-top: 8px; }
 
-    /* MISC */
     .settings-row { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 16px; border-bottom: 1px solid var(--separator); }
     .switch { position: relative; width: 50px; height: 30px; }
     .switch input { opacity: 0; width: 0; height: 0; }
@@ -180,10 +193,10 @@
         <div style="font-size:14px; opacity:0.6; margin-bottom:10px;" id="sheetDesc">Description</div>
         
         <div id="adminControlsArea" style="display:none; margin-bottom:10px;">
-           <button class="btn btn-admin" onclick="startPublishFlow()">🌍 Publier (Admin)</button>
+           <button class="btn btn-admin" onclick="startPublishFlow()" style="margin-bottom:0;">🌍 Publier (Admin)</button>
         </div>
 
-        <div style="display:flex; gap:12px;">
+        <div style="display:flex; gap:12px; margin-top:12px;">
           <button class="btn btn-primary" onclick="confirmMapAction('go')">🚀 Go</button>
           <button class="btn btn-secondary" onclick="confirmMapAction('save')">⭐ Sauver</button>
         </div>
@@ -196,13 +209,13 @@
       <div class="scroll-container">
         <h2>Bibliothèque</h2>
         
-        <div class="label" style="color:var(--gold);">🌟 Suggestions (Officiel)</div>
+        <div class="label" style="color:var(--gold);">🌟 Suggestions du Chef</div>
         <div id="suggestionsList"></div>
 
-        <div class="label">Mes Favoris</div>
+        <div class="label" style="margin-top:20px;">Mes Favoris</div>
         <div id="placesList"></div>
 
-        <div class="label">Historique</div>
+        <div class="label" style="margin-top:20px;">Historique</div>
         <div id="historyList"></div>
         <button class="btn btn-secondary" style="margin-top:20px;" onclick="clearHistory()">Effacer historique</button>
       </div>
@@ -229,13 +242,13 @@
       </div>
     </div>
 
-    <!-- ACCOUNT & ADMIN -->
+    <!-- ACCOUNT -->
     <div class="view" id="viewAccount">
       <div class="scroll-container">
         
         <!-- HEADER -->
         <div style="background:var(--accent); padding:24px; border-radius:24px; color:white; text-align:center; box-shadow:0 10px 30px -10px var(--accent); margin-bottom:20px;">
-          <div style="font-size:12px; font-weight:700; opacity:0.8;">SOLDE <span id="adminBadge" class="admin-badge" style="display:none;">ADMIN</span></div>
+          <div style="font-size:12px; font-weight:700; opacity:0.8;">SOLDE</div>
           <div style="font-size:42px; font-weight:800;" id="displayPoints">0</div>
           <div style="font-family:monospace; background:rgba(255,255,255,0.2); padding:6px 12px; border-radius:8px; margin-top:10px; display:inline-block; font-size:14px; user-select:all;" id="displayCode">...</div>
         </div>
@@ -256,15 +269,8 @@
            </div>
         </div>
 
-        <!-- ADMIN PANEL (Hidden) -->
-        <div id="adminPanel" class="admin-panel">
-          <h3 style="margin:0 0 10px 0; color:var(--gold);">🛠️ Control Panel</h3>
-          <p style="font-size:12px; opacity:0.8; margin-bottom:15px;">Gestion Membres & Points</p>
-          <div style="display:flex; gap:10px; margin-bottom:15px;">
-             <button class="btn btn-mini" style="background:#333; color:white;" onclick="loadAllUsers()">Charger Membres</button>
-          </div>
-          <div id="adminUserList" style="max-height:300px; overflow-y:auto; background:#111; padding:10px; border-radius:12px;"></div>
-        </div>
+        <!-- ADMIN TRIGGER -->
+        <button id="btnAdminTrigger" class="btn btn-admin" style="display:none;" onclick="openAdminPanel()">🛠️ Ouvrir Console Admin</button>
 
         <div style="font-weight:700; opacity:0.6; font-size:12px; margin-bottom:10px;">BOUTIQUE</div>
         <div class="shop-container collapsed" id="shopContainer">
@@ -280,6 +286,37 @@
           <div class="settings-row"><span>Unités Impériales</span><label class="switch"><input type="checkbox" id="toggleUnits"><span class="slider"></span></label></div>
         </div>
         <button class="btn" style="background:var(--bg-input); color:var(--danger); margin-top:30px;" id="btnLogout">Déconnexion</button>
+      </div>
+    </div>
+
+    <!-- NEW FULLSCREEN ADMIN DASHBOARD -->
+    <div class="admin-dashboard" id="adminDashboard">
+      <div class="admin-header">
+        <h2 style="margin:0; font-size:20px;">Admin Console</h2>
+        <button style="background:none; border:none; color:white; font-size:16px; font-weight:700;" onclick="closeAdminPanel()">Fermer</button>
+      </div>
+      <div class="admin-tabs">
+        <div class="admin-tab-pill active" onclick="switchAdminTab('users', this)">👥 Membres</div>
+        <div class="admin-tab-pill" onclick="switchAdminTab('content', this)">🌟 Contenu</div>
+      </div>
+      
+      <!-- USERS TAB -->
+      <div class="admin-content" id="adminTabUsers">
+        <div style="margin-bottom:20px;">
+           <div class="admin-card" style="display:flex; justify-content:space-between; align-items:center;">
+             <div><div style="opacity:0.6; font-size:12px;">TOTAL UTILISATEURS</div><div class="admin-stat-big" id="statTotalUsers">0</div></div>
+             <div style="font-size:30px;">🌍</div>
+           </div>
+           <input type="text" id="adminUserSearch" placeholder="Rechercher ID..." style="width:100%; padding:12px; background:#1C1C1E; border:1px solid #333; border-radius:12px; color:white; margin-bottom:10px;" oninput="renderAdminUsers(this.value)">
+        </div>
+        <div id="adminUserList"></div>
+      </div>
+      
+      <!-- CONTENT TAB -->
+      <div class="admin-content" id="adminTabContent" style="display:none;">
+        <h3 style="margin-top:0;">Suggestions Publiées</h3>
+        <p style="opacity:0.6; font-size:13px;">Gérez les lieux visibles par tous les utilisateurs.</p>
+        <div id="adminContentList"></div>
       </div>
     </div>
 
@@ -305,6 +342,7 @@ let userCode = localStorage.getItem('cc_user_code');
 let places=[], globalSuggestions=[], currentDest=null, lastPos=null, mapInstance=null, mapMarker=null, mapTileLayer=null, poiLayerGroup=null, tempMapPoint=null, hasCentered=false;
 let settings = { theme: localStorage.getItem('cc_theme') || 'light', highGPS: localStorage.getItem('cc_highgps') === 'true', units: localStorage.getItem('cc_units') === 'true' };
 let ownedItems = JSON.parse(localStorage.getItem('cc_owned_items') || '[]'), activeFeatures = JSON.parse(localStorage.getItem('cc_active_features') || '{}'), userPoints = 0;
+let allUsersCache = []; // Pour l'admin
 
 const SHOP_ITEMS = [
   { id: 'style_marker_car', name: 'Voiture', cost: 150, type: 'marker', icon:'🚗' },
@@ -338,7 +376,7 @@ function initApp() {
   $('displayCode').textContent = userCode.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
   $('displayPoints').textContent = userPoints;
   
-  if(userCode === ADMIN_ID) { $('adminBadge').style.display = 'inline-block'; $('adminPanel').classList.add('visible'); $('adminControlsArea').style.display = 'block'; }
+  if(userCode === ADMIN_ID) { $('btnAdminTrigger').style.display = 'block'; $('adminControlsArea').style.display = 'block'; }
   $('profileLevel').textContent = Math.floor(userPoints/500) + 1;
   $('profilePlaceCount').textContent = places.length;
 
@@ -347,93 +385,21 @@ function initApp() {
   show(v, false); startGPS();
 }
 
-/* SENSORS */
-function requestSensors() {
-  startGPS();
-  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    DeviceOrientationEvent.requestPermission().then(r => { if(r==='granted') window.addEventListener('deviceorientation', handleOrientation); });
-  } else window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-  $('btnReqSensors').style.display='none';
-}
-function handleOrientation(e) {
-  let heading = e.webkitCompassHeading || (e.alpha ? 360 - e.alpha : 0);
-  if(currentDest && lastPos) {
-    const bearing = getBearing(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon);
-    $('arrowContainer').style.transform = `rotate(${bearing - heading}deg)`;
-  } else $('arrowContainer').style.transform = `rotate(${-heading}deg)`;
-}
-function startGPS() {
-  navigator.geolocation.watchPosition(pos => {
-    lastPos = { lat: pos.coords.latitude, lon: pos.coords.longitude, speed: pos.coords.speed };
-    if (mapInstance && mapMarker) {
-      mapMarker.setLatLng([lastPos.lat, lastPos.lon]);
-      if(!hasCentered) { mapInstance.setView([lastPos.lat, lastPos.lon], 16); hasCentered = true; }
-    }
-    if(currentDest) updateNavDisplay();
-  }, null, { enableHighAccuracy: settings.highGPS, maximumAge: 10000 });
-}
+/* SENSORS & MAP */
+function requestSensors() { startGPS(); if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') { DeviceOrientationEvent.requestPermission().then(r => { if(r==='granted') window.addEventListener('deviceorientation', handleOrientation); }); } else window.addEventListener('deviceorientationabsolute', handleOrientation, true); $('btnReqSensors').style.display='none'; }
+function handleOrientation(e) { let heading = e.webkitCompassHeading || (e.alpha ? 360 - e.alpha : 0); if(currentDest && lastPos) { const bearing = getBearing(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon); $('arrowContainer').style.transform = `rotate(${bearing - heading}deg)`; } else $('arrowContainer').style.transform = `rotate(${-heading}deg)`; }
+function startGPS() { navigator.geolocation.watchPosition(pos => { lastPos = { lat: pos.coords.latitude, lon: pos.coords.longitude, speed: pos.coords.speed }; if (mapInstance && mapMarker) { mapMarker.setLatLng([lastPos.lat, lastPos.lon]); if(!hasCentered) { mapInstance.setView([lastPos.lat, lastPos.lon], 16); hasCentered = true; } } if(currentDest) updateNavDisplay(); }, null, { enableHighAccuracy: settings.highGPS, maximumAge: 10000 }); }
 
-/* MAP */
-function initMap() {
-  if (mapInstance) return; if (!$('map')) return;
-  mapInstance = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.6045, 1.4442], 14);
-  updateMapTiles(); updateUserMarker(); poiLayerGroup = L.layerGroup().addTo(mapInstance);
-  mapInstance.on('moveend', () => refreshPOIs(false));
-  mapInstance.on('contextmenu', e => {
-    tempMapPoint = { lat: e.latlng.lat, lon: e.latlng.lng, name: "Point repéré" };
-    $('sheetTitle').textContent = "Point Repéré"; $('sheetDesc').textContent = "Coordonnées GPS"; $('mapSheet').classList.add('active');
-  });
-}
+function initMap() { if (mapInstance) return; if (!$('map')) return; mapInstance = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.6045, 1.4442], 14); updateMapTiles(); updateUserMarker(); poiLayerGroup = L.layerGroup().addTo(mapInstance); mapInstance.on('moveend', () => refreshPOIs(false)); mapInstance.on('contextmenu', e => { tempMapPoint = { lat: e.latlng.lat, lon: e.latlng.lng, name: "Point repéré" }; $('sheetTitle').textContent = "Point Repéré"; $('sheetDesc').textContent = "Coordonnées GPS"; $('mapSheet').classList.add('active'); }); }
 function centerMap() { if(lastPos) mapInstance.flyTo([lastPos.lat, lastPos.lon], 16); }
-function updateMapTiles() {
-  if (!mapInstance) return; if (mapTileLayer) mapInstance.removeLayer(mapTileLayer);
-  let url = settings.theme === 'dark' ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-  if(activeFeatures['map_sat']) url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-  mapTileLayer = L.tileLayer(url, { maxZoom: 19 }).addTo(mapInstance);
-}
-function updateUserMarker() {
-  if(!mapInstance) return; if(mapMarker) mapInstance.removeLayer(mapMarker);
-  let html = `<div class="user-marker-pulse"></div>`;
-  if(activeFeatures['style_marker_car']) html = `<div style="font-size:24px;">🚗</div>`;
-  if(activeFeatures['style_marker_ufo']) html = `<div style="font-size:24px;">🛸</div>`;
-  if(activeFeatures['style_marker_plane']) html = `<div style="font-size:24px;">✈️</div>`;
-  mapMarker = L.marker([43.6045, 1.4442], {icon: L.divIcon({ className: '', html: html, iconSize: [24, 24] }) }).addTo(mapInstance);
-}
-async function refreshPOIs(force) {
-  if(!mapInstance) return;
-  const b = mapInstance.getBounds();
-  const q = `[out:json][timeout:5];(node["amenity"~"restaurant|cafe|bar"](${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()});node["tourism"](${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()}););out 15;`;
-  try {
-    const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    poiLayerGroup.clearLayers();
-    data.elements.forEach(el => {
-      let icon = '📍'; if(el.tags.amenity==='restaurant')icon='🍴'; if(el.tags.amenity==='bar')icon='🍸';
-      L.marker([el.lat, el.lon], { icon: L.divIcon({ className: 'poi-marker', html: icon, iconSize:[32,32] }) })
-       .addTo(poiLayerGroup).on('click', () => { tempMapPoint = { lat: el.lat, lon: el.lon, name: el.tags.name||"Lieu" }; $('sheetTitle').textContent = tempMapPoint.name; $('sheetDesc').textContent = el.tags.cuisine||"Lieu d'intérêt"; $('mapSheet').classList.add('active'); });
-    });
-  } catch(e){}
-}
+function updateMapTiles() { if (!mapInstance) return; if (mapTileLayer) mapInstance.removeLayer(mapTileLayer); let url = settings.theme === 'dark' ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'; if(activeFeatures['map_sat']) url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'; mapTileLayer = L.tileLayer(url, { maxZoom: 19 }).addTo(mapInstance); }
+function updateUserMarker() { if(!mapInstance) return; if(mapMarker) mapInstance.removeLayer(mapMarker); let html = `<div class="user-marker-pulse"></div>`; if(activeFeatures['style_marker_car']) html = `<div style="font-size:24px;">🚗</div>`; if(activeFeatures['style_marker_ufo']) html = `<div style="font-size:24px;">🛸</div>`; if(activeFeatures['style_marker_plane']) html = `<div style="font-size:24px;">✈️</div>`; mapMarker = L.marker([43.6045, 1.4442], {icon: L.divIcon({ className: '', html: html, iconSize: [24, 24] }) }).addTo(mapInstance); }
+async function refreshPOIs(force) { if(!mapInstance) return; const b = mapInstance.getBounds(); const q = `[out:json][timeout:5];(node["amenity"~"restaurant|cafe|bar"](${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()});node["tourism"](${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()}););out 15;`; try { const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`); const data = await res.json(); poiLayerGroup.clearLayers(); data.elements.forEach(el => { let icon = '📍'; if(el.tags.amenity==='restaurant')icon='🍴'; if(el.tags.amenity==='bar')icon='🍸'; L.marker([el.lat, el.lon], { icon: L.divIcon({ className: 'poi-marker', html: icon, iconSize:[32,32] }) }).addTo(poiLayerGroup).on('click', () => { tempMapPoint = { lat: el.lat, lon: el.lon, name: el.tags.name||"Lieu" }; $('sheetTitle').textContent = tempMapPoint.name; $('sheetDesc').textContent = el.tags.cuisine||"Lieu d'intérêt"; $('mapSheet').classList.add('active'); }); }); } catch(e){} }
 
-/* UI & HELPERS */
+/* UI */
 function toggleShop() { $('shopContainer').classList.toggle('expanded'); $('btnExpandShop').textContent = $('shopContainer').classList.contains('expanded') ? "Réduire" : "Voir tout"; }
-function renderShop() {
-  $('shopGrid').innerHTML = SHOP_ITEMS.map(item => {
-    const owned = ownedItems.includes(item.id), active = activeFeatures[item.id];
-    return `<div class="shop-card ${active?'active-item':''}" onclick="handleShop('${item.id}')"><div style="font-size:32px;">${item.icon}</div><div style="font-weight:700; font-size:12px; margin-top:5px;">${item.name}</div><div class="shop-status" style="${owned&&active?'background:var(--accent); color:white':''}">${owned?(active?"ON":"OFF"):item.cost}</div></div>`;
-  }).join('');
-}
-async function handleShop(id) {
-  const item = SHOP_ITEMS.find(i=>i.id===id);
-  if(!ownedItems.includes(id)) {
-    if(userPoints < item.cost) return alert("Points insuffisants"); if(!confirm("Acheter ?")) return;
-    userPoints -= item.cost; ownedItems.push(id); localStorage.setItem('cc_owned_items', JSON.stringify(ownedItems));
-    if(userCode) await supabaseClient.from('users').update({points: userPoints}).eq('id', userCode); $('displayPoints').textContent = userPoints;
-  }
-  if(activeFeatures[id]) delete activeFeatures[id]; else { if(item.type==='map') Object.keys(activeFeatures).forEach(k=>{if(k.startsWith('map_')) delete activeFeatures[k]}); if(item.type==='marker') Object.keys(activeFeatures).forEach(k=>{if(k.startsWith('style_')) delete activeFeatures[k]}); activeFeatures[id]=true; }
-  localStorage.setItem('cc_active_features', JSON.stringify(activeFeatures)); updateMapTiles(); updateUserMarker(); renderShop();
-}
-
+function renderShop() { $('shopGrid').innerHTML = SHOP_ITEMS.map(item => { const owned = ownedItems.includes(item.id), active = activeFeatures[item.id]; return `<div class="shop-card ${active?'active-item':''}" onclick="handleShop('${item.id}')"><div style="font-size:32px;">${item.icon}</div><div style="font-weight:700; font-size:12px; margin-top:5px;">${item.name}</div><div class="shop-status" style="${owned&&active?'background:var(--accent); color:white':''}">${owned?(active?"ON":"OFF"):item.cost}</div></div>`; }).join(''); }
+async function handleShop(id) { const item = SHOP_ITEMS.find(i=>i.id===id); if(!ownedItems.includes(id)) { if(userPoints < item.cost) return alert("Points insuffisants"); if(!confirm("Acheter ?")) return; userPoints -= item.cost; ownedItems.push(id); localStorage.setItem('cc_owned_items', JSON.stringify(ownedItems)); if(userCode) await supabaseClient.from('users').update({points: userPoints}).eq('id', userCode); $('displayPoints').textContent = userPoints; } if(activeFeatures[id]) delete activeFeatures[id]; else { if(item.type==='map') Object.keys(activeFeatures).forEach(k=>{if(k.startsWith('map_')) delete activeFeatures[k]}); if(item.type==='marker') Object.keys(activeFeatures).forEach(k=>{if(k.startsWith('style_')) delete activeFeatures[k]}); activeFeatures[id]=true; } localStorage.setItem('cc_active_features', JSON.stringify(activeFeatures)); updateMapTiles(); updateUserMarker(); renderShop(); }
 function applySettings() { document.body.setAttribute('data-theme', settings.theme); $('toggleTheme').checked = settings.theme==='dark'; $('toggleHighGPS').checked = settings.highGPS; $('toggleUnits').checked = settings.units; }
 $('toggleTheme').onchange = (e) => { settings.theme=e.target.checked?'dark':'light'; localStorage.setItem('cc_theme', settings.theme); applySettings(); updateMapTiles(); };
 
@@ -445,50 +411,112 @@ function renderPlaces() {
 
 async function loadData() { 
   if(!userCode)return;
+  // Load Favorites
   let { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode);
   if(data) places = data.map(d=>d.place_data);
+  // Load Global Suggestions (Admin ID)
   let { data: adminData } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', ADMIN_ID);
   if(adminData) globalSuggestions = adminData.map(d=>d.place_data);
 }
 
-// ADMIN FEATURES
+/* ===========================
+   ADMIN DASHBOARD LOGIC 
+   =========================== */
+function openAdminPanel() { $('adminDashboard').classList.add('active'); loadAllUsers(); loadAdminContent(); }
+function closeAdminPanel() { $('adminDashboard').classList.remove('active'); }
+function switchAdminTab(tabName, el) { 
+  document.querySelectorAll('.admin-tab-pill').forEach(t=>t.classList.remove('active')); el.classList.add('active'); 
+  $('adminTabUsers').style.display = tabName==='users'?'block':'none';
+  $('adminTabContent').style.display = tabName==='content'?'block':'none';
+}
+
 function startPublishFlow() {
   if(userCode !== ADMIN_ID) return;
   const newName = prompt("Nom du lieu public :", tempMapPoint.name);
   if(!newName) return;
   tempMapPoint.name = newName;
   if(confirm(`Publier "${newName}" pour tous les utilisateurs ?`)) {
-    globalSuggestions.push(tempMapPoint);
-    supabaseClient.from('user_favorites').insert([{user_id:ADMIN_ID, place_data:tempMapPoint}]);
-    renderPlaces(); alert("Lieu publié !"); closeMapSheet();
+    supabaseClient.from('user_favorites').insert([{user_id:ADMIN_ID, place_data:tempMapPoint}])
+      .then(() => { 
+        alert("Lieu publié !"); 
+        loadData().then(renderPlaces); // Refresh local view too
+        closeMapSheet(); 
+      });
   }
 }
+
 async function loadAllUsers() {
-  if(userCode !== ADMIN_ID) return;
-  const { data } = await supabaseClient.from('users').select('*');
-  const l = $('adminUserList'); l.innerHTML = '';
-  data.forEach(u => {
-    l.innerHTML += `<div class="admin-user-row">
-      <div style="font-family:monospace;">${u.id.substring(0,4)}...</div>
-      <div>${u.points} pts</div>
-      <div>
-        <button class="btn-mini" style="background:#444;" onclick="modUserPoints('${u.id}', 100)">+100</button>
-        <button class="btn-mini" style="background:#222;" onclick="modUserPoints('${u.id}', -100)">-100</button>
-      </div>
-    </div>`;
+  const { data } = await supabaseClient.from('users').select('*').limit(50); // Limit for perf
+  allUsersCache = data;
+  $('statTotalUsers').textContent = data.length;
+  renderAdminUsers('');
+}
+
+function renderAdminUsers(filter) {
+  const list = $('adminUserList'); list.innerHTML = '';
+  const f = filter.toLowerCase();
+  allUsersCache.forEach(u => {
+    if(u.id.includes(f)) {
+      list.innerHTML += `
+      <div class="admin-card">
+        <div style="display:flex; justify-content:space-between;">
+           <div>
+             <div class="admin-user-id">ID: ${u.id.substring(0,6)}...</div>
+             <div style="font-weight:700; font-size:18px;">${u.points} pts</div>
+           </div>
+           <div>${u.points < 0 ? '⛔ BAN' : '✅'}</div>
+        </div>
+        <div class="admin-actions-row">
+           <button class="admin-act-btn btn-green" onclick="modUserPoints('${u.id}', 500)">+500</button>
+           <button class="admin-act-btn btn-red" onclick="modUserPoints('${u.id}', -500)">-500</button>
+           <button class="admin-act-btn btn-red" style="background:#400; color:#f88;" onclick="modUserPoints('${u.id}', -9999)">BANNIR</button>
+        </div>
+      </div>`;
+    }
   });
 }
+
 async function modUserPoints(uid, amount) {
-  const { data } = await supabaseClient.from('users').select('points').eq('id', uid).single();
-  const newP = (data.points || 0) + amount;
-  await supabaseClient.from('users').update({points: newP}).eq('id', uid);
-  loadAllUsers(); // refresh
+  if(amount === -9999 && !confirm("Bannir cet utilisateur ?")) return;
+  const target = allUsersCache.find(u=>u.id===uid);
+  if(target) {
+     const newP = (amount===-9999) ? -1 : (target.points + amount);
+     await supabaseClient.from('users').update({points: newP}).eq('id', uid);
+     loadAllUsers(); // Refresh UI
+  }
+}
+
+async function loadAdminContent() {
+  // Fetch admin favorites (global suggestions)
+  const { data } = await supabaseClient.from('user_favorites').select('id, place_data').eq('user_id', ADMIN_ID);
+  const l = $('adminContentList'); l.innerHTML = '';
+  if(data && data.length) {
+    data.forEach(item => {
+      l.innerHTML += `
+      <div class="admin-card" style="display:flex; justify-content:space-between; align-items:center;">
+         <div>
+            <div style="font-weight:700;">${item.place_data.name}</div>
+            <div style="font-size:12px; opacity:0.6;">Lat: ${item.place_data.lat.toFixed(4)}</div>
+         </div>
+         <button class="admin-act-btn btn-red" onclick="deleteSuggestion(${item.id})">Supprimer</button>
+      </div>`;
+    });
+  } else {
+    l.innerHTML = '<div style="opacity:0.5; padding:20px; text-align:center;">Aucune suggestion publiée.</div>';
+  }
+}
+
+async function deleteSuggestion(dbId) {
+  if(confirm("Supprimer cette suggestion pour tout le monde ?")) {
+    await supabaseClient.from('user_favorites').delete().eq('id', dbId);
+    loadAdminContent(); // Refresh Admin List
+    loadData().then(renderPlaces); // Refresh User List
+  }
 }
 
 function confirmMapAction(action) {
-  if (action === 'save') { 
-    places.push(tempMapPoint); supabaseClient.from('user_favorites').insert([{user_id:userCode, place_data:tempMapPoint}]); renderPlaces();
-  } else { currentDest=tempMapPoint; $('navDestName').textContent=currentDest.name; show('viewNav'); } 
+  if (action === 'save') { places.push(tempMapPoint); supabaseClient.from('user_favorites').insert([{user_id:userCode, place_data:tempMapPoint}]); renderPlaces(); } 
+  else { currentDest=tempMapPoint; $('navDestName').textContent=currentDest.name; show('viewNav'); } 
   closeMapSheet(); 
 }
 
