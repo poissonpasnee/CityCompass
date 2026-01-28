@@ -2,450 +2,911 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="theme-color" content="#000000" />
-  <title>CityCompass v20 Reborn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>CityCompass</title>
 
-  <!-- LIBS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 
   <style>
-    /* ===========================
-       V20 DESIGN SYSTEM (Webapp Mobile First)
-       =========================== */
-    :root {
-      --primary: #007AFF; --bg: #000000; --card: #1C1C1E; --text: #FFFFFF;
-      --text-dim: #8E8E93; --danger: #FF3B30; --success: #34C759;
-      --nav-height: 80px;
-      --safe-top: env(safe-area-inset-top, 0px);
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    :root{
+      --bg: #f2f2f7;
+      --card: rgba(255,255,255,.92);
+      --text: #0b0b0f;
+      --muted: #6b6b73;
+      --border: rgba(0,0,0,.08);
+      --accent: #007aff;
+      --danger: #ff3b30;
+      --success: #34c759;
+
+      --shadow: 0 8px 28px rgba(0,0,0,.10);
+      --blur: blur(18px);
+
+      --ring: rgba(0,0,0,.14);
+      --ring2: rgba(0,0,0,.08);
     }
 
-    * { 
-      box-sizing: border-box; -webkit-tap-highlight-color: transparent; 
-      margin: 0; padding: 0; outline: none; user-select: none;
+    [data-theme="dark"]{
+      --bg: #000;
+      --card: rgba(28,28,30,.92);
+      --text: #fff;
+      --muted: #9b9ba1;
+      --border: rgba(255,255,255,.10);
+      --accent: #0a84ff;
+      --danger: #ff453a;
+      --success: #30d158;
+
+      --shadow: 0 12px 34px rgba(0,0,0,.40);
+
+      --ring: rgba(255,255,255,.18);
+      --ring2: rgba(255,255,255,.09);
     }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Roboto, sans-serif;
-      background: var(--bg); color: var(--text); height: 100dvh; overflow: hidden;
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow:hidden;
     }
 
-    /* VIEW SYSTEM */
-    .view {
-      position: absolute; inset: 0; display: none; flex-direction: column;
-      background: var(--bg); z-index: 1;
-    }
-    .view.active { display: flex; z-index: 10; }
-
-    /* LOGIN SCREEN (Full Center) */
-    #viewLogin {
-      z-index: 5000; justify-content: center; align-items: center; padding: 30px;
-      padding-top: max(30px, var(--safe-top)); padding-bottom: max(30px, var(--safe-bottom));
+    /* Layout */
+    .app{
+      position:relative;
+      height:100%;
+      display:flex;
+      flex-direction:column;
     }
 
-    .login-box {
-      width: 100%; max-width: 380px; background: var(--card); 
-      border-radius: 24px; padding: 40px 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    .view{
+      flex:1;
+      display:none;
+      overflow:auto;
+      padding: 18px 16px 110px;
+    }
+    .view.active{ display:block; }
+
+    .topbar{
+      padding: 18px 16px 8px;
+    }
+    .title{
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      font-size: 28px;
+      margin: 0;
+    }
+    .subtitle{
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
     }
 
-    .logo-anim {
-      width: 80px; height: 80px; margin: 0 auto 30px;
-      background: linear-gradient(135deg, #007AFF, #5AC8FA);
-      border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      font-size: 40px; animation: pulse 2s ease-in-out infinite;
-    }
-    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-
-    .input-login {
-      width: 100%; padding: 16px; margin-bottom: 14px; /* ESPACEMENT IMPORTANT */
-      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px; color: var(--text); font-size: 16px; text-align: center;
-    }
-    .input-login::placeholder { color: var(--text-dim); }
-
-    .btn-login {
-      width: 100%; padding: 18px; margin-bottom: 14px; /* ESPACEMENT IMPORTANT */
-      background: var(--primary); color: white; border: none; border-radius: 12px;
-      font-size: 17px; font-weight: 700; cursor: pointer;
-      box-shadow: 0 4px 16px rgba(0,122,255,0.3);
-    }
-    .btn-login:active { transform: scale(0.98); }
-
-    .btn-link {
-      background: none; border: none; color: var(--primary); font-size: 15px;
-      padding: 12px; cursor: pointer; display: inline-block; margin: 6px 10px;
+    /* Cards */
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
     }
 
-    /* MAP VIEW (Full Screen with Nav) */
-    #viewMap { padding-bottom: calc(var(--nav-height) + var(--safe-bottom)); }
-    #map { width: 100%; height: 100%; background: #1a1a1a; }
-
-    /* HUD TOP LEFT */
-    .hud {
-      position: absolute; top: max(15px, var(--safe-top)); left: 15px; z-index: 2000;
-      display: flex; flex-direction: column; gap: 10px;
-    }
-    .hud-badge {
-      background: rgba(28,28,30,0.9); backdrop-filter: blur(20px);
-      padding: 10px 16px; border-radius: 20px; font-size: 14px; font-weight: 700;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 8px;
-    }
-
-    /* NAVIGATION BAR (Bottom Fixed) */
-    .nav-bar {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      height: calc(var(--nav-height) + var(--safe-bottom));
-      background: rgba(28,28,30,0.95); backdrop-filter: blur(30px);
-      border-top: 1px solid rgba(255,255,255,0.1);
-      display: flex; justify-content: space-around; align-items: flex-start;
-      padding-top: 12px; padding-bottom: var(--safe-bottom);
-      z-index: 5000;
+    /* Tab bar */
+    .tabbar{
+      position:absolute;
+      left:0; right:0; bottom:0;
+      height: 92px;
+      padding: 10px 10px calc(12px + env(safe-area-inset-bottom));
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      justify-content:space-between;
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      z-index: 20;
     }
 
-    .nav-btn {
-      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
-      background: none; border: none; color: var(--text-dim); cursor: pointer;
-      padding: 8px;
+    .tabbtn{
+      flex:1;
+      height: 54px;
+      border-radius: 16px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor:pointer;
     }
-    .nav-btn.active { color: var(--primary); }
-    .nav-icon { font-size: 26px; }
-    .nav-label { font-size: 11px; font-weight: 600; }
-
-    /* FULL PANEL (Shop/Profile) */
-    .full-panel {
-      position: absolute; inset: 0; background: var(--bg); z-index: 4000;
-      display: none; flex-direction: column; overflow-y: auto;
-      padding: max(20px, var(--safe-top)) 20px calc(20px + var(--safe-bottom));
+    .tabbtn .ico{
+      width: 22px; height: 22px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 10px;
+      letter-spacing: .06em;
+      color: var(--muted);
     }
-    .full-panel.open { display: flex; animation: slideUp 0.3s ease; }
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-    .panel-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);
+    .tabbtn.active{
+      background: rgba(0,122,255,.10);
+      border-color: rgba(0,122,255,.20);
+      color: var(--accent);
     }
-    .btn-close {
-      background: rgba(255,255,255,0.1); border: none; color: var(--text);
-      width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer;
-    }
-
-    /* WIDGETS (Shop Items) */
-    .widget {
-      background: var(--card); padding: 20px; border-radius: 16px; margin-bottom: 15px;
-      display: flex; align-items: center; gap: 15px;
-    }
-    .widget-icon {
-      width: 50px; height: 50px; background: rgba(0,122,255,0.15);
-      border-radius: 12px; display: flex; align-items: center; justify-content: center;
-      font-size: 24px; color: var(--primary);
-    }
-    .widget-info { flex: 1; }
-    .widget-title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
-    .widget-desc { font-size: 13px; color: var(--text-dim); }
-    .btn-widget {
-      padding: 8px 18px; background: var(--primary); color: white; border: none;
-      border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer;
+    .tabbtn.active .ico{
+      border-color: rgba(0,122,255,.30);
+      color: var(--accent);
     }
 
-    /* COMPASS OVERLAY */
-    #viewCompass {
-      z-index: 6000; background: #000; align-items: center; justify-content: center;
+    /* Map */
+    #viewMap{
+      padding: 0;
+      overflow:hidden;
     }
-    .compass-circle {
-      width: 240px; height: 240px; border: 4px solid rgba(255,255,255,0.1);
-      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    #map{
+      position:absolute;
+      inset: 0 0 92px 0;
+      z-index: 1;
+    }
+    .searchOverlay{
+      position:absolute;
+      left: 12px;
+      right: 12px;
+      top: calc(12px + env(safe-area-inset-top));
+      z-index: 5;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+    }
+    .searchBox{
+      flex:1;
+      height: 46px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      padding: 0 14px;
+      color: var(--text);
+      font-size: 15px;
+      outline: none;
+    }
+    .pill{
+      height: 46px;
+      padding: 0 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      color: var(--text);
+      font-weight: 700;
+      cursor:pointer;
+    }
+
+    /* Compass */
+    .compassWrap{
+      min-height: calc(100vh - 92px);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap: 14px;
+      padding: 16px;
+    }
+    .ring{
+      width: 290px;
+      height: 290px;
+      border-radius: 50%;
+      border: 2px solid var(--ring);
       position: relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow: var(--shadow);
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.04), transparent 55%);
+      transform: rotate(0deg);
+      transition: transform .06s linear;
     }
-    .compass-north {
-      position: absolute; top: -40px; font-size: 20px; font-weight: 800;
-      color: var(--primary); letter-spacing: 3px;
+    .ring::before{
+      content:"";
+      position:absolute;
+      inset: 12px;
+      border-radius: 50%;
+      border: 1px solid var(--ring2);
     }
-    .compass-arrow {
-      font-size: 100px; color: var(--primary); transition: transform 0.1s linear;
+    .arrow{
+      position:absolute;
+      top: 20px;
+      width: 0; height: 0;
+      border-left: 16px solid transparent;
+      border-right: 16px solid transparent;
+      border-bottom: 88px solid var(--danger);
+      filter: drop-shadow(0 8px 14px rgba(0,0,0,.18));
+    }
+    .heading{
+      font-size: 46px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums;
+      margin-top: 2px;
+    }
+    .dir{
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: .20em;
+      text-transform: uppercase;
+      margin-top: -2px;
     }
 
-    /* UTILITIES */
-    .text-center { text-align: center; }
-    .mb-20 { margin-bottom: 20px; }
-    .mt-30 { margin-top: 30px; }
+    .btn{
+      height: 52px;
+      border-radius: 18px;
+      padding: 0 18px;
+      border: 1px solid rgba(0,122,255,.35);
+      background: rgba(0,122,255,.10);
+      color: var(--accent);
+      font-weight: 900;
+      font-size: 15px;
+      cursor:pointer;
+      min-width: 240px;
+    }
+    .btn.is-on{
+      border-color: rgba(52,199,89,.55);
+      background: rgba(52,199,89,.16);
+      color: var(--success);
+      box-shadow: 0 0 0 6px rgba(52,199,89,.10);
+    }
+    .hint{
+      color: var(--muted);
+      font-size: 12px;
+      text-align:center;
+      max-width: 340px;
+      line-height: 1.35;
+    }
+
+    /* Profile */
+    .sectionTitle{
+      margin: 18px 6px 10px;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+    .list{
+      overflow:hidden;
+    }
+    .row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 14px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .row:last-child{ border-bottom: 0; }
+    .row .left{
+      display:flex; flex-direction:column; gap: 3px;
+    }
+    .row .name{ font-weight: 800; }
+    .row .desc{ color: var(--muted); font-size: 12px; }
+    .linkBtn{
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      height: 36px;
+      padding: 0 12px;
+      border-radius: 12px;
+      font-weight: 800;
+      cursor:pointer;
+    }
+    .danger{
+      color: var(--danger);
+      border-color: rgba(255,59,48,.30);
+      background: rgba(255,59,48,.08);
+    }
+
+    /* Switch */
+    .switch{
+      position: relative;
+      width: 52px;
+      height: 32px;
+      display:inline-block;
+    }
+    .switch input{ display:none; }
+    .slider{
+      position:absolute;
+      inset:0;
+      background: rgba(120,120,128,.26);
+      border-radius: 999px;
+      transition: .18s ease;
+      border: 1px solid var(--border);
+    }
+    .slider::after{
+      content:"";
+      position:absolute;
+      width: 26px;
+      height: 26px;
+      left: 3px; top: 2px;
+      background: #fff;
+      border-radius: 50%;
+      transition: .18s ease;
+      box-shadow: 0 6px 16px rgba(0,0,0,.18);
+    }
+    input:checked + .slider{
+      background: rgba(52,199,89,.65);
+      border-color: rgba(52,199,89,.25);
+    }
+    input:checked + .slider::after{
+      transform: translateX(20px);
+    }
+
+    /* Shop */
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .item{
+      padding: 14px;
+      border-radius: 18px;
+      cursor:pointer;
+      position:relative;
+      user-select:none;
+    }
+    .item .tag{
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: .10em;
+      text-transform: uppercase;
+      font-weight: 900;
+    }
+    .item .wname{
+      margin-top: 6px;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+    }
+    .item .wdesc{
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .item .price{
+      margin-top: 10px;
+      font-size: 13px;
+      font-weight: 900;
+      color: var(--accent);
+    }
+    .badge{
+      position:absolute;
+      top: 10px; right: 10px;
+      font-size: 11px;
+      font-weight: 900;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+    }
   </style>
 </head>
+
 <body>
+  <div class="app" id="app">
 
-  <!-- 1. LOGIN -->
-  <div id="viewLogin" class="view active">
-    <div class="login-box">
-      <div class="logo-anim">🗺️</div>
-      <h2 class="text-center mb-20">CityCompass</h2>
+    <!-- MAP -->
+    <section class="view active" id="viewMap" aria-label="Explorer">
+      <div id="map"></div>
 
-      <!-- LOGIN FORM -->
-      <div id="formLogin">
-        <input id="lEmail" class="input-login" type="email" placeholder="Email">
-        <input id="lPass" class="input-login" type="password" placeholder="Mot de passe">
-        <button class="btn-login" onclick="auth.login()">Connexion</button>
-        <div class="text-center">
-          <button class="btn-link" onclick="ui.switchForm('formReg')">Créer un compte</button>
-          <button class="btn-link" style="color:var(--text-dim)" onclick="ui.switchForm('formReset')">Oublié ?</button>
+      <div class="searchOverlay">
+        <input id="inputSearch" class="searchBox" placeholder="Rechercher (placeholder)..." autocomplete="off" />
+        <button id="btnCenter" class="pill" type="button">Centrer</button>
+      </div>
+    </section>
+
+    <!-- COMPASS -->
+    <section class="view" id="viewCompass" aria-label="Boussole">
+      <div class="compassWrap">
+        <div class="ring" id="ring">
+          <div class="arrow" aria-hidden="true"></div>
+        </div>
+
+        <div class="heading" id="headingText">---°</div>
+        <div class="dir" id="dirText">En attente</div>
+
+        <button class="btn" id="btnCompass" type="button" aria-pressed="false">Activer la boussole</button>
+        <div class="hint" id="compassHint">
+          Si rien ne bouge : vérifie que Safari a l’accès “Mouvement et orientation” autorisé et que la page est en HTTPS.
         </div>
       </div>
+    </section>
 
-      <!-- REGISTER FORM -->
-      <div id="formReg" style="display:none;">
-        <h3 class="text-center mb-20">Inscription</h3>
-        <input id="rEmail" class="input-login" type="email" placeholder="Votre Email">
-        <input id="rPass" class="input-login" type="password" placeholder="Mot de passe">
-        <button class="btn-login" onclick="auth.register()">S'inscrire</button>
-        <button class="btn-link" onclick="ui.switchForm('formLogin')" style="width:100%;">Retour</button>
+    <!-- SHOP -->
+    <section class="view" id="viewShop" aria-label="Boutique">
+      <div class="topbar">
+        <h1 class="title">Boutique</h1>
+        <p class="subtitle">Tous les widgets (anciens + actuels).</p>
       </div>
 
-      <!-- RESET FORM -->
-      <div id="formReset" style="display:none;">
-        <h3 class="text-center mb-20">Récupération</h3>
-        <input id="resEmail" class="input-login" type="email" placeholder="Votre Email">
-        <button class="btn-login" onclick="auth.reset()">Envoyer lien</button>
-        <button class="btn-link" onclick="ui.switchForm('formLogin')" style="width:100%;">Retour</button>
+      <div style="padding: 0 16px 0;">
+        <div class="card" style="padding:14px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+            <div>
+              <div style="font-weight:900;">Points</div>
+              <div style="color:var(--muted); font-size:12px;">Système simple (localStorage).</div>
+            </div>
+            <div style="font-weight:1000; font-size:18px; color:var(--accent);" id="pointsText">0</div>
+          </div>
+        </div>
+
+        <div class="sectionTitle">Widgets</div>
+        <div class="grid" id="shopGrid"></div>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <!-- 2. MAP (Main App) -->
-  <div id="viewMap" class="view">
-    <div class="hud">
-      <div class="hud-badge">⭐ <span id="uiPoints">0</span> pts</div>
-      <div class="hud-badge" style="color:var(--success)">📍 GPS ON</div>
-    </div>
-    <div id="map"></div>
-  </div>
-
-  <!-- 3. COMPASS OVERLAY -->
-  <div id="viewCompass" class="view">
-    <div class="compass-circle">
-      <div class="compass-north">NORD</div>
-      <div id="compassArrow" class="compass-arrow">➤</div>
-    </div>
-    <button class="btn-login" style="position:absolute; bottom:100px; width:auto; padding:12px 40px;" onclick="ui.closeCompass()">Fermer</button>
-  </div>
-
-  <!-- PANEL: SHOP -->
-  <div id="panelShop" class="full-panel">
-    <div class="panel-header">
-      <h2>Boutique</h2>
-      <button class="btn-close" onclick="ui.closePanel()">✕</button>
-    </div>
-
-    <div class="widget">
-      <div class="widget-icon">🌙</div>
-      <div class="widget-info">
-        <div class="widget-title">Mode Nuit</div>
-        <div class="widget-desc">Thème sombre pour la carte</div>
+    <!-- PROFILE -->
+    <section class="view" id="viewProfile" aria-label="Profil">
+      <div class="topbar">
+        <h1 class="title">Profil</h1>
+        <p class="subtitle" id="profileSub">Paramètres restaurés.</p>
       </div>
-      <button class="btn-widget" onclick="alert('Fonction à venir')">ACTIVER</button>
-    </div>
 
-    <div class="widget">
-      <div class="widget-icon">👑</div>
-      <div class="widget-info">
-        <div class="widget-title">Statut VIP</div>
-        <div class="widget-desc">Badge doré sur le profil</div>
+      <div style="padding: 0 16px;">
+        <div class="sectionTitle">Préférences</div>
+        <div class="card list">
+
+          <div class="row">
+            <div class="left">
+              <div class="name">Mode nuit</div>
+              <div class="desc">Garder le thème même après actualisation.</div>
+            </div>
+            <label class="switch" title="Mode nuit">
+              <input type="checkbox" id="toggleTheme">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="row">
+            <div class="left">
+              <div class="name">Sons</div>
+              <div class="desc">Bip lors de l’activation de la boussole.</div>
+            </div>
+            <label class="switch" title="Sons">
+              <input type="checkbox" id="toggleSound">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="row">
+            <div class="left">
+              <div class="name">Haptique</div>
+              <div class="desc">Vibration courte à l’activation (si supportée).</div>
+            </div>
+            <label class="switch" title="Haptique">
+              <input type="checkbox" id="toggleHaptic">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="row">
+            <div class="left">
+              <div class="name">Unités</div>
+              <div class="desc">Kilomètres (placeholder).</div>
+            </div>
+            <button class="linkBtn" id="btnUnits" type="button">km</button>
+          </div>
+
+        </div>
+
+        <div class="sectionTitle">Données</div>
+        <div class="card list">
+
+          <div class="row">
+            <div class="left">
+              <div class="name">Vider le cache local</div>
+              <div class="desc">Réinitialise préférences, points, achats.</div>
+            </div>
+            <button class="linkBtn danger" id="btnReset" type="button">Réinitialiser</button>
+          </div>
+
+        </div>
+
+        <div style="text-align:center; margin-top: 16px; color:var(--muted); font-size:12px;">
+          <div id="footerText">CityCompass</div>
+        </div>
       </div>
-      <button class="btn-widget">500 PTS</button>
-    </div>
+    </section>
+
+    <!-- TABBAR (sans Chat) -->
+    <nav class="tabbar" aria-label="Navigation">
+      <button class="tabbtn active" data-target="viewMap" type="button">
+        <div class="ico">MAP</div>
+        Explorer
+      </button>
+      <button class="tabbtn" data-target="viewCompass" type="button">
+        <div class="ico">CMP</div>
+        Boussole
+      </button>
+      <button class="tabbtn" data-target="viewShop" type="button">
+        <div class="ico">SHP</div>
+        Boutique
+      </button>
+      <button class="tabbtn" data-target="viewProfile" type="button">
+        <div class="ico">PRF</div>
+        Profil
+      </button>
+    </nav>
+
   </div>
 
-  <!-- PANEL: CHAT -->
-  <div id="panelChat" class="full-panel">
-    <div class="panel-header">
-      <h2>Chat Local</h2>
-      <button class="btn-close" onclick="ui.closePanel()">✕</button>
-    </div>
-    <div id="chatBox" style="flex:1; background:var(--card); border-radius:12px; padding:15px; margin-bottom:15px; overflow-y:auto;"></div>
-    <div style="display:flex; gap:10px;">
-      <input id="chatInp" class="input-login" placeholder="Message..." style="margin:0; text-align:left; flex:1;">
-      <button class="btn-login" style="width:auto; margin:0; padding:0 20px;" onclick="app.sendMsg()">➤</button>
-    </div>
-  </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
-  <!-- PANEL: PROFILE -->
-  <div id="panelProfile" class="full-panel">
-    <div class="panel-header">
-      <h2>Profil</h2>
-      <button class="btn-close" onclick="ui.closePanel()">✕</button>
-    </div>
+  <script type="module">
+    import { CONFIG } from "./config.js";
 
-    <div class="widget">
-      <div class="widget-icon">👤</div>
-      <div class="widget-info">
-        <div class="widget-title" id="profEmail">user@mail.com</div>
-        <div class="widget-desc" id="profRole">MEMBER</div>
-      </div>
-    </div>
+    // ---------- Storage helpers ----------
+    const LS = {
+      theme: "cc_theme",
+      sound: "cc_sound",
+      haptic: "cc_haptic",
+      points: "cc_points",
+      owned: "cc_owned_widgets",
+      units: "cc_units"
+    };
 
-    <button class="btn-login" style="background:rgba(255,59,48,0.1); color:var(--danger); margin-top:30px;" onclick="auth.logout()">Se Déconnecter</button>
+    const clamp360 = (deg) => ((deg % 360) + 360) % 360;
 
-    <!-- ADMIN ZONE -->
-    <div id="adminZone" style="display:none; margin-top:40px; border:2px dashed gold; padding:20px; border-radius:16px;">
-      <h3 style="color:gold;">ADMIN MODE</h3>
-      <input id="admTgt" class="input-login" placeholder="ID User">
-      <input id="admPts" class="input-login" type="number" placeholder="Points">
-      <button class="btn-login" style="background:var(--success)" onclick="alert('Admin: Give Points')">Donner Points</button>
-    </div>
-  </div>
+    const state = {
+      theme: localStorage.getItem(LS.theme) || "light",
+      soundEnabled: (localStorage.getItem(LS.sound) ?? "1") === "1",
+      hapticEnabled: (localStorage.getItem(LS.haptic) ?? "1") === "1",
+      units: localStorage.getItem(LS.units) || "km",
+      points: parseInt(localStorage.getItem(LS.points) || "850", 10), // valeur demo
+      owned: new Set(JSON.parse(localStorage.getItem(LS.owned) || "[]")),
 
-  <!-- NAV BAR -->
-  <div class="nav-bar">
-    <button class="nav-btn active" onclick="ui.switchView('viewMap', this)">
-      <div class="nav-icon">🗺️</div>
-      <div class="nav-label">Carte</div>
-    </button>
-    <button class="nav-btn" onclick="ui.openCompass()">
-      <div class="nav-icon">🧭</div>
-      <div class="nav-label">Boussole</div>
-    </button>
-    <button class="nav-btn" onclick="ui.openPanel('panelShop')">
-      <div class="nav-icon">🛍️</div>
-      <div class="nav-label">Shop</div>
-    </button>
-    <button class="nav-btn" onclick="ui.openPanel('panelChat')">
-      <div class="nav-icon">💬</div>
-      <div class="nav-label">Chat</div>
-    </button>
-    <button class="nav-btn" onclick="ui.openPanel('panelProfile')">
-      <div class="nav-icon">👤</div>
-      <div class="nav-label">Profil</div>
-    </button>
-  </div>
+      compassActive: false,
+      compassHandler: null,
+      headingSmoothed: null
+    };
 
-<script>
-// ============================================
-// 1. CONFIG
-// ============================================
-const SB_URL = 'https://scbihxaceelyygrlacvm.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjYmloeGFjZWVseXlncmxhY3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1NjU3MTcsImV4cCI6MjA4NTE0MTcxN30.rgUH-kltyNX99-HTDmGEyzGyu8qFXR9LF1QxsjY0W44';
-
-const sb = supabase.createClient(SB_URL, SB_KEY);
-let currentUser = null;
-let mapObj = null;
-
-// ============================================
-// 2. AUTH (Email)
-// ============================================
-const auth = {
-    async login() {
-        const e = document.getElementById('lEmail').value;
-        const p = document.getElementById('lPass').value;
-        if(!e || !p) return alert('Champs vides');
-        const { error } = await sb.auth.signInWithPassword({email:e, password:p});
-        if(error) alert(error.message);
-    },
-    async register() {
-        const e = document.getElementById('rEmail').value;
-        const p = document.getElementById('rPass').value;
-        if(!e || !p) return alert('Champs vides');
-        const { error } = await sb.auth.signUp({email:e, password:p});
-        if(error) alert(error.message); else alert('Compte créé !');
-    },
-    async reset() {
-        const e = document.getElementById('resEmail').value;
-        const { error } = await sb.auth.resetPasswordForEmail(e);
-        alert(error ? error.message : "Email envoyé !");
-    },
-    logout() {
-        sb.auth.signOut(); location.reload();
+    // ---------- Apply theme ----------
+    function applyTheme(theme){
+      state.theme = theme;
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem(LS.theme, theme);
+      updateMapTiles();
     }
-};
 
-// ============================================
-// 3. UI
-// ============================================
-const ui = {
-    switchForm(id) {
-        ['formLogin','formReg','formReset'].forEach(x => document.getElementById(x).style.display='none');
-        document.getElementById(id).style.display='block';
-    },
-    switchView(id, btn) {
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        if(btn) btn.classList.add('active');
-        if(id==='viewMap' && mapObj) mapObj.invalidateSize();
-    },
-    openPanel(id) {
-        document.getElementById(id).classList.add('open');
-    },
-    closePanel() {
-        document.querySelectorAll('.full-panel').forEach(p => p.classList.remove('open'));
-    },
-    openCompass() {
-        document.getElementById('viewCompass').classList.add('active');
-        if(window.DeviceOrientationEvent) window.addEventListener('deviceorientation', app.handleCompass);
-    },
-    closeCompass() {
-        document.getElementById('viewCompass').classList.remove('active');
-        window.removeEventListener('deviceorientation', app.handleCompass);
-    }
-};
+    // ---------- Simple tone ----------
+    function playEnableTone(){
+      if(!state.soundEnabled) return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if(!AudioCtx) return;
 
-// ============================================
-// 4. APP
-// ============================================
-const app = {
-    initMap() {
-        if(mapObj) return;
-        mapObj = L.map('map', {zoomControl:false}).setView([43.6047, 1.4442], 13);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(mapObj);
-        mapObj.locate({setView:true, watch:true});
-        const me = L.marker([0,0]).addTo(mapObj);
-        mapObj.on('locationfound', e => me.setLatLng(e.latlng));
-    },
-    handleCompass(e) {
-        const deg = e.webkitCompassHeading || Math.abs(e.alpha - 360);
-        document.getElementById('compassArrow').style.transform = `rotate(${deg}deg)`;
-    },
-    initChat() {
-        const box = document.getElementById('chatBox');
-        const add = (m) => {
-            const d = document.createElement('div');
-            d.innerHTML = `<b>${m.user_id.slice(0,4)}:</b> ${m.content}`;
-            d.style.marginBottom = "8px";
-            box.appendChild(d);
-        };
-        sb.from('messages').select('*').order('created_at',{ascending:false}).limit(20)
-        .then(({data}) => { if(data) data.reverse().forEach(add); });
-        sb.channel('chat').on('postgres_changes', {event:'INSERT',schema:'public',table:'messages'}, p=>add(p.new)).subscribe();
-    },
-    async sendMsg() {
-        const i = document.getElementById('chatInp');
-        if(i.value) { await sb.from('messages').insert([{user_id:currentUser.id, content:i.value}]); i.value=''; }
-    }
-};
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
 
-// ============================================
-// 5. STARTUP
-// ============================================
-sb.auth.onAuthStateChange(async (evt, session) => {
-    if(evt === 'SIGNED_IN' && session) {
-        currentUser = session.user;
-        document.getElementById('viewLogin').style.display='none';
-        document.getElementById('viewMap').classList.add('active');
-        
-        const { data } = await sb.from('users').select('*').eq('id', currentUser.id).single();
-        if(data) {
-            currentUser.role = data.role;
-            currentUser.points = data.points;
-            document.getElementById('uiPoints').innerText = data.points;
-            document.getElementById('profEmail').innerText = currentUser.email;
-            document.getElementById('profRole').innerText = (data.role||'USER').toUpperCase();
-            if(data.role==='admin') document.getElementById('adminZone').style.display='block';
-        }
-        
-        setTimeout(() => { app.initMap(); app.initChat(); }, 300);
+      osc.type = "sine";
+      osc.frequency.value = 880;
+
+      gain.gain.value = 0.0001;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      const t0 = ctx.currentTime;
+      osc.start(t0);
+      gain.gain.exponentialRampToValueAtTime(0.18, t0 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.12);
+      osc.stop(t0 + 0.14);
+
+      osc.onended = () => ctx.close?.();
     }
-});
-</script>
+
+    function haptic(){
+      if(!state.hapticEnabled) return;
+      if(navigator.vibrate) navigator.vibrate(18);
+    }
+
+    // ---------- Tabs ----------
+    const views = [...document.querySelectorAll(".view")];
+    const tabs = [...document.querySelectorAll(".tabbtn")];
+
+    function switchTab(targetId){
+      views.forEach(v => v.classList.toggle("active", v.id === targetId));
+      tabs.forEach(b => b.classList.toggle("active", b.dataset.target === targetId));
+    }
+
+    tabs.forEach(btn => {
+      btn.addEventListener("click", () => switchTab(btn.dataset.target));
+    });
+
+    // ---------- Map ----------
+    let map = null;
+    let tileLayer = null;
+
+    function cartoUrl(style){
+      // Utilise {scale} comme '' ou '@2x' (retina)
+      const scale = (L.Browser && L.Browser.retina) ? "@2x" : "";
+      return CONFIG.TILES.base
+        .replace("{style}", style)
+        .replace("{scale}", scale);
+    }
+
+    function initMap(){
+      map = L.map("map", { zoomControl: false }).setView(
+        [CONFIG.DEFAULT_CENTER.lat, CONFIG.DEFAULT_CENTER.lon],
+        CONFIG.DEFAULT_ZOOM
+      );
+
+      updateMapTiles();
+
+      L.control.zoom({ position: "bottomright" }).addTo(map);
+
+      const me = L.circleMarker([CONFIG.DEFAULT_CENTER.lat, CONFIG.DEFAULT_CENTER.lon], {
+        radius: 7,
+        weight: 2,
+        color: state.theme === "dark" ? "#fff" : "#111",
+        fillColor: "#007aff",
+        fillOpacity: 0.85
+      }).addTo(map);
+
+      me.bindPopup("Position (démo)").openPopup();
+
+      document.getElementById("btnCenter").addEventListener("click", () => {
+        map.setView([CONFIG.DEFAULT_CENTER.lat, CONFIG.DEFAULT_CENTER.lon], CONFIG.DEFAULT_ZOOM, { animate: true });
+      });
+    }
+
+    function updateMapTiles(){
+      if(!map) return;
+
+      const style = (state.theme === "dark") ? CONFIG.TILES.darkStyle : CONFIG.TILES.lightStyle;
+
+      if(tileLayer){
+        map.removeLayer(tileLayer);
+        tileLayer = null;
+      }
+
+      tileLayer = L.tileLayer(cartoUrl(style), {
+        subdomains: CONFIG.TILES.subdomains,
+        maxZoom: CONFIG.TILES.maxZoom,
+        minZoom: 0,
+        attribution: '&copy; OpenStreetMap &copy; CARTO'
+      });
+
+      tileLayer.addTo(map);
+    }
+
+    // ---------- Compass ----------
+    const elBtnCompass = document.getElementById("btnCompass");
+    const elRing = document.getElementById("ring");
+    const elHeadingText = document.getElementById("headingText");
+    const elDirText = document.getElementById("dirText");
+
+    function setCompassBtn(on){
+      elBtnCompass.classList.toggle("is-on", on);
+      elBtnCompass.setAttribute("aria-pressed", on ? "true" : "false");
+      elBtnCompass.textContent = on ? "Boussole activée" : "Activer la boussole";
+    }
+
+    function cardinal(deg){
+      const dirs = ["N","NE","E","SE","S","SO","O","NO"];
+      return dirs[Math.round(clamp360(deg) / 45) % 8];
+    }
+
+    function updateCompassUI(headingDeg){
+      const h = clamp360(headingDeg);
+
+      // Lissage simple (low-pass)
+      if(state.headingSmoothed == null) state.headingSmoothed = h;
+      const prev = state.headingSmoothed;
+
+      // Gestion du passage 359 -> 0 pour éviter le saut
+      let delta = h - prev;
+      if(delta > 180) delta -= 360;
+      if(delta < -180) delta += 360;
+
+      const alpha = 0.18;
+      const next = clamp360(prev + delta * alpha);
+      state.headingSmoothed = next;
+
+      elRing.style.transform = `rotate(${-next}deg)`;
+      elHeadingText.textContent = `${Math.round(next)}°`;
+      elDirText.textContent = cardinal(next);
+    }
+
+    function handleOrientation(e){
+      // iOS : webkitCompassHeading (0..360)
+      // Android/others : alpha (0..360, souvent inversé)
+      let heading = null;
+
+      if(typeof e.webkitCompassHeading === "number"){
+        heading = e.webkitCompassHeading;
+      } else if(typeof e.alpha === "number"){
+        heading = 360 - e.alpha;
+      }
+
+      if(heading == null) return;
+      updateCompassUI(heading);
+    }
+
+    async function enableCompass(){
+      if(state.compassActive) return;
+
+      playEnableTone();
+      haptic();
+
+      // iOS permission gate
+      if (typeof DeviceOrientationEvent !== "undefined" &&
+          typeof DeviceOrientationEvent.requestPermission === "function") {
+        const res = await DeviceOrientationEvent.requestPermission();
+        if (res !== "granted") return;
+      }
+
+      state.compassHandler = handleOrientation;
+      window.addEventListener("deviceorientation", state.compassHandler, true);
+
+      state.compassActive = true;
+      setCompassBtn(true);
+    }
+
+    function disableCompass(){
+      if(!state.compassActive) return;
+
+      if(state.compassHandler){
+        window.removeEventListener("deviceorientation", state.compassHandler, true);
+      }
+
+      state.compassHandler = null;
+      state.compassActive = false;
+      state.headingSmoothed = null;
+
+      elRing.style.transform = "rotate(0deg)";
+      elHeadingText.textContent = "---°";
+      elDirText.textContent = "En attente";
+      setCompassBtn(false);
+    }
+
+    elBtnCompass.addEventListener("click", async () => {
+      if(!state.compassActive) await enableCompass();
+      else disableCompass();
+    });
+
+    // ---------- Shop ----------
+    const elShopGrid = document.getElementById("shopGrid");
+    const elPointsText = document.getElementById("pointsText");
+
+    function saveOwned(){
+      localStorage.setItem(LS.owned, JSON.stringify([...state.owned]));
+    }
+    function savePoints(){
+      localStorage.setItem(LS.points, String(state.points));
+    }
+
+    function renderPoints(){
+      elPointsText.textContent = String(state.points);
+    }
+
+    function renderShop(){
+      elShopGrid.innerHTML = "";
+
+      CONFIG.WIDGETS.forEach(w => {
+        // Ici on affiche tout (même adminOnly) ; tu pourras filtrer par rôle plus tard
+        const owned = state.owned.has(w.id);
+
+        const div = document.createElement("div");
+        div.className = "card item";
+
+        const badgeText = w.adminOnly ? "ADMIN" : (owned ? "ACTIF" : "DISPO");
+        div.innerHTML = `
+          <div class="badge">${badgeText}</div>
+          <div class="tag">${w.icon}</div>
+          <div class="wname">${escapeHtml(w.name)}</div>
+          <div class="wdesc">${escapeHtml(w.desc)}</div>
+          <div class="price">${w.price} pts</div>
+        `;
+
+        div.addEventListener("click", () => {
+          if(owned){
+            alert("Déjà activé.");
+            return;
+          }
+          if(state.points < w.price){
+            alert("Points insuffisants.");
+            return;
+          }
+          state.points -= w.price;
+          state.owned.add(w.id);
+
+          savePoints();
+          saveOwned();
+          renderPoints();
+          renderShop();
+        });
+
+        elShopGrid.appendChild(div);
+      });
+    }
+
+    // ---------- Profile ----------
+    const elToggleTheme = document.getElementById("toggleTheme");
+    const elToggleSound = document.getElementById("toggleSound");
+    const elToggleHaptic = document.getElementById("toggleHaptic");
+    const elBtnUnits = document.getElementById("btnUnits");
+    const elBtnReset = document.getElementById("btnReset");
+    const elFooterText = document.getElementById("footerText");
+
+    function initProfile(){
+      elToggleTheme.checked = (state.theme === "dark");
+      elToggleSound.checked = state.soundEnabled;
+      elToggleHaptic.checked = state.hapticEnabled;
+      elBtnUnits.textContent = state.units;
+
+      elToggleTheme.addEventListener("change", (e) => {
+        applyTheme(e.target.checked ? "dark" : "light");
+      });
+
+      elToggleSound.addEventListener("change", (e) => {
+        state.soundEnabled = e.target.checked;
+        localStorage.setItem(LS.sound, state.soundEnabled ? "1" : "0");
+      });
+
+      elToggleHaptic.addEventListener("change", (e) => {
+        state.hapticEnabled = e.target.checked;
+        localStorage.setItem(LS.haptic, state.hapticEnabled ? "1" : "0");
+      });
+
+      elBtnUnits.addEventListener("click", () => {
+        state.units = (state.units === "km") ? "mi" : "km";
+        localStorage.setItem(LS.units, state.units);
+        elBtnUnits.textContent = state.units;
+      });
+
+      elBtnReset.addEventListener("click", () => {
+        const ok = confirm("Réinitialiser préférences, points, achats ?");
+        if(!ok) return;
+
+        localStorage.removeItem(LS.theme);
+        localStorage.removeItem(LS.sound);
+        localStorage.removeItem(LS.haptic);
+        localStorage.removeItem(LS.points);
+        localStorage.removeItem(LS.owned);
+        localStorage.removeItem(LS.units);
+
+        location.reload();
+      });
+
+      elFooterText.textContent = `${CONFIG.APP_NAME} ${CONFIG.VERSION}`;
+    }
+
+    // ---------- Utils ----------
+    function escapeHtml(str){
+      return String(str)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    // ---------- Boot ----------
+    applyTheme(state.theme);
+    initMap();
+    renderPoints();
+    renderShop();
+    initProfile();
+    setCompassBtn(false);
+  </script>
 </body>
 </html>
