@@ -4,69 +4,61 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>CityCompass v37</title>
+  <title>CityCompass v38</title>
 
-  <!-- Leaflet CSS (Carte) -->
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
     :root {
-      /* Palette Claire (Défaut) */
-      --bg: #f2f2f7;
-      --card: rgba(255,255,255,0.95);
-      --text: #000000;
-      --muted: #8e8e93;
-      --border: rgba(0,0,0,0.1);
-      --accent: #007aff;
-      --danger: #ff3b30;
-      --success: #34c759;
+      --bg: #f2f2f7; --card: rgba(255,255,255,0.95);
+      --text: #000; --muted: #8e8e93; --border: rgba(0,0,0,0.1);
+      --accent: #007aff; --danger: #ff3b30; --success: #34c759;
       --shadow: 0 4px 20px rgba(0,0,0,0.08);
       --blur: blur(20px);
     }
-
     [data-theme="dark"] {
-      /* Palette Sombre */
-      --bg: #000000;
-      --card: rgba(28,28,30,0.95);
-      --text: #ffffff;
-      --muted: #98989f;
-      --border: rgba(255,255,255,0.15);
-      --accent: #0a84ff;
-      --danger: #ff453a;
-      --success: #30d158;
-      --shadow: 0 8px 30px rgba(0,0,0,0.5);
+      --bg: #000; --card: rgba(28,28,30,0.95);
+      --text: #fff; --muted: #98989f; --border: rgba(255,255,255,0.15);
+      --accent: #0a84ff; --danger: #ff453a; --success: #30d158;
     }
 
-    /* Reset & Base */
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-    html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg); color: var(--text);
-      display: flex; flex-direction: column;
+    body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+    /* --- LOGIN OVERLAY --- */
+    #authOverlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--bg);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 30px; transition: opacity 0.4s ease;
+    }
+    #authOverlay.hidden { opacity: 0; pointer-events: none; }
+    .auth-box { width: 100%; max-width: 320px; text-align: center; }
+    .auth-title { font-size: 28px; font-weight: 900; margin-bottom: 10px; }
+    .auth-input {
+      width: 100%; padding: 14px; margin: 8px 0;
+      border-radius: 12px; border: 1px solid var(--border);
+      background: var(--card); color: var(--text); font-size: 16px; outline:none;
+    }
+    .btn-auth {
+      width: 100%; padding: 14px; margin-top: 10px;
+      border-radius: 12px; background: var(--accent); color: white;
+      font-weight: 700; border: none; font-size: 16px; cursor: pointer;
     }
 
-    /* --- VUES (Pages) --- */
-    .view {
-      flex: 1;
-      display: none; /* Masqué par défaut */
-      flex-direction: column;
-      overflow-y: auto;
-      padding: 20px 16px 110px 16px; /* Espace pour la barre du bas */
-      animation: fadeIn 0.3s ease;
-    }
-    .view.active { display: flex; } /* Visible si actif */
+    /* --- VUES --- */
+    .view { flex: 1; display: none; flex-direction: column; overflow: hidden; position: relative; }
+    .view.active { display: flex; }
     
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* Vue Carte (Plein écran) */
-    #viewMap { padding: 0; position: relative; }
-    #map { width: 100%; height: 100%; z-index: 1; background: #e5e5e5; }
-
-    /* Overlay Recherche (Flottant) */
+    /* Carte */
+    #map { width: 100%; height: 100%; z-index: 1; }
+    
+    /* Search Bar + Suggestions */
+    .search-wrap {
+      position: absolute; top: 50px; left: 16px; right: 16px; z-index: 1000;
+    }
     .search-bar {
-      position: absolute; top: 50px; left: 16px; right: 16px; z-index: 10;
       display: flex; gap: 8px;
     }
     .input-glass {
@@ -74,491 +66,356 @@
       border-radius: 12px; border: 1px solid var(--border);
       background: var(--card); color: var(--text);
       backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
-      box-shadow: var(--shadow);
-      font-size: 16px; outline: none;
+      box-shadow: var(--shadow); font-size: 16px; outline: none;
     }
     .btn-icon {
       width: 48px; height: 48px; border-radius: 12px;
       background: var(--card); border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center;
-      box-shadow: var(--shadow); color: var(--accent);
-      cursor: pointer;
+      box-shadow: var(--shadow); color: var(--accent); cursor: pointer;
     }
+    /* Liste Prédictive */
+    .suggestions-list {
+      margin-top: 6px;
+      background: var(--card); border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      max-height: 200px; overflow-y: auto;
+      display: none; /* Caché par défaut */
+    }
+    .suggestion-item {
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      font-size: 14px; cursor: pointer;
+    }
+    .suggestion-item:last-child { border-bottom: none; }
 
-    /* --- BOUSSOLE (Style Minimaliste) --- */
+    /* Boussole */
     .compass-wrapper {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      min-height: 60vh;
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
     .compass-ring {
-      width: 280px; height: 280px;
-      border: 3px solid var(--border);
-      border-radius: 50%;
-      position: relative;
-      display: flex; align-items: center; justify-content: center;
-      transition: transform 0.1s linear;
-      margin-bottom: 40px;
-      background: radial-gradient(circle, transparent 60%, var(--border) 100%);
+      width: 260px; height: 260px;
+      border: 4px solid var(--border); border-radius: 50%;
+      position: relative; display: flex; align-items: center; justify-content: center;
+      transition: transform 0.1s linear; margin-bottom: 30px;
     }
-    /* Repères cardinaux fixes sur l'anneau */
-    .cardinal-mark {
-      position: absolute; font-size: 12px; font-weight: 700; color: var(--muted);
-    }
-    .c-n { top: 10px; color: var(--danger); }
-    
     .compass-arrow {
       width: 0; height: 0;
-      border-left: 20px solid transparent;
-      border-right: 20px solid transparent;
-      border-bottom: 90px solid var(--danger);
-      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2));
-      transform: translateY(-10px);
+      border-left: 20px solid transparent; border-right: 20px solid transparent;
+      border-bottom: 90px solid var(--danger); transform: translateY(-10px);
     }
-    .compass-value { font-size: 56px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -2px; }
-    .compass-label { font-size: 14px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: -5px; }
-    
+    .compass-val { font-size: 48px; font-weight: 800; font-variant-numeric: tabular-nums; }
     .btn-main {
-      margin-top: 40px;
-      padding: 16px 32px;
-      border-radius: 30px;
-      background: var(--card);
-      border: 1px solid var(--accent);
-      color: var(--accent);
-      font-size: 16px; font-weight: 700;
-      box-shadow: var(--shadow);
-      cursor: pointer; transition: all 0.2s;
+      margin-top: 30px; padding: 14px 28px; border-radius: 30px;
+      border: 1px solid var(--accent); background: var(--card); color: var(--accent);
+      font-weight: 700; transition: 0.2s;
     }
-    .btn-main.active {
-      background: var(--success); border-color: var(--success); color: white;
-      box-shadow: 0 0 20px rgba(52, 199, 89, 0.4);
-    }
+    .btn-main.active { background: var(--success); border-color: var(--success); color: #fff; }
 
-    /* --- BOUTIQUE & PROFIL (Listes) --- */
-    h2 { margin: 10px 0 20px; font-size: 28px; font-weight: 800; }
-    h3 { font-size: 13px; text-transform: uppercase; color: var(--muted); margin: 20px 0 8px 12px; letter-spacing: 0.5px; }
-    
-    .list-group {
-      background: var(--card); border-radius: 16px; overflow: hidden;
-      border: 1px solid var(--border);
-    }
-    .list-item {
-      padding: 16px; display: flex; align-items: center; justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      background: transparent;
-    }
-    .list-item:last-child { border-bottom: none; }
-    .list-info { display: flex; flex-direction: column; gap: 4px; }
-    .list-title { font-weight: 600; font-size: 16px; }
-    .list-desc { font-size: 12px; color: var(--muted); }
-    
-    /* Grille Boutique */
-    .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .shop-card {
-      background: var(--card); border-radius: 16px; padding: 16px;
-      border: 1px solid var(--border); text-align: center;
-      position: relative; box-shadow: var(--shadow);
-    }
-    .shop-icon { font-size: 32px; display: block; margin-bottom: 8px; }
-    .shop-price { color: var(--accent); font-weight: 700; font-size: 14px; margin-top: 8px; }
-    .shop-tag {
-      position: absolute; top: 8px; right: 8px;
-      font-size: 9px; font-weight: 800; padding: 4px 6px;
-      border-radius: 6px; background: var(--border); color: var(--muted);
-    }
-
-    /* Switch iOS */
-    .switch { position: relative; width: 50px; height: 30px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider {
-      position: absolute; inset: 0; background-color: #e9e9ea; border-radius: 34px; transition: .3s;
-    }
-    .slider:before {
-      content: ""; position: absolute; height: 26px; width: 26px; left: 2px; bottom: 2px;
-      background-color: white; border-radius: 50%; transition: .3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    input:checked + .slider { background-color: var(--success); }
-    input:checked + .slider:before { transform: translateX(20px); }
-
-    /* --- BARRE DE NAVIGATION (Bas) --- */
+    /* Nav Bar */
     .tab-bar {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      height: 85px; background: var(--card);
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border-top: 1px solid var(--border);
-      display: flex; justify-content: space-around;
-      padding-bottom: 20px; z-index: 999;
+      height: 85px; background: var(--card); border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around; padding-bottom: 20px;
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 2000;
     }
     .tab-btn {
-      flex: 1; border: none; background: none;
+      background: none; border: none; flex: 1;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      color: var(--muted); font-size: 10px; font-weight: 500;
-      cursor: pointer;
+      color: var(--muted); font-size: 10px; font-weight: 600;
     }
-    .tab-btn svg { width: 24px; height: 24px; margin-bottom: 4px; fill: currentColor; }
     .tab-btn.active { color: var(--accent); }
+    .tab-btn svg { width: 24px; height: 24px; margin-bottom: 4px; fill: currentColor; }
 
+    /* Autres */
+    .view-content { padding: 20px; overflow-y: auto; height: 100%; padding-bottom: 100px; }
+    .list-group { background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; }
+    .list-item { padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .shop-card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
   </style>
 </head>
 <body>
 
-  <!-- ================= VUES ================= -->
-
-  <!-- 1. EXPLORER (Carte) -->
-  <div id="viewMap" class="view active">
-    <div class="search-bar">
-      <input type="text" class="input-glass" placeholder="Chercher un lieu..." id="searchInput">
-      <div class="btn-icon" onclick="resetMap()">🎯</div>
-    </div>
-    <div id="map"></div>
-  </div>
-
-  <!-- 2. BOUSSOLE -->
-  <div id="viewCompass" class="view">
-    <div class="compass-wrapper">
-      <div class="compass-ring" id="compassRing">
-        <div class="cardinal-mark c-n">N</div>
-        <div class="compass-arrow"></div>
-      </div>
-      <div class="compass-value" id="compassValue">---°</div>
-      <div class="compass-label" id="compassLabel">En attente</div>
-
-      <button id="btnToggleCompass" class="btn-main">Activer la Boussole</button>
-      <p style="text-align:center; color:var(--muted); font-size:12px; margin-top:15px; max-width:250px;">
-        Nécessite une interaction pour activer le son et les capteurs.
-      </p>
+  <!-- LOGIN SCREEN -->
+  <div id="authOverlay">
+    <div class="auth-box">
+      <div class="auth-title">CityCompass</div>
+      <p style="color:var(--muted); margin-bottom:20px;">Connexion Sécurisée</p>
+      <input type="email" id="loginEmail" class="auth-input" placeholder="Email" value="user@demo.com">
+      <input type="password" id="loginPass" class="auth-input" placeholder="Mot de passe" value="123456">
+      <button class="btn-auth" onclick="tryLogin()">Se Connecter</button>
+      <p style="margin-top:15px; font-size:12px; color:var(--muted);">Pas de compte ? Cliquez pour créer (Auto).</p>
     </div>
   </div>
 
-  <!-- 3. BOUTIQUE -->
-  <div id="viewShop" class="view">
-    <h2>Boutique</h2>
-    <div class="list-group" style="margin-bottom:20px;">
-      <div class="list-item">
-        <div class="list-info">
-          <span class="list-title">Mes Points</span>
-          <span class="list-desc">Gagnez des points en explorant.</span>
-        </div>
-        <span style="font-weight:800; font-size:20px; color:var(--accent);" id="userPoints">1250</span>
-      </div>
-    </div>
-
-    <h3>Extensions</h3>
-    <div class="shop-grid" id="shopContainer">
-      <!-- Rempli par JS -->
-    </div>
-  </div>
-
-  <!-- 4. PROFIL -->
-  <div id="viewProfile" class="view">
-    <h2>Profil</h2>
+  <!-- APP CONTENT -->
+  <div id="app" style="display:none; height:100%; flex-direction:column;">
     
-    <h3>Affichage</h3>
-    <div class="list-group">
-      <div class="list-item">
-        <div class="list-info">
-          <span class="list-title">Mode Nuit</span>
-          <span class="list-desc">Interface sombre pour la nuit.</span>
+    <!-- 1. MAP -->
+    <div id="viewMap" class="view active">
+      <div class="search-wrap">
+        <div class="search-bar">
+          <input type="text" id="searchInput" class="input-glass" placeholder="Rechercher une adresse..." autocomplete="off">
+          <div class="btn-icon" onclick="locateUser()">📍</div>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="themeSwitch">
-          <span class="slider"></span>
-        </label>
+        <div id="suggestions" class="suggestions-list"></div>
+      </div>
+      <div id="map"></div>
+    </div>
+
+    <!-- 2. COMPASS -->
+    <div id="viewCompass" class="view">
+      <div class="compass-wrapper">
+        <div class="compass-ring" id="ring"><div class="compass-arrow"></div></div>
+        <div class="compass-val" id="headVal">---°</div>
+        <div style="color:var(--muted); margin-top:-5px;" id="headDir">En attente</div>
+        <button id="btnCompass" class="btn-main">Activer</button>
       </div>
     </div>
 
-    <h3>Navigation</h3>
-    <div class="list-group">
-      <div class="list-item">
-        <div class="list-info">
-          <span class="list-title">Sons & Bips</span>
-          <span class="list-desc">Retour sonore à l'activation.</span>
+    <!-- 3. SHOP -->
+    <div id="viewShop" class="view">
+      <div class="view-content">
+        <h2>Boutique</h2>
+        <div class="list-group">
+          <div class="list-item">
+            <span>Points</span>
+            <span style="font-weight:800; color:var(--accent);" id="userPoints">0</span>
+          </div>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="soundSwitch" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-      <div class="list-item">
-        <div class="list-info">
-          <span class="list-title">Précision GPS</span>
-          <span class="list-desc">Haute précision (batterie).</span>
-        </div>
-        <label class="switch">
-          <input type="checkbox" checked disabled>
-          <span class="slider"></span>
-        </label>
+        <h3>Extensions</h3>
+        <div class="shop-grid" id="shopGrid"></div>
       </div>
     </div>
 
-    <h3>Zone de Danger</h3>
-    <div class="list-group">
-      <div class="list-item" onclick="localStorage.clear(); location.reload();">
-        <span class="list-title" style="color:var(--danger)">Réinitialiser tout</span>
+    <!-- 4. PROFILE -->
+    <div id="viewProfile" class="view">
+      <div class="view-content">
+        <h2>Profil</h2>
+        <div class="list-group">
+          <div class="list-item">
+            <span>Mode Nuit</span>
+            <input type="checkbox" id="themeToggle">
+          </div>
+          <div class="list-item">
+            <span>Son Activé</span>
+            <input type="checkbox" id="soundToggle" checked>
+          </div>
+        </div>
+        <div class="list-group">
+          <div class="list-item" onclick="logout()" style="color:var(--danger); font-weight:700;">
+            Déconnexion
+          </div>
+        </div>
       </div>
     </div>
-    
-    <p style="text-align:center; color:var(--muted); margin-top:30px; font-size:11px;">
-      CityCompass v37.0 - Build 2026
-    </p>
+
+    <!-- TAB BAR -->
+    <nav class="tab-bar">
+      <button class="tab-btn active" onclick="goTab('viewMap', this)"><svg viewBox="0 0 24 24"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>Carte</button>
+      <button class="tab-btn" onclick="goTab('viewCompass', this)"><svg viewBox="0 0 24 24"><path d="M12 2L4.5 20.3l.7.7L12 18l6.8 3 .7-.7z"/></svg>Boussole</button>
+      <button class="tab-btn" onclick="goTab('viewShop', this)"><svg viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>Shop</button>
+      <button class="tab-btn" onclick="goTab('viewProfile', this)"><svg viewBox="0 0 24 24"><path d="M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4z"/></svg>Profil</button>
+    </nav>
   </div>
 
-
-  <!-- ================= BARRE DU BAS ================= -->
-  <nav class="tab-bar">
-    <button class="tab-btn active" onclick="showTab('viewMap', this)">
-      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-      Carte
-    </button>
-    <button class="tab-btn" onclick="showTab('viewCompass', this)">
-      <svg viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
-      Boussole
-    </button>
-    <button class="tab-btn" onclick="showTab('viewShop', this)">
-      <svg viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>
-      Store
-    </button>
-    <button class="tab-btn" onclick="showTab('viewProfile', this)">
-      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-      Profil
-    </button>
-  </nav>
-
-  <!-- Script Leaflet (Externe) -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- ================= LOGIQUE JS ================= -->
   <script>
-    // --- 1. CONFIGURATION (Fusionnée) ---
-    const CONFIG = {
-      defaultLat: 43.6047, 
-      defaultLon: 1.4442,
-      widgets: [
-        { id: 'w_night', name: 'Vision Nocturne', price: 150, icon: '🌑', desc: 'Filtre vert militaire' },
-        { id: 'w_sonar', name: 'Sonar Actif', price: 300, icon: '📡', desc: 'Détection audio des lieux' },
-        { id: 'w_trace', name: 'Traceur GPS', price: 200, icon: '👣', desc: 'Laisse une trace visuelle' },
-        { id: 'w_sat',   name: 'Vue Satellite', price: 500, icon: '🛰️', desc: 'Imagerie haute résolution' },
-        { id: 'w_hud',   name: 'Mode HUD', price: 800, icon: '🕶️', desc: 'Affichage tête haute' },
-        { id: 'w_god',   name: 'God Mode', price: 9999, icon: '⚡', desc: 'Admin Only', admin: true }
-      ]
-    };
-
-    // --- 2. ETAT DE L'APPLICATION ---
-    const state = {
+    /* --- CONFIG & STATE --- */
+    const WIDGETS = [
+      { id:'w_nv', name:'Vision Nuit', price:150, icon:'🌑' },
+      { id:'w_sn', name:'Sonar', price:300, icon:'📡' },
+      { id:'w_tr', name:'Traceur', price:200, icon:'👣' },
+      { id:'w_st', name:'Satellite', price:500, icon:'🛰️' },
+      { id:'w_gd', name:'God Mode', price:9999, icon:'⚡', admin:true }
+    ];
+    let state = {
+      user: localStorage.getItem('cc_user'),
       theme: localStorage.getItem('cc_theme') || 'light',
-      sound: localStorage.getItem('cc_sound') !== 'false', // defaut true
       points: parseInt(localStorage.getItem('cc_points') || '1250'),
       owned: JSON.parse(localStorage.getItem('cc_owned') || '[]'),
-      compassActive: false
+      sound: localStorage.getItem('cc_sound') !== 'false'
     };
 
-    // --- 3. GESTION DES ONGLETS ---
-    function showTab(viewId, btnEl) {
-      // Masquer toutes les vues
-      document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-      
-      // Afficher la cible
-      document.getElementById(viewId).classList.add('active');
-      if(btnEl) btnEl.classList.add('active');
-      
-      // Resize map si nécessaire
-      if(viewId === 'viewMap' && map) setTimeout(() => map.invalidateSize(), 100);
-    }
-
-    // --- 4. CARTE (Leaflet) ---
-    let map;
-    function initMap() {
-      // Si Leaflet n'est pas chargé (ex: pas d'internet), on évite le crash
-      if(typeof L === 'undefined') {
-        document.getElementById('map').innerHTML = '<div style="padding:20px;text-align:center;">Erreur: Impossible de charger la carte (vérifiez votre connexion).</div>';
-        return;
+    /* --- LOGIN SYSTEM --- */
+    function checkAuth() {
+      if(state.user) {
+        document.getElementById('authOverlay').classList.add('hidden');
+        document.getElementById('app').style.display = 'flex';
+        initApp();
       }
+    }
+    function tryLogin() {
+      const email = document.getElementById('loginEmail').value;
+      if(email.length > 3) {
+        localStorage.setItem('cc_user', email);
+        state.user = email;
+        checkAuth();
+      } else { alert('Email invalide'); }
+    }
+    function logout() {
+      localStorage.removeItem('cc_user');
+      location.reload();
+    }
+    window.onload = checkAuth;
 
-      map = L.map('map', { zoomControl: false }).setView([CONFIG.defaultLat, CONFIG.defaultLon], 15);
-      updateMapTiles();
+    /* --- MAP SYSTEM --- */
+    let map, userMarker;
+    function initApp() {
+      applyTheme(state.theme);
       
-      // Marker Demo
-      L.marker([CONFIG.defaultLat, CONFIG.defaultLon]).addTo(map)
-       .bindPopup("<b>Capitole</b><br>Centre de Toulouse").openPopup();
+      // MAP INIT
+      map = L.map('map', {zoomControl:false}).setView([43.604, 1.444], 13);
+      L.tileLayer(getTileUrl(), {maxZoom:19}).addTo(map);
+      
+      // AUTO LOCATE
+      locateUser();
+
+      // SEARCH LISTENER
+      document.getElementById('searchInput').addEventListener('input', handleSearch);
+      
+      // Render Shop & Profile
+      renderShop();
+      document.getElementById('themeToggle').checked = (state.theme==='dark');
     }
 
-    function updateMapTiles() {
-      if(!map) return;
-      // Nettoyage anciennes couches
-      map.eachLayer(layer => { if(layer._url) map.removeLayer(layer); });
-
-      const url = state.theme === 'dark'
+    function getTileUrl() {
+      return state.theme==='dark' 
         ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
         : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-      
-      L.tileLayer(url, {
-        attribution: '&copy; OpenStreetMap &copy; CartoDB',
-        maxZoom: 20
-      }).addTo(map);
-    }
-    
-    function resetMap() {
-      if(map) map.setView([CONFIG.defaultLat, CONFIG.defaultLon], 15, { animate: true });
     }
 
-    // --- 5. BOUSSOLE (Avec Son et Bouton Activé) ---
-    const btnCompass = document.getElementById('btnToggleCompass');
-    const ring = document.getElementById('compassRing');
-    const labelVal = document.getElementById('compassValue');
-    const labelDir = document.getElementById('compassLabel');
-
-    // Son "Bip" propre (Web Audio API)
-    function playBeep() {
-      if(!state.sound) return;
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      if(!Ctx) return;
-      
-      const ctx = new Ctx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, ctx.currentTime); // La A5
-      gain.gain.setValueAtTime(0.05, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.15);
-      
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.2);
+    function locateUser() {
+      map.locate({setView:true, maxZoom:16, enableHighAccuracy:true});
+      map.on('locationfound', e => {
+        if(userMarker) map.removeLayer(userMarker);
+        userMarker = L.circleMarker(e.latlng, {
+          radius:8, color:'#fff', fillColor:'#007aff', fillOpacity:1
+        }).addTo(map).bindPopup("Vous êtes ici").openPopup();
+      });
+      map.on('locationerror', () => alert("Localisation impossible (autorisez le GPS)."));
     }
 
-    btnCompass.addEventListener('click', async () => {
-      if(!state.compassActive) {
-        // ACTIVER
-        playBeep();
-        
-        // Permission iOS 13+
-        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-          try {
-            const response = await DeviceOrientationEvent.requestPermission();
-            if (response !== 'granted') return alert('Permission capteur refusée.');
-          } catch (e) { console.error(e); }
+    /* --- PREDICTIVE SEARCH (Nominatim) --- */
+    let searchTimeout;
+    function handleSearch(e) {
+      clearTimeout(searchTimeout);
+      const q = e.target.value;
+      const list = document.getElementById('suggestions');
+      
+      if(q.length < 3) { list.style.display='none'; return; }
+
+      searchTimeout = setTimeout(async () => {
+        try {
+          // Appel API OpenStreetMap (Nominatim)
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5`);
+          const data = await res.json();
+          
+          list.innerHTML = '';
+          if(data.length > 0) {
+            list.style.display = 'block';
+            data.forEach(place => {
+              const item = document.createElement('div');
+              item.className = 'suggestion-item';
+              item.textContent = place.display_name.split(',').slice(0,3).join(','); // Shorten text
+              item.onclick = () => {
+                const lat = parseFloat(place.lat);
+                const lon = parseFloat(place.lon);
+                map.setView([lat, lon], 16);
+                L.marker([lat, lon]).addTo(map).bindPopup(item.textContent).openPopup();
+                list.style.display = 'none';
+                document.getElementById('searchInput').value = item.textContent;
+              };
+              list.appendChild(item);
+            });
+          }
+        } catch(err) { console.error(err); }
+      }, 300); // 300ms debounce
+    }
+
+    /* --- COMPASS --- */
+    let compassActive = false;
+    document.getElementById('btnCompass').addEventListener('click', async () => {
+      const btn = document.getElementById('btnCompass');
+      if(!compassActive) {
+        // Sound
+        if(state.sound) {
+          const ctx = new (window.AudioContext||window.webkitAudioContext)();
+          const osc = ctx.createOscillator(); osc.frequency.value=880;
+          osc.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime+0.1);
         }
-
+        // Permission
+        if(typeof DeviceOrientationEvent.requestPermission === 'function') {
+          await DeviceOrientationEvent.requestPermission();
+        }
         window.addEventListener('deviceorientation', updateCompass, true);
-        state.compassActive = true;
-        
-        // Changement d'état Bouton
-        btnCompass.classList.add('active');
-        btnCompass.textContent = "Boussole Activée";
+        compassActive = true;
+        btn.classList.add('active'); btn.textContent = "Activé";
       } else {
-        // DESACTIVER
         window.removeEventListener('deviceorientation', updateCompass, true);
-        state.compassActive = false;
-        
-        // Reset UI
-        ring.style.transform = 'rotate(0deg)';
-        labelVal.textContent = "---°";
-        labelDir.textContent = "En attente";
-        
-        btnCompass.classList.remove('active');
-        btnCompass.textContent = "Activer la Boussole";
+        compassActive = false;
+        btn.classList.remove('active'); btn.textContent = "Activer";
+        document.getElementById('ring').style.transform = 'rotate(0deg)';
       }
     });
 
     function updateCompass(e) {
-      // Calcul Heading (iOS vs Android)
-      let heading = e.webkitCompassHeading || Math.abs(e.alpha - 360);
-      if(!heading) return;
-
-      // Rotation inverse pour l'anneau
-      ring.style.transform = `rotate(${-heading}deg)`;
-      
-      // Texte
-      labelVal.textContent = Math.round(heading) + "°";
-      labelDir.textContent = getCardinal(heading);
-    }
-
-    function getCardinal(deg) {
-      const dirs = ['Nord', 'N-Est', 'Est', 'S-Est', 'Sud', 'S-Ouest', 'Ouest', 'N-Ouest'];
-      return dirs[Math.round(deg / 45) % 8];
-    }
-
-    // --- 6. BOUTIQUE (Widgets) ---
-    function renderShop() {
-      const container = document.getElementById('shopContainer');
-      document.getElementById('userPoints').textContent = state.points;
-      container.innerHTML = '';
-
-      CONFIG.widgets.forEach(w => {
-        const isOwned = state.owned.includes(w.id);
-        const isAdmin = w.admin;
-        
-        const el = document.createElement('div');
-        el.className = 'shop-card';
-        // Badge
-        let badge = '';
-        if(isOwned) badge = '<div class="shop-tag" style="color:var(--success)">ACQUIS</div>';
-        else if(isAdmin) badge = '<div class="shop-tag" style="color:var(--danger)">ADMIN</div>';
-        
-        el.innerHTML = `
-          ${badge}
-          <span class="shop-icon">${w.icon}</span>
-          <div class="list-title" style="font-size:14px">${w.name}</div>
-          <div class="list-desc" style="margin-top:4px">${w.desc}</div>
-          ${!isOwned ? `<div class="shop-price">${w.price} pts</div>` : ''}
-        `;
-        
-        el.onclick = () => buyWidget(w);
-        container.appendChild(el);
-      });
-    }
-
-    function buyWidget(w) {
-      if(state.owned.includes(w.id)) return alert('Vous possédez déjà cet objet.');
-      if(state.points < w.price) return alert('Pas assez de points !');
-      
-      if(confirm(`Acheter ${w.name} pour ${w.price} pts ?`)) {
-        state.points -= w.price;
-        state.owned.push(w.id);
-        localStorage.setItem('cc_points', state.points);
-        localStorage.setItem('cc_owned', JSON.stringify(state.owned));
-        renderShop();
-        playBeep(); // Petit son de validation
+      let h = e.webkitCompassHeading || Math.abs(e.alpha-360);
+      if(h) {
+        document.getElementById('ring').style.transform = `rotate(${-h}deg)`;
+        document.getElementById('headVal').textContent = Math.round(h)+'°';
+        document.getElementById('headDir').textContent = ['N','NE','E','SE','S','SO','O','NO'][Math.round(h/45)%8];
       }
     }
 
-    // --- 7. PROFIL (Thème & Settings) ---
-    const switchTheme = document.getElementById('themeSwitch');
-    const switchSound = document.getElementById('soundSwitch');
-
-    function initProfile() {
-      // Set switch states
-      switchTheme.checked = (state.theme === 'dark');
-      switchSound.checked = state.sound;
-
-      // Theme logic
-      switchTheme.addEventListener('change', (e) => {
-        state.theme = e.target.checked ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', state.theme);
-        localStorage.setItem('cc_theme', state.theme);
-        updateMapTiles(); // Rafraichir carte
-      });
-
-      // Sound logic
-      switchSound.addEventListener('change', (e) => {
-        state.sound = e.target.checked;
-        localStorage.setItem('cc_sound', state.sound);
-      });
+    /* --- UI & THEME --- */
+    function goTab(id, btn) {
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      btn.classList.add('active');
+      if(id==='viewMap' && map) setTimeout(()=>map.invalidateSize(), 100);
     }
 
-    // --- INITIALISATION AU CHARGEMENT ---
-    window.onload = () => {
-      // Appliquer thème immédiat
-      document.documentElement.setAttribute('data-theme', state.theme);
-      
-      initMap();
-      renderShop();
-      initProfile();
-    };
+    document.getElementById('themeToggle').addEventListener('change', e => {
+      state.theme = e.target.checked ? 'dark' : 'light';
+      localStorage.setItem('cc_theme', state.theme);
+      applyTheme(state.theme);
+      // Reload tiles
+      map.eachLayer(l => l._url && map.removeLayer(l));
+      L.tileLayer(getTileUrl(), {maxZoom:19}).addTo(map);
+    });
 
+    function applyTheme(t) {
+      document.documentElement.setAttribute('data-theme', t);
+    }
+
+    function renderShop() {
+      document.getElementById('userPoints').textContent = state.points;
+      const grid = document.getElementById('shopGrid');
+      grid.innerHTML = '';
+      WIDGETS.forEach(w => {
+        const owned = state.owned.includes(w.id);
+        const div = document.createElement('div');
+        div.className = 'shop-card';
+        div.innerHTML = `
+          <div style="font-size:30px">${w.icon}</div>
+          <div style="font-weight:700; margin:5px 0;">${w.name}</div>
+          <div style="color:var(--accent); font-weight:800; font-size:14px;">${owned ? 'ACQUIS' : w.price+' pts'}</div>
+        `;
+        div.onclick = () => {
+          if(!owned && state.points >= w.price) {
+            state.points -= w.price;
+            state.owned.push(w.id);
+            localStorage.setItem('cc_points', state.points);
+            localStorage.setItem('cc_owned', JSON.stringify(state.owned));
+            renderShop();
+          }
+        };
+        grid.appendChild(div);
+      });
+    }
   </script>
 </body>
 </html>
