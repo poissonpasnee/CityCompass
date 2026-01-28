@@ -21,10 +21,8 @@
       --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
       --blur: blur(20px);
       
-      --text: #1f1f1f;
-      --text-muted: #666;
-      --accent: #007aff;
-      --danger: #ff3b30;
+      --text: #1f1f1f; --text-muted: #666;
+      --accent: #007aff; --danger: #ff3b30;
       
       --safe-top: env(safe-area-inset-top);
       --safe-bot: env(safe-area-inset-bottom);
@@ -35,8 +33,7 @@
       --bg-gradient: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
       --glass: rgba(0, 0, 0, 0.60);
       --glass-border: rgba(255, 255, 255, 0.1);
-      --text: #ffffff;
-      --text-muted: #aaa;
+      --text: #ffffff; --text-muted: #aaa;
       --accent: #0a84ff;
     }
 
@@ -62,7 +59,7 @@
       width: 100%; padding: 16px; border-radius: 16px; border: none;
       background: var(--accent); color: white; font-weight: 700; font-size: 16px;
       cursor: pointer; box-shadow: 0 4px 15px rgba(0,122,255,0.3);
-      transition: transform 0.1s;
+      transition: transform 0.1s; display: flex; align-items: center; justify-content: center;
     }
     .btn-liquid:active { transform: scale(0.97); }
     
@@ -96,7 +93,7 @@
     }
     .search-input { flex: 1; border: none; background: transparent; font-size: 16px; color: var(--text); height: 100%; outline: none; }
     .sugg-box { position: absolute; top: 60px; left: 0; right: 0; max-height: 250px; overflow-y: auto; display: none; }
-    .sugg-item { padding: 12px 16px; border-bottom: 1px solid var(--glass-border); font-size: 14px; background: rgba(255,255,255,0.1); }
+    .sugg-item { padding: 12px 16px; border-bottom: 1px solid var(--glass-border); font-size: 14px; background: rgba(255,255,255,0.1); cursor: pointer; }
     
     /* DRAWER */
     #drawer {
@@ -122,7 +119,7 @@
     .list-group { overflow: hidden; margin-bottom: 20px; }
     .list-item {
       padding: 16px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;
-      background: rgba(255,255,255,0.02); transition: background 0.2s;
+      background: rgba(255,255,255,0.02); transition: background 0.2s; cursor: pointer;
     }
     .list-item:active { background: rgba(255,255,255,0.1); }
     .list-item:last-child { border-bottom: none; }
@@ -134,13 +131,13 @@
       background: var(--glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
       border-top: 1px solid var(--glass-border); z-index: 1000;
     }
-    .tab { flex: 1; background: none; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 10px; transition: color 0.2s; }
+    .tab { flex: 1; background: none; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 10px; transition: color 0.2s; cursor: pointer; }
     .tab.active { color: var(--accent); }
     .tab svg { width: 26px; height: 26px; margin-bottom: 4px; fill: currentColor; }
 
     /* ADMIN */
     #adminModal { position: absolute; inset:0; background: var(--bg-gradient); z-index: 5000; display:none; padding-top:var(--safe-top); }
-    .user-row { padding: 12px; border-bottom:1px solid rgba(0,0,0,0.1); display:flex; justify-content:space-between; }
+    .user-row { padding: 12px; border-bottom:1px solid rgba(0,0,0,0.1); display:flex; justify-content:space-between; align-items: center; }
   </style>
 </head>
 <body>
@@ -157,7 +154,7 @@
       
       <button class="btn-liquid" onclick="handleLogin()">Connexion</button>
       <div style="margin-top:20px; font-size:14px; color:var(--accent); cursor:pointer;" onclick="handleSignup()">Pas de compte ? S'inscrire</div>
-      <div id="loginMsg" style="margin-top:15px; font-size:13px; color:var(--danger);"></div>
+      <div id="loginMsg" style="margin-top:15px; font-size:13px; color:var(--danger); min-height: 20px;"></div>
     </div>
   </div>
 
@@ -193,7 +190,7 @@
         </div>
         <div class="deg-display" id="cVal">---°</div>
         <div class="nav-pill" id="navInfo">CIBLE À <span id="distVal">0</span> M</div>
-        <button class="btn-liquid" style="width:200px; margin-top:40px;" onclick="startSensors()" id="btnSensors">Activer</button>
+        <button class="btn-liquid" style="width:200px; margin-top:40px;" onclick="startSensors()" id="btnSensors">Activer Capteurs</button>
       </div>
     </div>
 
@@ -204,8 +201,8 @@
         
         <div class="glass-card list-group" style="padding:20px; text-align:center; margin-bottom:20px;">
           <div style="font-size:40px; margin-bottom:10px;">👤</div>
-          <div style="font-weight:700;" id="pEmail">email@user.com</div>
-          <div style="font-size:24px; font-weight:800; color:var(--accent); margin-top:5px;"><span id="pPoints">0</span> Pts</div>
+          <div style="font-weight:700;" id="pEmail">Chargement...</div>
+          <div style="font-size:24px; font-weight:800; color:var(--accent); margin-top:5px;"><span id="pPoints">...</span> Pts</div>
         </div>
 
         <h3 style="margin:20px 0 10px; font-size:14px; text-transform:uppercase; opacity:0.6; padding-left:10px;">Mes Favoris</h3>
@@ -238,6 +235,9 @@
         <h1>Admin Panel</h1>
         <button onclick="$('adminModal').style.display='none'" style="border:none; background:none; font-size:20px;">✕</button>
       </div>
+      <div style="background:rgba(255,255,255,0.1); padding:10px; border-radius:12px; margin-bottom:10px; font-size:12px;">
+        Gestion des utilisateurs Supabase (auth + table profiles)
+      </div>
       <div class="glass-card list-group" id="userList">
         <!-- Users populated by JS -->
       </div>
@@ -261,9 +261,9 @@
   </nav>
 
   <script>
-    // --- CONFIG SUPABASE (REMPLACER AVEC VOS CLES) ---
-    const SB_URL = 'https://VOTRE_PROJET.supabase.co';
-    const SB_KEY = 'VOTRE_CLE_ANON_PUBLIQUE';
+    // --- CONFIG SUPABASE ---
+    const SB_URL = 'https://vjlfbcwnfwyrxstfvefq.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGZiY3duZnd5cnhzdGZ2ZWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMDc2MjcsImV4cCI6MjA4NDc4MzYyN30.WTuWbxB-8isJOp2lNnq73njQmifDjxTNEWngMgKtmv4';
     const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
     const $ = id => document.getElementById(id);
@@ -296,7 +296,11 @@
     };
 
     async function loadProfile() {
-      const { data } = await supabase.from('profiles').select('*').eq('id', state.user.id).single();
+      // Récupère le profil depuis la table "profiles"
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', state.user.id).single();
+      
+      if(error) console.error("Erreur profil:", error);
+      
       state.profile = data || { points: 0, role: 'user' };
       $('pEmail').textContent = state.user.email;
       $('pPoints').textContent = state.profile.points;
@@ -312,7 +316,7 @@
       const email = $('email').value;
       const password = $('pass').value;
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) $('loginMsg').textContent = error.message;
+      if (error) $('loginMsg').textContent = "Erreur: " + error.message;
       else location.reload();
     }
 
@@ -320,8 +324,8 @@
       const email = $('email').value;
       const password = $('pass').value;
       const { error } = await supabase.auth.signUp({ email, password });
-      if (error) $('loginMsg').textContent = error.message;
-      else alert('Inscription réussie ! Connectez-vous.');
+      if (error) $('loginMsg').textContent = "Erreur: " + error.message;
+      else alert('Inscription réussie ! Vous êtes connecté.'); // Auto-login often happens
     }
 
     async function handleLogout() {
@@ -510,24 +514,31 @@
     // --- 8. ADMIN PANEL ---
     async function showAdmin() {
       $('adminModal').style.display = 'flex';
-      const { data } = await supabase.from('profiles').select('*');
+      // Lecture de la table profiles
+      const { data, error } = await supabase.from('profiles').select('*');
       const list = $('userList');
       list.innerHTML = '';
       
+      if(error) {
+         list.innerHTML = '<div style="padding:20px">Erreur lecture profils (Vérifiez script SQL).</div>';
+         return;
+      }
+
       data.forEach(u => {
         const div = document.createElement('div');
         div.className = 'user-row';
         div.innerHTML = `
-          <div><div style="font-weight:700;">${u.email || u.id.substr(0,8)}</div>Points: ${u.points}</div>
-          <button style="background:var(--accent); color:white; border:none; padding:5px 10px; border-radius:8px;" onclick="addPoints('${u.id}')">+100</button>
+          <div><div style="font-weight:700;">${u.email}</div>Points: ${u.points}</div>
+          <button style="background:var(--accent); color:white; border:none; padding:8px 12px; border-radius:8px;" onclick="addPoints('${u.id}', ${u.points})">+100</button>
         `;
         list.appendChild(div);
       });
     }
     
-    window.addPoints = async (uid) => {
-      // Pour demo : mise à jour locale ou appel RPC si configuré
-      alert(`Ajout de points pour ${uid} (Nécessite RLS/RPC sur Supabase)`);
+    window.addPoints = async (uid, currentPts) => {
+      const { error } = await supabase.from('profiles').update({ points: currentPts + 100 }).eq('id', uid);
+      if(!error) { alert('Points ajoutés !'); showAdmin(); }
+      else alert('Erreur: ' + error.message);
     }
 
     function toggleTheme() {
