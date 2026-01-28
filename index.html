@@ -261,293 +261,102 @@
   </nav>
 
   <script>
-    // --- CONFIG SUPABASE ---
-    const SB_URL = 'https://vjlfbcwnfwyrxstfvefq.supabase.co';
-    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGZiY3duZnd5cnhzdGZ2ZWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMDc2MjcsImV4cCI6MjA4NDc4MzYyN30.WTuWbxB-8isJOp2lNnq73njQmifDjxTNEWngMgKtmv4';
-    const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+// --- CONFIGURATION ---
+const SB_URL = https: vjlfbcwnfwyrxstfvefq.supabase.co ; // Remplacez par votre URL si besoin
+const SB_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGZiY3duZnd5cnhzdGZ2ZWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMDc2MjcsImV4cCI6MjA4NDc4MzYyN30.WTuWbxB-8isJOp2lNnq73njQmifDjxTNEWngMgKtmv4;            // Remplacez par votre CLÉ si besoin
 
-    const $ = id => document.getElementById(id);
-    let state = {
-      user: null,
-      profile: null,
-      favs: JSON.parse(localStorage.getItem('cc_favs') || '[]'),
-      target: null,
-      pos: null
-    };
+// Initialisation Supabase
+const { createClient } = supabase;
+const sb = createClient(SB_URL, SB_KEY);
 
-    // --- 1. PERSISTENCE & INIT ---
-    window.onload = async () => {
-      // Restore Theme
-      if(localStorage.getItem('cc_theme')==='dark') {
-        document.body.setAttribute('data-theme','dark');
-        $('swTheme').checked = true;
-      }
+// --- FONCTIONS GLOBALES (Pour garantir que les boutons marchent) ---
 
-      // Check Session
-      const {  { session } } = await supabase.auth.getSession();
-      if (session) {
-        state.user = session.user;
-        await loadProfile();
-        initApp();
-      } else {
-        $('viewLogin').classList.add('active');
-        $('viewLogin').style.opacity = 1;
-      }
-    };
+// 1. GESTION DE LA CARTE
+let map, userMarker;
+const initMap = () => {
+    if(map) return;
+    map = L.map('map').setView([43.604, 1.444], 13); // Toulouse par défaut
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap',
+        subdomains: 'abcd',
+        maxZoom: 19
+    }).addTo(map);
+    
+    // Géolocalisation
+    map.locate({setView: true, maxZoom: 16, watch: true});
+    map.on('locationfound', e => {
+        if(!userMarker) {
+            userMarker = L.marker(e.latlng).addTo(map).bindPopup("Vous êtes ici").openPopup();
+        } else {
+            userMarker.setLatLng(e.latlng);
+        }
+    });
+};
 
-    async function loadProfile() {
-      // Récupère le profil depuis la table "profiles"
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', state.user.id).single();
-      
-      if(error) console.error("Erreur profil:", error);
-      
-      state.profile = data || { points: 0, role: 'user' };
-      $('pEmail').textContent = state.user.email;
-      $('pPoints').textContent = state.profile.points;
-      
-      if(state.profile.role === 'admin' || state.user.email.includes('admin')) {
-        $('adminBtn').style.display = 'flex';
-      }
-      renderFavs();
+// 2. GESTION COMPTE (Les fonctions qui manquaient)
+window.handleLogin = async () => {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    if(!email || !password) return alert("Veuillez remplir tous les champs");
+
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    
+    if (error) {
+        alert("Erreur de connexion : " + error.message);
+    } else {
+        // Connexion réussie
+        document.getElementById('loginScreen').style.display = 'none';
+        initMap(); // Lancer la carte
     }
+};
 
-    // --- 2. AUTH ---
-    async function handleLogin() {
-      const email = $('email').value;
-      const password = $('pass').value;
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) $('loginMsg').textContent = "Erreur: " + error.message;
-      else location.reload();
-    }
+window.handleSignup = async () => {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
 
-    async function handleSignup() {
-      const email = $('email').value;
-      const password = $('pass').value;
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) $('loginMsg').textContent = "Erreur: " + error.message;
-      else alert('Inscription réussie ! Vous êtes connecté.'); // Auto-login often happens
-    }
+    if(!email || !password) return alert("Veuillez remplir tous les champs pour l'inscription");
 
-    async function handleLogout() {
-      await supabase.auth.signOut();
-      localStorage.clear();
-      location.reload();
-    }
-
-    function initApp() {
-      $('viewLogin').style.display = 'none';
-      $('app').style.display = 'block';
-      $('tabbar').style.display = 'flex';
-      
-      // RESTORE LAST VIEW
-      const lastView = localStorage.getItem('cc_view') || 'viewMap';
-      const btns = document.querySelectorAll('.tab');
-      let targetBtn = btns[0];
-      if(lastView === 'viewCompass') targetBtn = btns[1];
-      if(lastView === 'viewProfile') targetBtn = btns[2];
-      
-      switchView(lastView, targetBtn);
-      
-      initMap();
-    }
-
-    // --- 3. NAVIGATION (VIEW MANAGER) ---
-    window.switchView = (id, btn) => {
-      document.querySelectorAll('.view').forEach(v => {
-        v.classList.remove('active');
-        v.style.opacity = 0;
-      });
-      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-      
-      const target = $(id);
-      target.classList.add('active');
-      // Petit délai pour l'anim css opacity
-      setTimeout(() => target.style.opacity = 1, 10);
-      
-      btn.classList.add('active');
-      localStorage.setItem('cc_view', id);
-      
-      if(id === 'viewMap' && map) setTimeout(()=>map.invalidateSize(), 50);
-    }
-
-    // --- 4. MAP & DRAWER ---
-    let map, mapMarker, selPlace;
-    function initMap() {
-      if(map) return;
-      map = L.map('map', {zoomControl:false}).setView([43.604, 1.444], 14);
-      
-      const theme = localStorage.getItem('cc_theme');
-      const url = theme==='dark' 
-        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-      
-      L.tileLayer(url, {maxZoom:19}).addTo(map);
-      
-      map.locate({setView:true, maxZoom:15});
-      map.on('locationfound', e => {
-        state.pos = e.latlng;
-        L.circleMarker(e.latlng, {radius:8, color:'#fff', fillColor:'#007aff', fillOpacity:1}).addTo(map);
-      });
-      
-      map.on('click', e => selectPlace(e.latlng.lat, e.latlng.lng, 'Point Repère'));
-    }
-
-    function selectPlace(lat, lng, name) {
-      selPlace = {lat, lng, name};
-      
-      if(mapMarker) map.removeLayer(mapMarker);
-      mapMarker = L.marker([lat, lng]).addTo(map);
-      map.flyTo([lat, lng], 16);
-      
-      $('dTitle').textContent = name.substring(0,20);
-      $('dCoords').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-      $('drawer').classList.add('visible');
-    }
-
-    // --- 5. SEARCH & KEYBOARD FIX ---
-    let sTimer;
-    $('sInput').addEventListener('input', (e) => {
-      clearTimeout(sTimer);
-      const q = e.target.value;
-      if(q.length < 3) { $('sList').style.display='none'; return; }
-      
-      sTimer = setTimeout(async() => {
-        const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=4`);
-        const d = await r.json();
-        const list = $('sList');
-        list.innerHTML = '';
-        list.style.display = 'block';
-        
-        d.forEach(p => {
-          const div = document.createElement('div');
-          div.className = 'sugg-item';
-          div.textContent = p.display_name.split(',')[0];
-          div.onclick = () => {
-            selectPlace(parseFloat(p.lat), parseFloat(p.lon), div.textContent);
-            list.style.display='none';
-            $('sInput').value = div.textContent;
-          };
-          list.appendChild(div);
-        });
-      }, 400);
+    // Tente de créer le compte
+    const { data, error } = await sb.auth.signUp({ 
+        email, 
+        password,
+        options: { data: { full_name: email.split('@')[0] } } // Pseudo auto
     });
 
-    // --- 6. FAVORIS & PROFILE ---
-    function addToFavs() {
-      if(!selPlace) return;
-      state.favs.push(selPlace);
-      localStorage.setItem('cc_favs', JSON.stringify(state.favs));
-      renderFavs();
-      $('drawer').classList.remove('visible');
-      alert('Ajouté aux favoris');
+    if (error) {
+        alert("Erreur d'inscription : " + error.message);
+    } else {
+        alert("Compte créé ! Vous êtes connecté.");
+        document.getElementById('loginScreen').style.display = 'none';
+        initMap();
     }
+};
 
-    function renderFavs() {
-      const list = $('favList');
-      if(state.favs.length === 0) return;
-      list.innerHTML = '';
-      
-      state.favs.forEach((f, i) => {
-        const div = document.createElement('div');
-        div.className = 'list-item';
-        div.innerHTML = `
-          <div>
-            <div style="font-weight:600;">${f.name}</div>
-            <div style="font-size:12px; opacity:0.6;">${f.lat.toFixed(3)}, ${f.lng.toFixed(3)}</div>
-          </div>
-          <button class="btn-liquid" style="width:auto; padding:8px 16px; font-size:12px;" onclick="loadFav(${i})">GO</button>
-        `;
-        list.appendChild(div);
-      });
-    }
-
-    window.loadFav = (i) => {
-      selPlace = state.favs[i];
-      goNav();
-    };
-
-    // --- 7. COMPASS & NAVIGATION ---
-    function goNav() {
-      if(selPlace) {
-        state.target = selPlace;
-        $('drawer').classList.remove('visible');
-        switchView('viewCompass', document.querySelectorAll('.tab')[1]);
-        
-        $('navInfo').style.display = 'inline-block';
-        $('cTarget').style.display = 'block';
-      }
-    }
-
-    function startSensors() {
-      if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission().then(r => {
-          if(r === 'granted') window.addEventListener('deviceorientation', handleOrient, true);
-        });
-      } else {
-        window.addEventListener('deviceorientation', handleOrient, true);
-      }
-      $('btnSensors').style.display = 'none';
-    }
-
-    function handleOrient(e) {
-      const h = e.webkitCompassHeading || Math.abs(e.alpha - 360);
-      if(!h) return;
-      
-      $('cRing').style.transform = `rotate(${-h}deg)`;
-      $('cVal').textContent = Math.round(h) + '°';
-      
-      if(state.target && state.pos) {
-        const dist = map.distance(state.pos, [state.target.lat, state.target.lng]);
-        $('distVal').textContent = Math.round(dist);
-        
-        // Bearing
-        const lat1=state.pos.lat*Math.PI/180, lat2=state.target.lat*Math.PI/180;
-        const dLon=(state.target.lng-state.pos.lng)*Math.PI/180;
-        const y = Math.sin(dLon) * Math.cos(lat2);
-        const x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLon);
-        const brng = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-        
-        $('cTarget').style.transform = `rotate(${brng}deg)`;
-      }
-    }
-
-    // --- 8. ADMIN PANEL ---
-    async function showAdmin() {
-      $('adminModal').style.display = 'flex';
-      // Lecture de la table profiles
-      const { data, error } = await supabase.from('profiles').select('*');
-      const list = $('userList');
-      list.innerHTML = '';
-      
-      if(error) {
-         list.innerHTML = '<div style="padding:20px">Erreur lecture profils (Vérifiez script SQL).</div>';
-         return;
-      }
-
-      data.forEach(u => {
-        const div = document.createElement('div');
-        div.className = 'user-row';
-        div.innerHTML = `
-          <div><div style="font-weight:700;">${u.email}</div>Points: ${u.points}</div>
-          <button style="background:var(--accent); color:white; border:none; padding:8px 12px; border-radius:8px;" onclick="addPoints('${u.id}', ${u.points})">+100</button>
-        `;
-        list.appendChild(div);
-      });
-    }
+window.handleForgot = async () => {
+    const email = document.getElementById('email').value;
+    if(!email) return alert("Entrez votre email pour réinitialiser le mot de passe");
     
-    window.addPoints = async (uid, currentPts) => {
-      const { error } = await supabase.from('profiles').update({ points: currentPts + 100 }).eq('id', uid);
-      if(!error) { alert('Points ajoutés !'); showAdmin(); }
-      else alert('Erreur: ' + error.message);
-    }
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.href,
+    });
+    
+    if(error) alert(error.message);
+    else alert("Email de réinitialisation envoyé !");
+};
 
-    function toggleTheme() {
-      const isDark = $('swTheme').checked;
-      document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
-      localStorage.setItem('cc_theme', isDark ? 'dark' : 'light');
-      location.reload(); // Quick refresh for maps
+// --- LOGIQUE DE DEMARRAGE ---
+window.onload = async () => {
+    // Vérifie si déjà connecté
+    const { data: { session } } = await sb.auth.getSession();
+    
+    if (session) {
+        document.getElementById('loginScreen').style.display = 'none';
+        initMap();
+    } else {
+        document.getElementById('loginScreen').style.display = 'flex';
     }
-
-  </script>
+};
+</script>
 </body>
 </html>
