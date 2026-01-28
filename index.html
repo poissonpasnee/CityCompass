@@ -3,296 +3,275 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-  <meta name="theme-color" content="#000000" />
-  <title>CityCompass Final</title>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>CityCompass v26</title>
 
-  <!-- LEAFLET & ICONS -->
+  <!-- LIBS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- LIBS -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    /* =========================
-       VARIABLES & THEME (Premium UI)
-       ========================== */
+    /* --- DESIGN SYSTEM v26 (Google Maps Style) --- */
     :root {
-      --bg-body: #F2F2F7; --bg-card: #FFFFFF;
-      --text-primary: #000000; --text-secondary: #8E8E93;
-      --accent: #007AFF; --danger: #FF3B30; --success: #34C759;
-      --radius: 20px; --nav-height: 85px;
-      --safe-top: env(safe-area-inset-top);
-      --safe-bottom: env(safe-area-inset-bottom);
-    }
-    [data-theme="dark"] {
-      --bg-body: #000000; --bg-card: #1C1C1E;
-      --text-primary: #FFFFFF; --text-secondary: #98989D;
-      --accent: #0A84FF;
-    }
-
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
-    body {
-      margin: 0; padding: 0; height: 100dvh; overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, sans-serif;
-      background-color: var(--bg-body); color: var(--text-primary);
-      transition: background 0.3s ease;
-    }
-
-    /* VIEW MANAGER */
-    .view { 
-      position: absolute; inset: 0; bottom: var(--nav-height); 
-      display: none; flex-direction: column; overflow: hidden;
-      background: var(--bg-body); z-index: 10;
-    }
-    .view.active { display: flex; animation: fadeIn 0.3s ease; }
-    
-    /* LOGIN VIEW (Override) */
-    #viewLogin { bottom: 0; z-index: 5000; justify-content: center; padding: 30px; background: var(--bg-body); }
-    #viewLogin.hidden { display: none !important; }
-
-    /* COMPONENTS */
-    .btn { 
-      width: 100%; padding: 16px; border-radius: 16px; border: none; 
-      font-weight: 700; font-size: 17px; cursor: pointer; 
-      background: var(--accent); color: white; margin-bottom: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.1s;
-    }
-    .btn:active { transform: scale(0.97); }
-    .btn-sec { background: rgba(128,128,128,0.1); color: var(--text-primary); box-shadow: none; }
-    
-    .input-box {
-      width: 100%; padding: 16px; margin-bottom: 12px; border-radius: 16px;
-      border: 1px solid rgba(128,128,128,0.2); background: var(--bg-card); 
-      color: var(--text-primary); font-size: 16px; text-align: center;
+      --primary: #4285F4; --surface: #FFFFFF; --bg: #F8F9FA;
+      --text: #202124; --text-sub: #5F6368;
+      --shadow: 0 2px 6px rgba(0,0,0,0.15); --shadow-hover: 0 4px 12px rgba(0,0,0,0.15);
+      --radius: 16px; --nav-h: 70px;
     }
     
-    /* ANIMATIONS */
-    .compass-anim {
-      width: 80px; height: 80px; margin: 0 auto 30px; border-radius: 50%;
-      border: 4px solid rgba(128,128,128,0.2); border-top-color: var(--accent);
-      animation: spin 2s linear infinite; position: relative;
-    }
-    .compass-arrow {
-      position: absolute; inset: 15px; 
-      background: url("image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='%23007AFF' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 2L4.5 20.29l1.3.92L12 17.5l6.2 3.71 1.3-.92L12 2z'/%3E%3C/svg%3E") no-repeat center/contain;
-      animation: breathe 3s ease-in-out infinite;
-    }
-    @keyframes spin { 100% { transform: rotate(360deg); } }
-    @keyframes breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; outline:none; user-select:none; }
+    body { margin:0; font-family:'Google Sans', Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); height:100dvh; overflow:hidden; }
 
-    /* NAV BAR */
-    .nav-bar {
-      position: absolute; bottom: 0; left: 0; right: 0; height: var(--nav-height);
-      background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border-top: 1px solid rgba(0,0,0,0.1); display: flex; justify-content: space-around;
-      padding-bottom: var(--safe-bottom); padding-top: 10px; z-index: 4000;
-    }
-    [data-theme="dark"] .nav-bar { background: rgba(30,30,30,0.9); border-color: rgba(255,255,255,0.1); }
+    /* LAYOUT */
+    .view { position:absolute; inset:0; display:none; flex-direction:column; background:var(--bg); z-index:1; }
+    .view.active { display:flex; z-index:10; }
     
-    .nav-item { border:none; background:none; color:var(--text-secondary); display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; }
-    .nav-item.active { color: var(--accent); }
-    .nav-item svg { width: 24px; height: 24px; fill: currentColor; }
+    /* MAP VIEW (Full Screen) */
+    #viewMap { padding-bottom:var(--nav-h); }
+    #map { flex:1; width:100%; height:100%; z-index:0; }
+    
+    /* SEARCH BAR (Floating) */
+    .search-floater {
+      position:absolute; top:max(15px, env(safe-area-inset-top)); left:15px; right:15px;
+      background:var(--surface); height:48px; border-radius:8px; display:flex; align-items:center;
+      box-shadow:var(--shadow); padding:0 15px; z-index:1000;
+    }
+    .avatar-btn { width:32px; height:32px; background:#eee; border-radius:50%; margin-left:auto; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer; }
+    
+    /* WIDGETS (Shop Preview) */
+    .widget-scroller {
+      position:absolute; top:80px; left:0; right:0; overflow-x:auto; white-space:nowrap;
+      padding:0 15px; -webkit-overflow-scrolling:touch; z-index:900;
+      scrollbar-width:none;
+    }
+    .widget-scroller::-webkit-scrollbar { display:none; }
+    
+    .widget-pill {
+      display:inline-flex; align-items:center; gap:6px; background:var(--surface); 
+      padding:8px 16px; border-radius:20px; box-shadow:var(--shadow); margin-right:10px;
+      font-size:14px; font-weight:500; color:var(--text); cursor:pointer;
+    }
+    .widget-pill i { color:var(--primary); }
 
-    /* MAP HUD */
-    .hud { position: absolute; top: max(15px, var(--safe-top)); left: 20px; z-index: 2000; }
-    .badge { background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 8px; display: table; }
+    /* AUTH OVERLAY (Clean & Simple) */
+    #viewAuth { z-index:5000; background:var(--surface); justify-content:center; padding:30px; }
+    .auth-card { max-width:400px; margin:0 auto; text-align:center; width:100%; }
+    
+    .input-mat {
+      width:100%; padding:14px 16px; border:1px solid #ddd; border-radius:8px;
+      font-size:16px; margin-bottom:12px; transition:0.2s;
+    }
+    .input-mat:focus { border-color:var(--primary); box-shadow:0 0 0 2px rgba(66,133,244,0.2); }
+    
+    .btn-mat {
+      width:100%; padding:14px; background:var(--primary); color:white; border:none;
+      border-radius:8px; font-weight:500; font-size:16px; cursor:pointer; 
+      box-shadow:var(--shadow); margin-bottom:12px;
+    }
+    .btn-mat:active { transform:scale(0.98); }
+    .btn-text { background:none; color:var(--primary); box-shadow:none; font-size:14px; padding:10px; }
 
-    /* SCROLL CONTENT */
-    .scroll-content { flex: 1; overflow-y: auto; padding: 20px; }
+    /* BOTTOM SHEET (Shop/Profile) */
+    .sheet {
+      position:absolute; top:100%; left:0; right:0; height:90%; background:var(--surface);
+      border-radius:24px 24px 0 0; box-shadow:0 -5px 20px rgba(0,0,0,0.1);
+      transition:transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); z-index:2000;
+      display:flex; flex-direction:column; padding:20px;
+    }
+    .sheet.open { transform:translateY(-100%); }
+    .sheet-handle { width:40px; height:4px; background:#ddd; border-radius:2px; margin:0 auto 20px; }
+
+    /* ITEMS LIST */
+    .shop-item {
+      display:flex; align-items:center; padding:15px 0; border-bottom:1px solid #eee;
+    }
+    .item-icon { width:50px; height:50px; background:#f1f3f4; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--primary); margin-right:15px; }
+    .item-info { flex:1; }
+    .item-title { font-weight:500; font-size:16px; margin-bottom:4px; }
+    .item-desc { font-size:13px; color:var(--text-sub); }
+    .btn-buy { padding:6px 14px; background:var(--bg); color:var(--primary); border-radius:20px; font-weight:600; font-size:13px; border:none; }
+    
+    /* COMPASS OVERLAY */
+    #viewCompass { background:#000; color:#fff; align-items:center; justify-content:center; }
+    .compass-ring { width:200px; height:200px; border:2px solid #333; border-radius:50%; display:flex; align-items:center; justify-content:center; position:relative; }
+    .compass-arrow { font-size:80px; color:var(--primary); transition:transform 0.1s linear; }
+
   </style>
 </head>
 <body>
 
-  <!-- ERROR TOAST (Pour debug immédiat) -->
-  <div id="sysToast" style="position:fixed; top:0; left:0; right:0; background:#FF3B30; color:white; font-size:12px; padding:10px; text-align:center; display:none; z-index:9999;"></div>
-
-  <!-- 1. LOGIN SCREEN -->
-  <div id="viewLogin" class="view active">
-    <div style="width:100%; max-width:400px; text-align:center;">
+  <!-- AUTH VIEW -->
+  <div id="viewAuth" class="view active">
+    <div class="auth-card">
+      <div style="font-size:50px; color:var(--primary); margin-bottom:20px;"><i class="fa-solid fa-map-location-dot"></i></div>
+      <h2 style="margin:0 0 40px 0;">CityCompass</h2>
       
-      <div class="compass-anim"><div class="compass-arrow"></div></div>
-      <h2 style="font-size:28px; margin:0 0 5px;">CityCompass</h2>
-      <p style="color:var(--text-secondary); margin:0 0 30px;">Exploration Urbaine</p>
-
-      <!-- FORMS -->
-      <div id="formLogin">
-        <input type="email" id="lEmail" class="input-box" placeholder="Email (ex: moi@gmail.com)">
-        <input type="password" id="lPass" class="input-box" placeholder="Mot de passe">
-        <button class="btn" onclick="auth.login()">Connexion</button>
-        <div style="display:flex; justify-content:space-between; padding:0 10px; font-size:14px; margin-top:10px;">
-           <span style="color:var(--accent)" onclick="ui.showForm('formRegister')">Créer un compte</span>
-           <span style="color:var(--text-secondary)" onclick="ui.showForm('formReset')">Oublié ?</span>
+      <div id="authLogin">
+        <input id="lEmail" class="input-mat" placeholder="Email" type="email">
+        <input id="lPass" class="input-mat" placeholder="Mot de passe" type="password">
+        <button class="btn-mat" onclick="auth.login()">Connexion</button>
+        <div style="display:flex; justify-content:space-between; margin-top:10px;">
+           <button class="btn-text" onclick="ui.toAuth('authReg')">Créer un compte</button>
+           <button class="btn-text" style="color:#999" onclick="ui.toAuth('authReset')">Oublié ?</button>
         </div>
       </div>
 
-      <div id="formRegister" style="display:none;">
-        <h3 style="margin-top:0">Inscription</h3>
-        <input type="email" id="rEmail" class="input-box" placeholder="Votre Email">
-        <input type="password" id="rPass" class="input-box" placeholder="Choisissez un mot de passe">
-        <button class="btn" onclick="auth.register()">Créer Compte</button>
-        <button class="btn btn-sec" onclick="ui.showForm('formLogin')">Annuler</button>
+      <div id="authReg" style="display:none;">
+        <h3 style="margin-top:0;">Rejoindre</h3>
+        <input id="rEmail" class="input-mat" placeholder="Votre Email" type="email">
+        <input id="rPass" class="input-mat" placeholder="Choisir Mot de passe" type="password">
+        <button class="btn-mat" onclick="auth.register()">S'inscrire</button>
+        <button class="btn-text" onclick="ui.toAuth('authLogin')">Retour</button>
       </div>
       
-      <div id="formReset" style="display:none;">
-         <h3>Réinitialisation</h3>
-         <p style="font-size:13px; opacity:0.7">Vous recevrez un lien par email.</p>
-         <input type="email" id="resEmail" class="input-box" placeholder="Votre Email">
-         <button class="btn" onclick="auth.reset()">Envoyer lien</button>
-         <button class="btn btn-sec" onclick="ui.showForm('formLogin')">Retour</button>
+      <div id="authReset" style="display:none;">
+        <h3>Récupération</h3>
+        <input id="resEmail" class="input-mat" placeholder="Email du compte" type="email">
+        <button class="btn-mat" onclick="auth.reset()">Envoyer lien</button>
+        <button class="btn-text" onclick="ui.toAuth('authLogin')">Annuler</button>
       </div>
-
     </div>
   </div>
 
-  <!-- 2. MAP SCREEN -->
+  <!-- MAP VIEW (MAIN) -->
   <div id="viewMap" class="view">
-    <div class="hud">
-      <div class="badge">⭐ <span id="uiPts">0</span> pts</div>
-      <div class="badge" style="color:var(--success)">📍 GPS ON</div>
+    <!-- Search Bar -->
+    <div class="search-floater">
+       <i class="fa-solid fa-bars" style="color:var(--text-sub); margin-right:15px;" onclick="ui.toggleSheet('sheetMenu')"></i>
+       <span style="color:var(--text-sub); font-size:15px;">Rechercher un lieu...</span>
+       <div class="avatar-btn" onclick="ui.toggleSheet('sheetProfile')">
+          <i class="fa-solid fa-user"></i>
+       </div>
     </div>
-    <div id="map" style="flex:1;"></div>
+
+    <!-- Widgets -->
+    <div class="widget-scroller">
+       <div class="widget-pill" onclick="ui.toggleSheet('sheetShop')"><i class="fa-solid fa-bag-shopping"></i> Boutique</div>
+       <div class="widget-pill" onclick="ui.openCompass()"><i class="fa-regular fa-compass"></i> Boussole</div>
+       <div class="widget-pill"><i class="fa-solid fa-star"></i> <span id="ptsBadge">0</span> pts</div>
+       <div class="widget-pill" style="background:#E8F0FE; color:var(--primary);" onclick="app.gpsCenter()"><i class="fa-solid fa-location-crosshairs"></i> Ma Position</div>
+    </div>
+
+    <div id="map"></div>
   </div>
 
-  <!-- 3. SHOP SCREEN -->
-  <div id="viewShop" class="view">
-    <div class="scroll-content">
-      <h1>Boutique</h1>
-      <div style="background:var(--bg-card); padding:20px; border-radius:16px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
-         <span>Mode Sombre</span>
-         <button class="btn" style="width:auto; padding:8px 16px; margin:0;" onclick="ui.toggleTheme()">Activer</button>
-      </div>
-      <p style="opacity:0.5; text-align:center;">Bientôt plus d'objets...</p>
+  <!-- COMPASS VIEW -->
+  <div id="viewCompass" class="view">
+    <div class="compass-ring">
+        <div style="position:absolute; top:-30px; font-weight:bold; color:var(--primary)">N</div>
+        <i id="compassArrow" class="fa-solid fa-location-arrow compass-arrow"></i>
     </div>
-  </div>
-
-  <!-- 4. CHAT SCREEN -->
-  <div id="viewChat" class="view">
-    <div class="scroll-content" style="display:flex; flex-direction:column;">
-      <h1>Chat</h1>
-      <div id="chatBox" style="flex:1; background:var(--bg-card); border-radius:16px; padding:15px; margin-bottom:15px; overflow-y:auto;">
-         <div style="text-align:center; opacity:0.5; margin-top:20px;">Chargement...</div>
-      </div>
-      <div style="display:flex; gap:10px;">
-        <input id="chatInput" class="input-box" style="margin:0; text-align:left;" placeholder="Message...">
-        <button class="btn" style="width:auto;" onclick="app.sendMsg()">></button>
-      </div>
+    <div style="position:absolute; bottom:50px;">
+       <button class="btn-mat" style="width:auto; padding:10px 30px; background:#333;" onclick="ui.closeCompass()">Fermer</button>
     </div>
   </div>
 
-  <!-- 5. PROFILE SCREEN -->
-  <div id="viewProfile" class="view">
-    <div class="scroll-content">
-      <h1>Profil</h1>
-      <div style="background:var(--bg-card); padding:20px; border-radius:16px; text-align:center;">
-         <div style="font-size:40px; margin-bottom:10px;">👤</div>
-         <h3 id="profEmail" style="margin:0;">user@mail.com</h3>
-         <div id="profRole" style="background:var(--accent); color:white; display:inline-block; padding:4px 8px; border-radius:6px; font-size:12px; margin-top:5px;">USER</div>
-      </div>
-      <button class="btn btn-sec" style="color:var(--danger); margin-top:20px;" onclick="auth.logout()">Déconnexion</button>
-      
-      <!-- ADMIN -->
-      <div id="adminPanel" style="display:none; margin-top:30px; border:2px dashed gold; padding:15px; border-radius:16px;">
-         <h3 style="color:gold; margin-top:0;">Admin</h3>
-         <input id="admTarget" class="input-box" placeholder="Email User">
-         <input id="admPoints" class="input-box" placeholder="Points" type="number">
-         <button class="btn" onclick="app.adminGive()">Donner Points</button>
-      </div>
-    </div>
+  <!-- SHEET: SHOP -->
+  <div id="sheetShop" class="sheet">
+     <div class="sheet-handle" onclick="ui.closeSheets()"></div>
+     <h2 style="margin:0 0 20px 0;">Boutique</h2>
+     <div style="flex:1; overflow-y:auto;">
+        <!-- Item 1 -->
+        <div class="shop-item">
+           <div class="item-icon"><i class="fa-solid fa-moon"></i></div>
+           <div class="item-info">
+              <div class="item-title">Mode Sombre</div>
+              <div class="item-desc">Interface nuit pour la carte</div>
+           </div>
+           <button class="btn-buy" onclick="app.toggleDark()">ACTIVER</button>
+        </div>
+        <!-- Item 2 -->
+        <div class="shop-item">
+           <div class="item-icon" style="color:#FBBC04"><i class="fa-solid fa-crown"></i></div>
+           <div class="item-info">
+              <div class="item-title">Statut VIP</div>
+              <div class="item-desc">Badge spécial sur le profil</div>
+           </div>
+           <button class="btn-buy">500 PTS</button>
+        </div>
+     </div>
   </div>
 
-  <!-- NAVIGATION -->
-  <div class="nav-bar">
-    <button class="nav-item active" onclick="ui.nav('viewMap', this)">
-      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
-      <span style="font-size:10px">Carte</span>
-    </button>
-    <button class="nav-item" onclick="ui.nav('viewShop', this)">
-      <svg viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>
-      <span style="font-size:10px">Shop</span>
-    </button>
-    <button class="nav-item" onclick="ui.nav('viewChat', this)">
-      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-      <span style="font-size:10px">Chat</span>
-    </button>
-    <button class="nav-item" onclick="ui.nav('viewProfile', this)">
-      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-      <span style="font-size:10px">Profil</span>
-    </button>
+  <!-- SHEET: PROFILE -->
+  <div id="sheetProfile" class="sheet">
+     <div class="sheet-handle" onclick="ui.closeSheets()"></div>
+     <div style="text-align:center; padding-bottom:20px; border-bottom:1px solid #eee;">
+        <div style="width:80px; height:80px; background:#eee; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:30px; color:#aaa;">👤</div>
+        <h2 id="profEmail" style="margin:5px 0; font-size:18px;">user@mail.com</h2>
+        <div id="profRole" style="color:var(--text-sub); font-size:14px;">Membre Standard</div>
+     </div>
+     
+     <div style="padding-top:20px;">
+        <button class="btn-mat" style="background:#f1f3f4; color:var(--danger); box-shadow:none;" onclick="auth.logout()">Se déconnecter</button>
+     </div>
+     
+     <!-- ADMIN SECTION -->
+     <div id="adminSec" style="display:none; margin-top:30px; border-top:1px dashed #ccc; padding-top:20px;">
+        <h4 style="margin:0 0 10px 0;">GOD MODE (Admin)</h4>
+        <input id="admTarget" class="input-mat" placeholder="Email Cible">
+        <input id="admPts" class="input-mat" type="number" placeholder="Points">
+        <button class="btn-mat" style="background:#0F9D58;" onclick="app.adminGive()">Donner Points</button>
+     </div>
   </div>
 
 <script>
 // ============================================
-// 1. SYSTEME (Supabase & Error Handler)
+// 1. INIT
 // ============================================
 const SB_URL = 'https://scbihxaceelyygrlacvm.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjYmloeGFjZWVseXlncmxhY3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1NjU3MTcsImV4cCI6MjA4NTE0MTcxN30.rgUH-kltyNX99-HTDmGEyzGyu8qFXR9LF1QxsjY0W44';
-
-// Attrape-tout erreur JS
-window.onerror = function(msg) {
-    const t = document.getElementById('sysToast');
-    t.innerText = "ERREUR JS: " + msg;
-    t.style.display = 'block';
-    setTimeout(() => t.style.display = 'none', 5000);
-};
 
 const sb = supabase.createClient(SB_URL, SB_KEY);
 let currentUser = null;
 let mapObj = null;
 
 // ============================================
-// 2. AUTHENTIFICATION (EMAIL)
+// 2. AUTH SYSTEM (EMAIL)
 // ============================================
 const auth = {
     async login() {
         const email = document.getElementById('lEmail').value;
         const pass = document.getElementById('lPass').value;
-        if(!email || !pass) return alert("Veuillez remplir email et mot de passe");
+        if(!email || !pass) return alert("Remplissez tout !");
 
         const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-        if(error) alert("Erreur Connexion: " + error.message);
-        // Redirection gérée par onAuthStateChange
+        if(error) alert("Erreur: " + error.message);
     },
 
     async register() {
         const email = document.getElementById('rEmail').value;
         const pass = document.getElementById('rPass').value;
-        if(!email || !pass) return alert("Remplissez tout");
+        if(!email || !pass) return alert("Remplissez tout !");
 
-        const { data, error } = await sb.auth.signUp({
+        const { error } = await sb.auth.signUp({
             email, password: pass,
-            options: { shouldCreateUser: true } 
+            options: { shouldCreateUser: true }
         });
 
-        if(error) alert("Erreur Inscription: " + error.message);
-        else {
-            alert("Compte créé ! Connexion...");
-            // Si auto-confirm est OFF dans Supabase, il sera connecté
-        }
+        if(error) alert("Erreur: " + error.message);
+        else alert("Compte créé !");
     },
 
     async reset() {
         const email = document.getElementById('resEmail').value;
+        if(!email) return alert("Email requis");
         const { error } = await sb.auth.resetPasswordForEmail(email);
-        if(error) alert("Erreur: " + error.message);
-        else alert("Email de réinitialisation envoyé !");
+        alert(error ? "Erreur: " + error.message : "Email envoyé !");
     },
 
-    async initSession(user) {
+    async init(user) {
         currentUser = user;
-        
-        // Load Profile Data
         const { data } = await sb.from('users').select('*').eq('id', user.id).single();
         if(data) {
             currentUser.role = data.role;
             currentUser.points = data.points;
         } else {
-            currentUser.role = 'user';
-            currentUser.points = 0;
+            currentUser.role = 'user'; currentUser.points = 0;
         }
-
         ui.startApp();
     },
 
@@ -303,96 +282,98 @@ const auth = {
 };
 
 // ============================================
-// 3. UI MANAGER
+// 3. UI LOGIC (v26 Style)
 // ============================================
 const ui = {
-    showForm(id) {
-        ['formLogin','formRegister','formReset'].forEach(f => document.getElementById(f).style.display='none');
-        document.getElementById(id).style.display = 'block';
+    toAuth(id) {
+        ['authLogin','authReg','authReset'].forEach(x => document.getElementById(x).style.display='none');
+        document.getElementById(id).style.display='block';
     },
 
     startApp() {
-        document.getElementById('viewLogin').classList.add('hidden');
+        document.getElementById('viewAuth').style.display = 'none';
         document.getElementById('viewMap').classList.add('active');
         
-        // UI Updates
+        // Populate Profile
         document.getElementById('profEmail').innerText = currentUser.email;
-        document.getElementById('profRole').innerText = (currentUser.role || 'USER').toUpperCase();
-        document.getElementById('uiPts').innerText = currentUser.points || 0;
+        document.getElementById('profRole').innerText = currentUser.role.toUpperCase();
+        document.getElementById('ptsBadge').innerText = currentUser.points;
         
-        if(currentUser.role === 'admin') document.getElementById('adminPanel').style.display = 'block';
-
-        // Init Map
-        setTimeout(app.initMap, 500);
-        app.initChat();
+        if(currentUser.role === 'admin') document.getElementById('adminSec').style.display='block';
+        
+        setTimeout(app.initMap, 100);
     },
 
-    nav(viewId, btn) {
-        document.querySelectorAll('.view').forEach(v => {
-            if(v.id !== 'viewLogin') v.classList.remove('active');
-        });
-        document.getElementById(viewId).classList.add('active');
-        
-        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        if(viewId === 'viewMap' && mapObj) mapObj.invalidateSize();
+    toggleSheet(id) {
+        const el = document.getElementById(id);
+        const isOpen = el.classList.contains('open');
+        this.closeSheets();
+        if(!isOpen) el.classList.add('open');
     },
 
-    toggleTheme() {
-        document.body.dataset.theme = document.body.dataset.theme === 'dark' ? '' : 'dark';
+    closeSheets() {
+        document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
+    },
+
+    openCompass() {
+        document.getElementById('viewCompass').classList.add('active');
+        if(window.DeviceOrientationEvent) window.addEventListener('deviceorientation', app.handleCompass);
+    },
+    
+    closeCompass() {
+        document.getElementById('viewCompass').classList.remove('active');
+        window.removeEventListener('deviceorientation', app.handleCompass);
     }
 };
 
 // ============================================
-// 4. APP LOGIC
+// 4. APP FEATURES
 // ============================================
 const app = {
     initMap() {
         if(mapObj) return;
         mapObj = L.map('map', {zoomControl: false}).setView([48.85, 2.35], 13);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(mapObj);
-        mapObj.locate({setView: true, maxZoom: 16});
-        const me = L.marker([0,0]).addTo(mapObj);
+        // Google Maps Style Layer (Voyager)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19, attribution: '&copy; OSM'
+        }).addTo(mapObj);
+        
+        // Custom GPS Dot
+        const dotIcon = L.divIcon({
+            className: 'gps-dot',
+            html: '<div style="width:16px; height:16px; background:#4285F4; border:3px solid white; border-radius:50%; box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>'
+        });
+        const me = L.marker([0,0], {icon: dotIcon}).addTo(mapObj);
+        
+        mapObj.locate({setView: true, watch: true, enableHighAccuracy:true});
         mapObj.on('locationfound', e => me.setLatLng(e.latlng));
     },
 
-    initChat() {
-        const box = document.getElementById('chatBox');
-        
-        const add = (msg) => {
-            const d = document.createElement('div');
-            d.style.marginBottom = "8px";
-            d.innerHTML = `<b>${msg.user_id.slice(0,4)}:</b> ${msg.content}`;
-            box.appendChild(d);
-            box.scrollTop = box.scrollHeight;
-        };
-
-        sb.from('messages').select('*').order('created_at', {ascending:false}).limit(20)
-        .then(({data}) => { box.innerHTML=''; if(data) data.reverse().forEach(add); });
-
-        sb.channel('chat').on('postgres_changes', {event:'INSERT', schema:'public', table:'messages'}, p => add(p.new)).subscribe();
+    gpsCenter() {
+        if(mapObj) mapObj.locate({setView: true, maxZoom:16});
     },
 
-    async sendMsg() {
-        const inp = document.getElementById('chatInput');
-        if(!inp.value) return;
-        await sb.from('messages').insert([{user_id: currentUser.id, content: inp.value}]);
-        inp.value = '';
+    handleCompass(e) {
+        const deg = e.webkitCompassHeading || Math.abs(e.alpha - 360);
+        document.getElementById('compassArrow').style.transform = `rotate(${-deg}deg)`;
+    },
+    
+    toggleDark() {
+        const isDark = document.body.style.filter === 'invert(1) hue-rotate(180deg)';
+        document.body.style.filter = isDark ? '' : 'invert(1) hue-rotate(180deg)';
+        if(mapObj) mapObj.getContainer().style.filter = isDark ? '' : 'invert(1) hue-rotate(180deg)';
     },
     
     async adminGive() {
-        const email = document.getElementById('admTarget').value;
-        const pts = document.getElementById('admPoints').value;
-        // Need to find ID by Email (Only works if you have a function or Admin API, here simplistic)
-        alert("Fonction Admin nécessitant une recherche d'ID serveur.");
+        const tgt = document.getElementById('admTarget').value; // Ici email
+        alert("Attention: Le système actuel requiert l'ID unique (UUID) de l'utilisateur, pas l'email, pour modifier les points. Demandez à l'utilisateur son UUID dans son profil.");
     }
 };
 
-// AUTO LOGIN CHECK
+// AUTO START
 sb.auth.onAuthStateChange((event, session) => {
     if(event === 'SIGNED_IN' && session) {
-        auth.initSession(session.user);
+        auth.init(session.user);
     }
 });
 
