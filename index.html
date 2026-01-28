@@ -3,255 +3,226 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>CityCompass Ultimate</title>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>CityCompass Liquid</title>
 
-  <!-- Leaflet CSS -->
+  <!-- LEAFLET & SUPABASE -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    /* --- THEME LIQUIDE & VARIABLES --- */
+    /* --- THEME LIQUIDE & GLASSMORPHISM --- */
     :root {
-      --bg-grad: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-      --glass: rgba(255, 255, 255, 0.75);
+      --bg-gradient: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      --glass: rgba(255, 255, 255, 0.65);
       --glass-border: rgba(255, 255, 255, 0.4);
-      --text: #1d1d1f; --text-sec: #86868b;
-      --accent: #007aff; --danger: #ff3b30; --success: #34c759;
-      --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+      --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
       --blur: blur(20px);
+      
+      --text: #1f1f1f;
+      --text-muted: #666;
+      --accent: #007aff;
+      --danger: #ff3b30;
+      
       --safe-top: env(safe-area-inset-top);
       --safe-bot: env(safe-area-inset-bottom);
+      --nav-height: 85px;
     }
+    
     [data-theme="dark"] {
-      --bg-grad: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-      --glass: rgba(25, 25, 25, 0.65);
+      --bg-gradient: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+      --glass: rgba(0, 0, 0, 0.60);
       --glass-border: rgba(255, 255, 255, 0.1);
-      --text: #f5f5f7; --text-sec: #a1a1a6;
+      --text: #ffffff;
+      --text-muted: #aaa;
       --accent: #0a84ff;
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-    html, body { height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; font-family: -apple-system, system-ui, sans-serif; background: var(--bg-grad); color: var(--text); transition: background 0.5s; }
-
-    /* --- GLASSMORPHISM CARDS --- */
-    .glass-panel {
-      background: var(--glass); box-shadow: var(--shadow); backdrop-filter: var(--blur);
-      -webkit-backdrop-filter: var(--blur); border: 1px solid var(--glass-border); border-radius: 24px;
+    
+    body {
+      margin: 0; padding: 0; height: 100vh; overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-gradient); color: var(--text);
+      transition: background 0.5s;
     }
 
-    /* --- LOGIN (LIQUID STYLE) --- */
-    #authOverlay {
-      position: fixed; inset: 0; z-index: 9999;
-      background: var(--bg-grad);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 30px; transition: opacity 0.5s ease;
+    /* --- COMPOSANTS GLASS --- */
+    .glass-card {
+      background: var(--glass);
+      backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      border-radius: 24px;
     }
-    #authOverlay.hidden { opacity: 0; pointer-events: none; }
+
+    .btn-liquid {
+      width: 100%; padding: 16px; border-radius: 16px; border: none;
+      background: var(--accent); color: white; font-weight: 700; font-size: 16px;
+      cursor: pointer; box-shadow: 0 4px 15px rgba(0,122,255,0.3);
+      transition: transform 0.1s;
+    }
+    .btn-liquid:active { transform: scale(0.97); }
     
-    .auth-card { padding: 40px 30px; width: 100%; max-width: 360px; text-align: center; border-radius: 30px; }
-    .logo-anim { font-size: 60px; margin-bottom: 20px; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15)); animation: float 6s ease-in-out infinite; }
-    @keyframes float { 0%{transform:translateY(0px)} 50%{transform:translateY(-10px)} 100%{transform:translateY(0px)} }
-    
-    .inp-glass {
-      width: 100%; height: 56px; border-radius: 16px; border: 1px solid var(--glass-border);
-      background: rgba(255,255,255,0.1); padding: 0 20px; font-size: 17px; color: var(--text);
+    .input-glass {
+      width: 100%; padding: 16px; border-radius: 16px; border: 1px solid var(--glass-border);
+      background: rgba(255,255,255,0.2); color: var(--text); font-size: 16px;
       margin-bottom: 12px; outline: none; transition: 0.3s;
     }
-    .inp-glass:focus { background: rgba(255,255,255,0.25); border-color: var(--accent); }
-    .btn-liquid {
-      width: 100%; height: 56px; border-radius: 16px; border: none; font-size: 18px; font-weight: 700;
-      background: var(--accent); color: white; cursor: pointer; margin-top: 10px;
-      box-shadow: 0 4px 15px rgba(0,122,255,0.3); transition: transform 0.2s;
-    }
-    .btn-liquid:active { transform: scale(0.96); }
+    .input-glass:focus { background: rgba(255,255,255,0.4); border-color: var(--accent); }
 
-    /* --- APP VIEW --- */
-    #app { display: none; height: 100%; width: 100%; position: relative; }
-    .view { position: absolute; inset: 0 0 90px 0; display: none; flex-direction: column; }
-    .view.active { display: flex; z-index: 10; animation: fadeIn 0.3s ease-out; }
-    @keyframes fadeIn { from{opacity:0; transform:scale(0.98);} to{opacity:1; transform:scale(1);} }
-
-    .view-header { padding: calc(var(--safe-top) + 20px) 24px 10px; display: flex; justify-content: space-between; align-items: flex-end; }
-    .view-title { font-size: 34px; font-weight: 800; letter-spacing: -1px; }
-    .view-content { flex: 1; overflow-y: auto; padding: 10px 20px 40px; }
-
-    /* --- MAP --- */
-    #viewMap { padding: 0; bottom: 90px; }
-    #map { width: 100%; height: 100%; z-index: 1; }
+    /* --- VUES --- */
+    #app { height: 100%; width: 100%; position: relative; }
     
-    .search-float {
-      position: absolute; top: calc(var(--safe-top) + 20px); left: 20px; right: 20px; z-index: 100;
-      height: 50px; display: flex; align-items: center; padding: 0 16px;
+    .view {
+      position: absolute; inset: 0 0 var(--nav-height) 0;
+      display: none; flex-direction: column; opacity: 0; transition: opacity 0.2s;
     }
-    .search-inp { border: none; background: transparent; flex: 1; font-size: 17px; color: var(--text); height: 100%; outline: none; }
+    .view.active { display: flex; opacity: 1; z-index: 10; }
+    
+    .view-content { flex: 1; overflow-y: auto; padding: calc(var(--safe-top) + 20px) 20px 40px; }
+    
+    /* LOGIN VIEW */
+    #viewLogin { bottom: 0; z-index: 2000; justify-content: center; align-items: center; padding: 30px; }
+    
+    /* MAP VIEW */
+    #viewMap { padding: 0; }
+    #map { width: 100%; height: 100%; z-index: 1; }
+    .search-float {
+      position: absolute; top: calc(var(--safe-top) + 16px); left: 16px; right: 16px; z-index: 100;
+      display: flex; align-items: center; padding: 0 16px; height: 50px;
+    }
+    .search-input { flex: 1; border: none; background: transparent; font-size: 16px; color: var(--text); height: 100%; outline: none; }
     .sugg-box { position: absolute; top: 60px; left: 0; right: 0; max-height: 250px; overflow-y: auto; display: none; }
-    .sugg-row { padding: 14px 16px; border-bottom: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); font-size: 15px; }
-
-    /* --- DRAWER --- */
+    .sugg-item { padding: 12px 16px; border-bottom: 1px solid var(--glass-border); font-size: 14px; background: rgba(255,255,255,0.1); }
+    
+    /* DRAWER */
     #drawer {
-      position: absolute; bottom: 24px; left: 16px; right: 16px; padding: 24px; z-index: 200;
-      transform: translateY(150%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: absolute; bottom: 20px; left: 16px; right: 16px; padding: 24px; z-index: 200;
+      transform: translateY(150%); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     #drawer.visible { transform: translateY(0); }
-    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
-    
-    /* --- COMPASS --- */
-    .compass-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+    /* COMPASS VIEW */
+    .compass-ui { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .ring {
-      width: 280px; height: 280px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.2);
+      width: 280px; height: 280px; border-radius: 50%; border: 4px solid var(--glass-border);
       position: relative; display: flex; justify-content: center; transition: transform 0.1s linear;
       background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-      box-shadow: 0 0 50px rgba(0,122,255,0.1);
+      box-shadow: 0 0 40px rgba(0,122,255,0.1); margin-bottom: 30px;
     }
-    .needle { width: 6px; height: 100px; position: absolute; top: 40px; border-radius: 4px; }
-    .n-north { background: var(--danger); }
-    .n-target { background: var(--accent); top: -20px; height: 40px; display: none; box-shadow: 0 0 15px var(--accent); }
-    .deg-val { font-size: 70px; font-weight: 900; margin-top: 20px; font-feature-settings: "tnum"; text-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-    .nav-pill { margin-top: 10px; padding: 8px 16px; background: rgba(0,122,255,0.15); color: var(--accent); border-radius: 20px; font-weight: 700; display: none; }
+    .needle-n { width: 6px; height: 20px; background: var(--danger); position: absolute; top: -10px; border-radius: 4px; }
+    .needle-t { width: 8px; height: 35px; background: var(--accent); position: absolute; top: -15px; border-radius: 4px; display: none; box-shadow: 0 0 10px var(--accent); }
+    .deg-display { font-size: 60px; font-weight: 900; }
+    .nav-pill { background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-weight: 700; font-size: 14px; margin-top: 10px; display: none; }
 
-    /* --- LISTS & WIDGETS --- */
-    .list-box { border-radius: 20px; overflow: hidden; margin-bottom: 20px; }
-    .list-row {
-      padding: 18px 20px; display: flex; justify-content: space-between; align-items: center;
-      background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border);
-      transition: background 0.2s;
+    /* PROFILE & LISTS */
+    .list-group { overflow: hidden; margin-bottom: 20px; }
+    .list-item {
+      padding: 16px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;
+      background: rgba(255,255,255,0.02); transition: background 0.2s;
     }
-    .list-row:active { background: rgba(255,255,255,0.1); }
-    .list-row:last-child { border-bottom: none; }
-    
-    /* Switch */
-    .switch { position: relative; width: 52px; height: 32px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; inset: 0; background: rgba(120,120,128,0.2); border-radius: 34px; transition: .3s; }
-    .slider:before { content: ""; position: absolute; height: 28px; width: 28px; left: 2px; bottom: 2px; background: white; border-radius: 50%; transition: .3s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-    input:checked + .slider { background: var(--accent); }
-    input:checked + .slider:before { transform: translateX(20px); }
+    .list-item:active { background: rgba(255,255,255,0.1); }
+    .list-item:last-child { border-bottom: none; }
 
-    /* TABBAR */
+    /* TAB BAR */
     .tabbar {
-      position: fixed; bottom: 0; width: 100%; height: 90px;
+      position: fixed; bottom: 0; width: 100%; height: var(--nav-height);
       display: flex; justify-content: space-around; padding-bottom: var(--safe-bot);
       background: var(--glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
       border-top: 1px solid var(--glass-border); z-index: 1000;
     }
-    .tab { flex: 1; background: none; border: none; color: var(--text-sec); display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 10px; transition: color 0.2s; }
+    .tab { flex: 1; background: none; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 10px; transition: color 0.2s; }
     .tab.active { color: var(--accent); }
-    .tab svg { width: 28px; height: 28px; margin-bottom: 4px; fill: currentColor; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05)); }
+    .tab svg { width: 26px; height: 26px; margin-bottom: 4px; fill: currentColor; }
 
-    /* ADMIN PANEL */
-    #adminPanel { display: none; background: rgba(0,0,0,0.03); padding: 15px; border-radius: 16px; margin-top: 20px; border: 1px dashed var(--text-sec); }
+    /* ADMIN */
+    #adminModal { position: absolute; inset:0; background: var(--bg-gradient); z-index: 5000; display:none; padding-top:var(--safe-top); }
+    .user-row { padding: 12px; border-bottom:1px solid rgba(0,0,0,0.1); display:flex; justify-content:space-between; }
   </style>
 </head>
 <body>
 
-  <!-- AUTH SCREEN -->
-  <div id="authOverlay">
-    <div class="auth-card glass-panel">
-      <div class="logo-anim">🧭</div>
-      <h2 style="margin:0 0 10px;">CityCompass</h2>
-      <p style="color:var(--text-sec); margin:0 0 30px;">Exploration augmentée.</p>
+  <!-- 1. LOGIN -->
+  <div class="view active" id="viewLogin">
+    <div class="glass-card" style="padding:40px 30px; width:100%; max-width:360px; text-align:center;">
+      <div style="font-size:50px; margin-bottom:20px;">🧭</div>
+      <h1 style="margin:0 0 10px;">CityCompass</h1>
+      <p style="margin:0 0 30px; opacity:0.6;">Liquid Edition v44</p>
       
-      <input type="email" id="email" class="inp-glass" placeholder="Email" value="admin@demo.com">
-      <input type="password" id="pass" class="inp-glass" placeholder="Mot de passe" value="admin123">
+      <input type="email" id="email" class="input-glass" placeholder="Email" value="user@demo.com">
+      <input type="password" id="pass" class="input-glass" placeholder="Mot de passe" value="123456">
       
-      <button class="btn-liquid" onclick="login()">Connexion</button>
-      <div style="margin-top:20px; color:var(--accent); font-size:14px; cursor:pointer;" onclick="alert('Inscription désactivée (Demo)')">Créer un compte</div>
+      <button class="btn-liquid" onclick="handleLogin()">Connexion</button>
+      <div style="margin-top:20px; font-size:14px; color:var(--accent); cursor:pointer;" onclick="handleSignup()">Pas de compte ? S'inscrire</div>
+      <div id="loginMsg" style="margin-top:15px; font-size:13px; color:var(--danger);"></div>
     </div>
   </div>
 
-  <!-- APP CONTAINER -->
-  <div id="app">
+  <!-- 2. APP -->
+  <div id="app" style="display:none;">
     
     <!-- MAP -->
-    <div id="viewMap" class="view active">
-      <div class="search-float glass-panel">
-        <span style="margin-right:10px; opacity:0.5">🔍</span>
-        <input id="sInput" class="search-inp" placeholder="Rechercher..." autocomplete="off">
-        <div id="sList" class="sugg-box glass-panel"></div>
+    <div class="view" id="viewMap">
+      <div class="search-float glass-card">
+        <span style="margin-right:10px;">🔍</span>
+        <input id="sInput" class="search-input" placeholder="Rechercher..." autocomplete="off">
+        <div id="sList" class="sugg-box glass-card"></div>
       </div>
-
+      
       <div id="map"></div>
 
-      <!-- DRAWER -->
-      <div id="drawer" class="glass-panel">
-        <div style="font-weight:800; font-size:22px;" id="dName">Lieu</div>
-        <div style="font-size:14px; color:var(--text-sec); font-family:monospace;" id="dCoords">---</div>
-        
-        <div class="btn-grid">
-          <button class="btn-liquid" style="background:rgba(120,120,128,0.1); color:var(--text); box-shadow:none; height:50px; margin:0;" onclick="addToFav()">⭐️ Favoris</button>
-          <button class="btn-liquid" style="height:50px; margin:0;" onclick="startNav()">🧭 Boussole</button>
+      <div id="drawer" class="glass-card">
+        <div style="font-weight:800; font-size:20px;" id="dTitle">Lieu</div>
+        <div style="font-size:13px; opacity:0.7; margin-bottom:15px;" id="dCoords">---</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <button class="btn-liquid" style="background:rgba(0,0,0,0.1); color:var(--text);" onclick="addToFavs()">⭐️ Favoris</button>
+          <button class="btn-liquid" onclick="goNav()">🧭 Boussole</button>
         </div>
       </div>
     </div>
 
     <!-- COMPASS -->
-    <div id="viewCompass" class="view">
-      <div class="compass-container">
+    <div class="view" id="viewCompass">
+      <div class="compass-ui">
         <div class="ring" id="cRing">
-          <div class="needle n-north"></div>
-          <div class="needle n-target" id="cTarget"></div>
+          <div class="needle-n"></div>
+          <div class="needle-t" id="cTarget"></div>
         </div>
-        <div class="deg-val" id="cDeg">---°</div>
-        <div class="nav-pill" id="navInfo">CIBLE: <span id="distVal">0</span> M</div>
-        
-        <button id="btnSensors" class="btn-liquid" style="width:200px; margin-top:40px;" onclick="enableSensors()">Activer Capteurs</button>
-      </div>
-    </div>
-
-    <!-- SHOP -->
-    <div id="viewShop" class="view">
-      <div class="view-header"><div class="view-title">Boutique</div></div>
-      <div class="view-content">
-        <div class="glass-panel list-box">
-          <div class="list-row">
-            <span style="font-weight:600;">Vos Points</span>
-            <span style="font-weight:800; color:var(--accent); font-size:22px;" id="ptVal">0</span>
-          </div>
-        </div>
-        <h4 style="margin:20px 0 10px 10px; opacity:0.6; text-transform:uppercase; font-size:12px;">Extensions</h4>
-        <div id="shopGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;"></div>
+        <div class="deg-display" id="cVal">---°</div>
+        <div class="nav-pill" id="navInfo">CIBLE À <span id="distVal">0</span> M</div>
+        <button class="btn-liquid" style="width:200px; margin-top:40px;" onclick="startSensors()" id="btnSensors">Activer</button>
       </div>
     </div>
 
     <!-- PROFILE -->
-    <div id="viewProfile" class="view">
-      <div class="view-header"><div class="view-title">Profil</div></div>
+    <div class="view" id="viewProfile">
       <div class="view-content">
+        <h1 style="margin-bottom:20px;">Mon Profil</h1>
         
-        <!-- User Info -->
-        <div class="glass-panel list-box" style="padding:20px; text-align:center; margin-bottom:20px;">
+        <div class="glass-card list-group" style="padding:20px; text-align:center; margin-bottom:20px;">
           <div style="font-size:40px; margin-bottom:10px;">👤</div>
-          <div style="font-weight:700; font-size:18px;" id="pEmail">user@demo.com</div>
-          <div style="font-size:14px; color:var(--text-sec);">Membre Standard</div>
+          <div style="font-weight:700;" id="pEmail">email@user.com</div>
+          <div style="font-size:24px; font-weight:800; color:var(--accent); margin-top:5px;"><span id="pPoints">0</span> Pts</div>
         </div>
 
-        <div class="glass-panel list-box">
-          <div class="list-row">
-            <span>Mode Sombre</span>
-            <label class="switch"><input type="checkbox" id="swTheme"><span class="slider"></span></label>
-          </div>
-          <div class="list-row">
-            <span>Sons FX</span>
-            <label class="switch"><input type="checkbox" id="swSound"><span class="slider"></span></label>
-          </div>
+        <h3 style="margin:20px 0 10px; font-size:14px; text-transform:uppercase; opacity:0.6; padding-left:10px;">Mes Favoris</h3>
+        <div class="glass-card list-group" id="favList">
+          <div class="list-item" style="color:var(--text-muted); justify-content:center;">Aucun favori</div>
         </div>
 
-        <!-- ADMIN PANEL (Hidden by default) -->
-        <div id="adminPanel">
-          <h4 style="margin:0 0 10px; color:var(--danger);">ADMIN CONTROL</h4>
-          <div class="list-row" style="border:none; padding:10px 0;">
-            <span>Reset All Users</span>
-            <button style="padding:5px 10px; border-radius:8px; border:none; background:var(--danger); color:white;" onclick="localStorage.clear();location.reload();">RESET</button>
+        <h3 style="margin:20px 0 10px; font-size:14px; text-transform:uppercase; opacity:0.6; padding-left:10px;">Réglages</h3>
+        <div class="glass-card list-group">
+          <div class="list-item">
+            <span>Mode Nuit</span>
+            <input type="checkbox" id="swTheme" onchange="toggleTheme()">
           </div>
-          <div class="list-row" style="border:none; padding:10px 0;">
-            <span>Add 1000 Pts</span>
-            <button style="padding:5px 10px; border-radius:8px; border:none; background:var(--success); color:white;" onclick="addPoints(1000)">+1000</button>
+          <div class="list-item" id="adminBtn" style="display:none;" onclick="showAdmin()">
+            <span style="color:var(--accent); font-weight:700;">Panel Admin 🛠️</span>
           </div>
-        </div>
-
-        <div class="glass-panel list-box" style="margin-top:20px;">
-          <div class="list-row" onclick="logout()" style="justify-content:center;">
+          <div class="list-item" onclick="handleLogout()">
             <span style="color:var(--danger); font-weight:700;">Déconnexion</span>
           </div>
         </div>
@@ -260,257 +231,312 @@
 
   </div>
 
-  <nav class="tabbar">
-    <button class="tab active" onclick="tab('viewMap',this)">
-        <svg viewBox="0 0 24 24"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
-        <span style="font-size:10px; font-weight:600;">Carte</span>
+  <!-- ADMIN OVERLAY -->
+  <div id="adminModal" class="view">
+    <div class="view-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h1>Admin Panel</h1>
+        <button onclick="$('adminModal').style.display='none'" style="border:none; background:none; font-size:20px;">✕</button>
+      </div>
+      <div class="glass-card list-group" id="userList">
+        <!-- Users populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <nav class="tabbar" id="tabbar" style="display:none;">
+    <button class="tab" onclick="switchView('viewMap', this)">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+      <span style="font-size:10px; font-weight:600;">Carte</span>
     </button>
-    <button class="tab" onclick="tab('viewCompass',this)">
-        <svg viewBox="0 0 24 24"><path d="M12 2L4.5 20.3l.7.7L12 18l6.8 3 .7-.7z"/></svg>
-        <span style="font-size:10px; font-weight:600;">Boussole</span>
+    <button class="tab" onclick="switchView('viewCompass', this)">
+      <svg viewBox="0 0 24 24"><path d="M12 2L4.5 20.3l.7.7L12 18l6.8 3 .7-.7z"/></svg>
+      <span style="font-size:10px; font-weight:600;">Boussole</span>
     </button>
-    <button class="tab" onclick="tab('viewShop',this)">
-        <svg viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>
-        <span style="font-size:10px; font-weight:600;">Store</span>
-    </button>
-    <button class="tab" onclick="tab('viewProfile',this)">
-        <svg viewBox="0 0 24 24"><path d="M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4z"/></svg>
-        <span style="font-size:10px; font-weight:600;">Profil</span>
+    <button class="tab" onclick="switchView('viewProfile', this)">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4z"/></svg>
+      <span style="font-size:10px; font-weight:600;">Profil</span>
     </button>
   </nav>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
   <script>
-    /* --- DATA & STATE --- */
-    const WIDGETS = [
-      { id:'w_nv', name:'Vision Nuit', price:150, icon:'🌑' },
-      { id:'w_sn', name:'Sonar', price:300, icon:'📡' },
-      { id:'w_tr', name:'Traceur', price:200, icon:'👣' },
-      { id:'w_gd', name:'God Mode', price:9999, icon:'⚡', admin:true }
-    ];
+    // --- CONFIG SUPABASE (REMPLACER AVEC VOS CLES) ---
+    const SB_URL = 'https://VOTRE_PROJET.supabase.co';
+    const SB_KEY = 'VOTRE_CLE_ANON_PUBLIQUE';
+    const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+
+    const $ = id => document.getElementById(id);
     let state = {
-      user: localStorage.getItem('cc_user'),
-      theme: localStorage.getItem('cc_theme') || 'light',
-      points: parseInt(localStorage.getItem('cc_pts') || '1500'),
-      owned: JSON.parse(localStorage.getItem('cc_own') || '[]'),
+      user: null,
+      profile: null,
       favs: JSON.parse(localStorage.getItem('cc_favs') || '[]'),
-      activeW: JSON.parse(localStorage.getItem('cc_act') || '{}'),
-      target: null, // {lat,lng}
+      target: null,
       pos: null
     };
 
-    /* --- AUTH --- */
-    function checkAuth() {
-      if(state.user) {
-        document.getElementById('authOverlay').classList.add('hidden');
-        document.getElementById('app').style.display = 'block';
-        document.getElementById('pEmail').textContent = state.user;
-        initApp();
-        
-        // Admin Check (Simulation)
-        if(state.user.includes('admin') || state.owned.includes('w_gd')) {
-          document.getElementById('adminPanel').style.display='block';
-        }
+    // --- 1. PERSISTENCE & INIT ---
+    window.onload = async () => {
+      // Restore Theme
+      if(localStorage.getItem('cc_theme')==='dark') {
+        document.body.setAttribute('data-theme','dark');
+        $('swTheme').checked = true;
       }
-    }
-    function login() {
-      const e = document.getElementById('email').value;
-      if(e.length>3) { localStorage.setItem('cc_user', e); state.user = e; checkAuth(); }
-    }
-    function logout() { localStorage.removeItem('cc_user'); location.reload(); }
 
-    /* --- APP INIT --- */
-    let map, mapMarker;
+      // Check Session
+      const {  { session } } = await supabase.auth.getSession();
+      if (session) {
+        state.user = session.user;
+        await loadProfile();
+        initApp();
+      } else {
+        $('viewLogin').classList.add('active');
+        $('viewLogin').style.opacity = 1;
+      }
+    };
+
+    async function loadProfile() {
+      const { data } = await supabase.from('profiles').select('*').eq('id', state.user.id).single();
+      state.profile = data || { points: 0, role: 'user' };
+      $('pEmail').textContent = state.user.email;
+      $('pPoints').textContent = state.profile.points;
+      
+      if(state.profile.role === 'admin' || state.user.email.includes('admin')) {
+        $('adminBtn').style.display = 'flex';
+      }
+      renderFavs();
+    }
+
+    // --- 2. AUTH ---
+    async function handleLogin() {
+      const email = $('email').value;
+      const password = $('pass').value;
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) $('loginMsg').textContent = error.message;
+      else location.reload();
+    }
+
+    async function handleSignup() {
+      const email = $('email').value;
+      const password = $('pass').value;
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) $('loginMsg').textContent = error.message;
+      else alert('Inscription réussie ! Connectez-vous.');
+    }
+
+    async function handleLogout() {
+      await supabase.auth.signOut();
+      localStorage.clear();
+      location.reload();
+    }
+
     function initApp() {
-      // Theme
-      if(state.theme === 'dark') document.body.setAttribute('data-theme','dark');
-      document.getElementById('swTheme').checked = (state.theme==='dark');
-
-      // Map (Delay for layout)
-      setTimeout(() => {
-        map = L.map('map', {zoomControl:false}).setView([43.604, 1.444], 14);
-        updateTiles();
-        
-        // User Location
-        map.locate({setView:true, maxZoom:15, enableHighAccuracy:true});
-        map.on('locationfound', e => {
-          state.pos = e.latlng;
-          L.circleMarker(e.latlng, {radius:8, color:'#fff', fillColor:'#007aff', fillOpacity:1}).addTo(map);
-        });
-        
-        // Map Click (Fix propagation)
-        map.on('click', e => {
-          setSelection(e.latlng.lat, e.latlng.lng, "Point Repère");
-        });
-      }, 100);
-
-      // Listeners
-      document.getElementById('sInput').addEventListener('input', handleSearch);
-      renderShop();
+      $('viewLogin').style.display = 'none';
+      $('app').style.display = 'block';
+      $('tabbar').style.display = 'flex';
+      
+      // RESTORE LAST VIEW
+      const lastView = localStorage.getItem('cc_view') || 'viewMap';
+      const btns = document.querySelectorAll('.tab');
+      let targetBtn = btns[0];
+      if(lastView === 'viewCompass') targetBtn = btns[1];
+      if(lastView === 'viewProfile') targetBtn = btns[2];
+      
+      switchView(lastView, targetBtn);
+      
+      initMap();
     }
 
-    /* --- MAP ACTIONS --- */
-    function updateTiles() {
-      if(!map) return;
-      const u = state.theme==='dark' 
+    // --- 3. NAVIGATION (VIEW MANAGER) ---
+    window.switchView = (id, btn) => {
+      document.querySelectorAll('.view').forEach(v => {
+        v.classList.remove('active');
+        v.style.opacity = 0;
+      });
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+      
+      const target = $(id);
+      target.classList.add('active');
+      // Petit délai pour l'anim css opacity
+      setTimeout(() => target.style.opacity = 1, 10);
+      
+      btn.classList.add('active');
+      localStorage.setItem('cc_view', id);
+      
+      if(id === 'viewMap' && map) setTimeout(()=>map.invalidateSize(), 50);
+    }
+
+    // --- 4. MAP & DRAWER ---
+    let map, mapMarker, selPlace;
+    function initMap() {
+      if(map) return;
+      map = L.map('map', {zoomControl:false}).setView([43.604, 1.444], 14);
+      
+      const theme = localStorage.getItem('cc_theme');
+      const url = theme==='dark' 
         ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
         : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-      map.eachLayer(l => l._url && map.removeLayer(l));
-      L.tileLayer(u, {maxZoom:19}).addTo(map);
-    }
-
-    let sTimer;
-    function handleSearch(e) {
-      clearTimeout(sTimer);
-      const q = e.target.value;
-      const box = document.getElementById('sList');
-      if(q.length<3) { box.style.display='none'; return; }
       
-      sTimer = setTimeout(async() => {
-        const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=4`);
-        const d = await r.json();
-        box.innerHTML = '';
-        if(d.length) {
-          box.style.display = 'block';
-          d.forEach(p => {
-            const div = document.createElement('div');
-            div.className = 'sugg-row';
-            div.textContent = p.display_name.split(',')[0];
-            div.onclick = () => {
-              setSelection(p.lat, p.lon, div.textContent);
-              box.style.display='none';
-              document.getElementById('sInput').value = div.textContent;
-            };
-            box.appendChild(div);
-          });
-        }
-      }, 400);
+      L.tileLayer(url, {maxZoom:19}).addTo(map);
+      
+      map.locate({setView:true, maxZoom:15});
+      map.on('locationfound', e => {
+        state.pos = e.latlng;
+        L.circleMarker(e.latlng, {radius:8, color:'#fff', fillColor:'#007aff', fillOpacity:1}).addTo(map);
+      });
+      
+      map.on('click', e => selectPlace(e.latlng.lat, e.latlng.lng, 'Point Repère'));
     }
 
-    let selPlace;
-    function setSelection(lat, lng, name) {
-      selPlace = {lat:parseFloat(lat), lng:parseFloat(lng), name:name};
+    function selectPlace(lat, lng, name) {
+      selPlace = {lat, lng, name};
       
       if(mapMarker) map.removeLayer(mapMarker);
       mapMarker = L.marker([lat, lng]).addTo(map);
       map.flyTo([lat, lng], 16);
       
-      document.getElementById('dName').textContent = name.substring(0,20);
-      document.getElementById('dCoords').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-      document.getElementById('drawer').classList.add('visible');
+      $('dTitle').textContent = name.substring(0,20);
+      $('dCoords').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      $('drawer').classList.add('visible');
     }
 
-    function addToFav() {
-      if(selPlace) {
-        state.favs.push(selPlace);
-        localStorage.setItem('cc_favs', JSON.stringify(state.favs));
-        alert('Lieu ajouté aux favoris !');
-        document.getElementById('drawer').classList.remove('visible');
-      }
-    }
-    
-    function startNav() {
-      if(selPlace) {
-        state.target = selPlace;
-        document.getElementById('drawer').classList.remove('visible');
-        tab('viewCompass', document.querySelectorAll('.tab')[1]);
+    // --- 5. SEARCH & KEYBOARD FIX ---
+    let sTimer;
+    $('sInput').addEventListener('input', (e) => {
+      clearTimeout(sTimer);
+      const q = e.target.value;
+      if(q.length < 3) { $('sList').style.display='none'; return; }
+      
+      sTimer = setTimeout(async() => {
+        const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=4`);
+        const d = await r.json();
+        const list = $('sList');
+        list.innerHTML = '';
+        list.style.display = 'block';
         
-        document.getElementById('navInfo').style.display = 'inline-block';
-        document.getElementById('cTarget').style.display = 'block';
-      }
-    }
-
-    /* --- COMPASS ENGINE --- */
-    function enableSensors() {
-      if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission().then(r => {
-          if(r==='granted') window.addEventListener('deviceorientation', updateCompass, true);
+        d.forEach(p => {
+          const div = document.createElement('div');
+          div.className = 'sugg-item';
+          div.textContent = p.display_name.split(',')[0];
+          div.onclick = () => {
+            selectPlace(parseFloat(p.lat), parseFloat(p.lon), div.textContent);
+            list.style.display='none';
+            $('sInput').value = div.textContent;
+          };
+          list.appendChild(div);
         });
-      } else {
-        window.addEventListener('deviceorientation', updateCompass, true);
-      }
-      document.getElementById('btnSensors').style.display='none';
+      }, 400);
+    });
+
+    // --- 6. FAVORIS & PROFILE ---
+    function addToFavs() {
+      if(!selPlace) return;
+      state.favs.push(selPlace);
+      localStorage.setItem('cc_favs', JSON.stringify(state.favs));
+      renderFavs();
+      $('drawer').classList.remove('visible');
+      alert('Ajouté aux favoris');
     }
 
-    function updateCompass(e) {
-      // Heading
-      let h = e.webkitCompassHeading || Math.abs(e.alpha-360);
-      if(!h) return;
-      document.getElementById('cRing').style.transform = `rotate(${-h}deg)`;
-      document.getElementById('cDeg').textContent = Math.round(h)+'°';
-
-      // Navigation Logic
-      if(state.target && state.pos) {
-        const dist = map.distance(state.pos, [state.target.lat, state.target.lng]);
-        document.getElementById('distVal').textContent = Math.round(dist);
-        
-        // Bearing
-        const rad = Math.PI/180;
-        const lat1=state.pos.lat*rad, lat2=state.target.lat*rad;
-        const dLon=(state.target.lng-state.pos.lng)*rad;
-        const y = Math.sin(dLon) * Math.cos(lat2);
-        const x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLon);
-        const brng = (Math.atan2(y, x)/rad + 360) % 360;
-        
-        document.getElementById('cTarget').style.transform = `rotate(${brng}deg)`;
-      }
-    }
-
-    /* --- SHOP & ADMIN --- */
-    function renderShop() {
-      document.getElementById('ptVal').textContent = state.points;
-      const g = document.getElementById('shopGrid'); g.innerHTML='';
-      WIDGETS.forEach(w => {
-        const owned = state.owned.includes(w.id);
-        const active = state.activeW[w.id];
-        const card = document.createElement('div');
-        card.className = 'glass-panel';
-        card.style.padding='15px'; card.style.textAlign='center';
-        
-        let act = owned 
-          ? `<label class="switch" style="margin-top:10px;"><input type="checkbox" ${active?'checked':''} onchange="toggleW('${w.id}',this)"><span class="slider"></span></label>`
-          : `<button class="btn-liquid" style="height:40px; font-size:14px; margin-top:10px;" onclick="buy('${w.id}',${w.price})">${w.price}</button>`;
-          
-        card.innerHTML = `<div style="font-size:30px">${w.icon}</div><div style="font-weight:700; font-size:14px; margin-top:5px;">${w.name}</div>${act}`;
-        g.appendChild(card);
+    function renderFavs() {
+      const list = $('favList');
+      if(state.favs.length === 0) return;
+      list.innerHTML = '';
+      
+      state.favs.forEach((f, i) => {
+        const div = document.createElement('div');
+        div.className = 'list-item';
+        div.innerHTML = `
+          <div>
+            <div style="font-weight:600;">${f.name}</div>
+            <div style="font-size:12px; opacity:0.6;">${f.lat.toFixed(3)}, ${f.lng.toFixed(3)}</div>
+          </div>
+          <button class="btn-liquid" style="width:auto; padding:8px 16px; font-size:12px;" onclick="loadFav(${i})">GO</button>
+        `;
+        list.appendChild(div);
       });
     }
 
-    function buy(id, cost) {
-      if(state.points >= cost) {
-        state.points -= cost; state.owned.push(id);
-        localStorage.setItem('cc_pts', state.points);
-        localStorage.setItem('cc_own', JSON.stringify(state.owned));
-        renderShop();
-        if(id==='w_gd') location.reload(); // Reload for God Mode
+    window.loadFav = (i) => {
+      selPlace = state.favs[i];
+      goNav();
+    };
+
+    // --- 7. COMPASS & NAVIGATION ---
+    function goNav() {
+      if(selPlace) {
+        state.target = selPlace;
+        $('drawer').classList.remove('visible');
+        switchView('viewCompass', document.querySelectorAll('.tab')[1]);
+        
+        $('navInfo').style.display = 'inline-block';
+        $('cTarget').style.display = 'block';
       }
     }
-    window.toggleW = (id, el) => {
-      state.activeW[id] = el.checked;
-      localStorage.setItem('cc_act', JSON.stringify(state.activeW));
-    };
-    window.addPoints = (n) => {
-      state.points += n; localStorage.setItem('cc_pts', state.points); renderShop();
-    };
 
-    /* --- UI & THEME --- */
-    function tab(id, btn) {
-      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-      document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-      btn.classList.add('active');
-      if(id==='viewMap') setTimeout(()=>map.invalidateSize(), 50);
+    function startSensors() {
+      if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission().then(r => {
+          if(r === 'granted') window.addEventListener('deviceorientation', handleOrient, true);
+        });
+      } else {
+        window.addEventListener('deviceorientation', handleOrient, true);
+      }
+      $('btnSensors').style.display = 'none';
     }
 
-    document.getElementById('swTheme').addEventListener('change', e => {
-      state.theme = e.target.checked ? 'dark' : 'light';
-      document.body.setAttribute('data-theme', state.theme);
-      localStorage.setItem('cc_theme', state.theme);
-      updateTiles();
-    });
+    function handleOrient(e) {
+      const h = e.webkitCompassHeading || Math.abs(e.alpha - 360);
+      if(!h) return;
+      
+      $('cRing').style.transform = `rotate(${-h}deg)`;
+      $('cVal').textContent = Math.round(h) + '°';
+      
+      if(state.target && state.pos) {
+        const dist = map.distance(state.pos, [state.target.lat, state.target.lng]);
+        $('distVal').textContent = Math.round(dist);
+        
+        // Bearing
+        const lat1=state.pos.lat*Math.PI/180, lat2=state.target.lat*Math.PI/180;
+        const dLon=(state.target.lng-state.pos.lng)*Math.PI/180;
+        const y = Math.sin(dLon) * Math.cos(lat2);
+        const x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLon);
+        const brng = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+        
+        $('cTarget').style.transform = `rotate(${brng}deg)`;
+      }
+    }
 
-    window.onload = checkAuth;
+    // --- 8. ADMIN PANEL ---
+    async function showAdmin() {
+      $('adminModal').style.display = 'flex';
+      const { data } = await supabase.from('profiles').select('*');
+      const list = $('userList');
+      list.innerHTML = '';
+      
+      data.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'user-row';
+        div.innerHTML = `
+          <div><div style="font-weight:700;">${u.email || u.id.substr(0,8)}</div>Points: ${u.points}</div>
+          <button style="background:var(--accent); color:white; border:none; padding:5px 10px; border-radius:8px;" onclick="addPoints('${u.id}')">+100</button>
+        `;
+        list.appendChild(div);
+      });
+    }
+    
+    window.addPoints = async (uid) => {
+      // Pour demo : mise à jour locale ou appel RPC si configuré
+      alert(`Ajout de points pour ${uid} (Nécessite RLS/RPC sur Supabase)`);
+    }
+
+    function toggleTheme() {
+      const isDark = $('swTheme').checked;
+      document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      localStorage.setItem('cc_theme', isDark ? 'dark' : 'light');
+      location.reload(); // Quick refresh for maps
+    }
+
   </script>
 </body>
 </html>
