@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#000000" />
-  <title>City Compass v16.6</title>
+  <title>City Compass v16.7</title>
 
   <!-- LEAFLET CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -124,10 +124,13 @@
           <div class="compass-anim-arrow"></div>
         </div>
         <h1 style="text-align:center; font-size:28px; font-weight:800; margin-bottom:8px;">City Compass</h1>
-        <p style="text-align:center; opacity:0.6; margin-bottom:40px;">Exploration Urbaine v16.6</p>
+        <p style="text-align:center; opacity:0.6; margin-bottom:40px;">Secure Login v16.7</p>
+        
         <input id="inputLoginCode" placeholder="Code 16 chiffres" maxlength="19" inputmode="numeric" class="login-input">
+        <input id="inputLoginPass" type="password" placeholder="Mot de passe" class="login-input" style="font-family:sans-serif; letter-spacing:0;">
+        
         <button class="btn btn-primary" id="btnLogin" style="margin-bottom:12px;">Connexion</button>
-        <button class="btn btn-secondary" id="btnCreateAccount">Créer Profil</button>
+        <button class="btn btn-secondary" id="btnCreateAccount">Nouveau Profil</button>
         <p id="loginError" style="color:var(--danger); margin-top:20px; text-align:center; min-height:20px;"></p>
       </div>
     </div>
@@ -264,10 +267,9 @@ const SUPABASE_KEY = window.CC_ENV?.SB_ANON_KEY;
 if(!SUPABASE_URL || !SUPABASE_KEY) alert("ERREUR: config.js manquant.");
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// AJOUTE TES ADMINS ICI
 const ADMIN_IDS = [
-    "3339683758546584",
-    "0000000000000000" // Ajoute d'autres IDs ici
+    "3339683758546584", 
+    "0000000000000000"
 ];
 
 const $ = (id) => document.getElementById(id);
@@ -291,9 +293,9 @@ const SHOPITEMS = [
     { id: 'widalt', name: 'Altimètre', cost: 250, type: 'widget', icon: '⛰️' }
 ];
 
-window.onload = function() { initMap(); if(userCode) login(userCode); };
+window.onload = function() { initMap(); if(userCode) initApp(); };
 
-// --- SEARCH ENGINE (Nominatim) ---
+// --- SEARCH ENGINE ---
 const addrInput = $('addrInput');
 const searchResults = $('searchResults');
 let searchTimeout = null;
@@ -304,7 +306,6 @@ addrInput.addEventListener('input', (e) => {
     if(query.length < 3) { searchResults.style.display = 'none'; return; }
     
     searchTimeout = setTimeout(async () => {
-        // Priorité Toulouse (viewbox approximative)
         const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=1.35,43.68,1.55,43.53&bounded=0&limit=5`;
         try {
             const res = await fetch(url);
@@ -315,13 +316,12 @@ addrInput.addEventListener('input', (e) => {
                 data.forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'search-res-item';
-                    div.textContent = item.display_name.split(',')[0]; // Nom court
+                    div.textContent = item.display_name.split(',')[0];
                     div.onclick = () => {
                         tempMapPoint = { lat: parseFloat(item.lat), lon: parseFloat(item.lon), name: div.textContent };
                         mapInstance.setView([item.lat, item.lon], 16);
                         searchResults.style.display = 'none';
                         addrInput.value = '';
-                        // Ouvre la sheet
                         $('sheetTitle').textContent = tempMapPoint.name;
                         $('sheetDesc').textContent = item.display_name;
                         $('btnDeleteFav').style.display='none';
@@ -334,32 +334,62 @@ addrInput.addEventListener('input', (e) => {
     }, 500);
 });
 
-// --- AUTH ---
-async function login(c) {
-    const clean = c.replace(/\s/g, ''); if(clean.length!==16) return;
-    $('btnLogin').textContent="Connexion..."; $('btnLogin').disabled=true;
+// --- AUTH & PASSWORD ---
+async function login() {
+    const c = $('inputLoginCode').value.replace(/\s/g, ''); 
+    const p = $('inputLoginPass').value;
+
+    if(c.length!==16) { $('loginError').textContent="Code 16 chiffres requis"; return; }
+    if(!p) { $('loginError').textContent="Mot de passe requis"; return; }
+
+    $('btnLogin').textContent="..."; $('btnLogin').disabled=true;
     try {
-        const { data } = await supabaseClient.from('users').select('*').eq('id', clean);
+        // Vérifie ID + Password
+        const { data } = await supabaseClient.from('users').select('*').eq('id', c).eq('password', p);
         if(data && data.length){ 
-            userCode=clean; userPoints=data[0].points; 
-            localStorage.setItem('cc_user_code', userCode); initApp(); 
-        } else { $('loginError').textContent="Profil introuvable"; $('btnLogin').disabled=false; }
-    } catch(e) { $('loginError').textContent="Erreur"; $('btnLogin').disabled=false; }
+            userCode=c; userPoints=data[0].points; 
+            localStorage.setItem('cc_user_code', userCode); 
+            initApp(); 
+        } else { 
+            $('loginError').textContent="Identifiants incorrects"; 
+            $('btnLogin').disabled=false; 
+            $('btnLogin').textContent="Connexion";
+        }
+    } catch(e) { 
+        $('loginError').textContent="Erreur serveur"; 
+        $('btnLogin').disabled=false; 
+        $('btnLogin').textContent="Connexion";
+    }
 }
 
 async function createAccount() {
+    const pass = prompt("Choisissez un mot de passe :");
+    if(!pass || pass.length < 4) { alert("Mot de passe trop court (min 4)."); return; }
+
     const c = Array(16).fill(0).map(()=>Math.floor(Math.random()*10)).join('');
-    await supabaseClient.from('users').insert([{ id: c, points: 200 }]);
-    userCode=c; userPoints=200; localStorage.setItem('cc_user_code', c); initApp();
+    // Insert avec password
+    const { error } = await supabaseClient.from('users').insert([{ id: c, points: 200, password: pass }]);
+    
+    if(error) { alert("Erreur création : " + error.message); return; }
+
+    alert(`Votre CODE: ${c}\nVotre PASS: ${pass}\n(Notez-les bien !)`);
+    userCode=c; userPoints=200; 
+    localStorage.setItem('cc_user_code', c); 
+    initApp();
 }
 
-function initApp() {
+async function initApp() {
+    // Re-fetch user data pour être sûr des points si auto-login
+    if(!userPoints && userCode) {
+        const { data } = await supabaseClient.from('users').select('points').eq('id', userCode).single();
+        if(data) userPoints = data.points;
+    }
+    
     $('viewLogin').classList.remove('active');
     $('navBar').style.display = 'flex';
     $('displayCode').textContent = userCode.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
     $('displayPoints').textContent = userPoints;
     
-    // Check ADMIN LIST
     if(ADMIN_IDS.includes(userCode)) { $('btnAdminTrigger').style.display = 'block'; $('adminControlsArea').style.display = 'block'; }
     
     $('profileLevel').textContent = Math.floor(userPoints/500) + 1;
@@ -369,7 +399,7 @@ function initApp() {
 // --- MAP ---
 function initMap() { 
     if (mapInstance) return; 
-    mapInstance = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.6047, 1.4442], 13); // Default Toulouse
+    mapInstance = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.6047, 1.4442], 13);
     updateMapTiles(); 
     favLayerGroup = L.layerGroup().addTo(mapInstance);
     mapInstance.on('contextmenu', e => { 
@@ -415,7 +445,6 @@ async function loadData() {
   placesRows = data || [];
   places = placesRows.map(r => ({ ...r.place_data, _dbId: r.id })).filter(p => p.type !== 'trace');
   
-  // Utiliser le premier admin ID pour les suggestions globales
   let { data: adminData } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', ADMIN_IDS[0]);
   if(adminData) globalSuggestions = adminData.map(d=>d.place_data);
 
@@ -461,17 +490,11 @@ function updateNavDisplay() {
     const dist = getDist(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon);
     $('distVal').textContent = dist > 1 ? dist.toFixed(1) + " km" : Math.round(dist*1000) + " m";
     
-    // Compass Logic
     const bearing = getBearing(lastPos.lat, lastPos.lon, currentDest.lat, currentDest.lon);
     const heading = lastPos.heading || 0; 
-    // Si pas de cap GPS, on utilise le cap boussole phone (géré par deviceorientation event ailleurs)
-    // Ici calcul simpliste pour update visuel
     $('arrowContainer').style.transform = `rotate(${bearing - heading}deg)`;
     
-    // Ring Progress (Ex: max 10km)
-    const maxDist = 10; 
-    const pct = Math.max(0, Math.min(1, dist/maxDist));
-    const dash = 289; // Cirmcumference 2*PI*46
+    const maxDist = 10; const pct = Math.max(0, Math.min(1, dist/maxDist)); const dash = 289; 
     $('ringProg').style.strokeDashoffset = dash * pct;
 }
 function getDist(lat1,lon1,lat2,lon2) {
@@ -548,7 +571,7 @@ function openAdminPanel() {
 
 $('toggleTheme').onchange = (e) => { settings.theme=e.target.checked?'dark':'light'; localStorage.setItem('cc_theme', settings.theme); applySettings(); updateMapTiles(); };
 $('btnLogout').onclick = () => { localStorage.removeItem('cc_user_code'); location.reload(); };
-$('btnLogin').onclick = () => login($('inputLoginCode').value);
+$('btnLogin').onclick = () => login();
 $('btnCreateAccount').onclick = createAccount;
 </script>
 </body>
