@@ -1,240 +1,367 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>CityCompass v23 - Solid Connect</title>
-  
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <!-- Assurez-vous d'avoir config.js -->
-  <script src="config.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CityCompass Ultimate</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Supabase JS -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <style>
-    :root { --primary: #00f2ff; --bg: #050505; --text: #fff; --danger: #ff4757; }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+    <style>
+        :root {
+            --primary: #2563eb; --accent: #3b82f6; --bg: #f8fafc; --text: #0f172a;
+            --surface: #ffffff; --danger: #ef4444; --success: #22c55e;
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+        }
+        [data-theme="dark"] {
+            --bg: #0f172a; --text: #f8fafc; --surface: #1e293b;
+        }
 
-    /* UI LOGIN */
-    #loginScreen { position: fixed; inset: 0; z-index: 9999; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; transition: opacity 0.4s; }
-    .hidden { display: none !important; }
-    
-    .login-box { width: 100%; max-width: 320px; background: #111; padding: 20px; border-radius: 20px; border: 1px solid #333; display: flex; flex-direction: column; gap: 15px; }
-    input, select { width: 100%; padding: 12px; background: #000; border: 1px solid #444; color: white; border-radius: 10px; font-size: 16px; outline: none; text-align: center; }
-    .btn-main { width: 100%; padding: 12px; background: var(--primary); color: #000; font-weight: bold; border: none; border-radius: 10px; font-size: 16px; margin-top: 5px; cursor: pointer; }
-    .btn-link { background: transparent; color: #888; border: none; text-decoration: underline; font-size: 13px; cursor: pointer; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; height: 100dvh; }
 
-    /* TOAST */
-    #toast { position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 20px; border-radius: 20px; border: 1px solid var(--primary); z-index: 10000; display: none; }
-    
-    /* APP */
-    #app { display: none; width: 100%; height: 100%; position: relative; }
-    #map { width: 100%; height: 100%; z-index: 1; }
-    
-    /* PANELS */
-    .panel { position: fixed; inset: 0; background: #000; z-index: 2000; transform: translateY(100%); transition: transform 0.3s; padding: 20px; display: flex; flex-direction: column; }
-    .panel.open { transform: translateY(0); }
-    .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 24px; font-weight: bold; }
-    
-    /* NAV */
-    .nav-bar { position: absolute; bottom: 30px; left: 20px; right: 20px; height: 60px; background: rgba(20,20,20,0.95); border-radius: 30px; display: flex; justify-content: space-around; align-items: center; z-index: 1000; border: 1px solid #333; }
-    .nav-icon { font-size: 24px; color: #666; padding: 10px; }
-  </style>
+        /* --- LAYOUTS --- */
+        .screen { position: absolute; inset: 0; background: var(--bg); z-index: 10; display: none; flex-direction: column; opacity: 0; transition: opacity 0.3s ease; }
+        .screen.active { display: flex; opacity: 1; z-index: 20; }
+
+        /* --- LOGIN SCREEN --- */
+        .login-container { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 2rem; text-align: center; gap: 15px; }
+        .logo { font-size: 3rem; color: var(--primary); margin-bottom: 1rem; }
+        input { padding: 15px; border-radius: 12px; border: 1px solid #ccc; background: var(--surface); color: var(--text); font-size: 1rem; width: 100%; outline: none; }
+        .btn { padding: 15px; border-radius: 12px; background: var(--primary); color: white; border: none; font-weight: bold; font-size: 1rem; cursor: pointer; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .link { color: var(--accent); font-size: 0.9rem; margin-top: 10px; cursor: pointer; text-decoration: underline; }
+
+        /* --- APP INTERFACE --- */
+        #map { flex: 1; width: 100%; height: 100%; z-index: 1; }
+        
+        /* HUD & Widgets */
+        .hud-top { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 1000; display: flex; gap: 10px; pointer-events: none; }
+        .widget { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 10px 15px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); pointer-events: auto; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem; color: #333; }
+        [data-theme="dark"] .widget { background: rgba(30,41,59,0.95); color: #fff; }
+
+        /* Bottom Nav */
+        .nav-bar { position: absolute; bottom: 0; left: 0; right: 0; background: var(--surface); padding: 15px 20px calc(15px + var(--safe-bottom)); border-radius: 25px 25px 0 0; display: flex; justify-content: space-around; z-index: 1000; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #94a3b8; font-size: 0.75rem; background: none; border: none; cursor: pointer; }
+        .nav-item i { font-size: 1.4rem; transition: 0.3s; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item.active i { transform: translateY(-5px); }
+
+        /* --- PANELS (Shop, Profile, Admin) --- */
+        .full-panel { position: fixed; inset: 0; background: var(--bg); z-index: 2000; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
+        .full-panel.open { transform: translateY(0); }
+        .panel-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.1); }
+        .panel-content { flex: 1; overflow-y: auto; padding: 20px; }
+        
+        /* Shop Items */
+        .shop-item { display: flex; justify-content: space-between; align-items: center; background: var(--surface); padding: 15px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .item-info h4 { margin: 0 0 5px; }
+        .item-info p { margin: 0; font-size: 0.8rem; opacity: 0.7; }
+
+        /* Compass Overlay */
+        #compassScreen { background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; }
+        #compassArrow { font-size: 10rem; color: var(--primary); transition: transform 0.1s linear; text-shadow: 0 0 30px var(--primary); }
+
+        /* Toast Notification */
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #333; color: white; padding: 10px 20px; border-radius: 50px; z-index: 9999; transition: transform 0.3s; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; }
+        #toast.visible { transform: translateX(-50%) translateY(0); }
+    </style>
 </head>
 <body>
 
-<div id="toast">Info</div>
+    <!-- NOTIFICATION -->
+    <div id="toast"><i class="fa-solid fa-circle-info"></i> <span id="toastMsg">Message</span></div>
 
-<!-- LOGIN SCREEN -->
-<div id="loginScreen">
-    <i class="fa-regular fa-compass" style="font-size: 60px; color: var(--primary); margin-bottom: 20px;"></i>
-    
-    <!-- 1. LOGIN -->
-    <div id="viewLogin" class="login-box">
-        <h2 style="margin:0; text-align:center;">CONNEXION v23</h2>
-        <input type="text" id="inpLoginId" placeholder="ID (16 chiffres)" inputmode="numeric" oninput="formatInput(this)">
-        <input type="password" id="inpLoginPass" placeholder="Mot de Passe">
-        <button class="btn-main" onclick="app.login()">ENTRER</button>
-        <div style="display:flex; justify-content:space-between; margin-top:10px;">
-            <button class="btn-link" onclick="app.show('viewSignup')">Créer Compte</button>
-            <button class="btn-link" onclick="app.show('viewForgot')">Oublié ?</button>
+    <!-- 1. LOGIN SCREEN -->
+    <div id="screenLogin" class="screen active">
+        <div class="login-container">
+            <div class="logo"><i class="fa-solid fa-compass"></i></div>
+            <h2>CityCompass</h2>
+            <p style="opacity:0.6">Exploration Urbaine Simplifiée</p>
+            
+            <div id="formLogin">
+                <input type="text" id="inpLoginId" placeholder="Votre ID (16 chiffres)" inputmode="numeric">
+                <input type="password" id="inpLoginPwd" placeholder="Mot de passe" style="margin-top:10px">
+                <button id="btnLogin" class="btn" style="margin-top:20px">Se Connecter</button>
+                <div id="btnToRegister" class="link">Créer un nouveau compte</div>
+                <div id="btnToForgot" class="link" style="color:#94a3b8">Mot de passe oublié ?</div>
+            </div>
+
+            <div id="formRegister" style="display:none">
+                <p>Création de compte sécurisée</p>
+                <input type="password" id="inpRegPwd" placeholder="Choisissez un mot de passe">
+                <button id="btnRegister" class="btn" style="margin-top:20px">Générer mon ID & Créer</button>
+                <div id="btnBackLogin" class="link">Retour connexion</div>
+            </div>
         </div>
     </div>
 
-    <!-- 2. SIGNUP -->
-    <div id="viewSignup" class="login-box hidden">
-        <h2 style="margin:0; text-align:center;">NOUVEAU COMPTE</h2>
-        <input type="password" id="inpSignPass" placeholder="Mot de Passe">
-        <select id="inpSignQ">
-            <option value="animal">Nom de mon animal ?</option>
-            <option value="ville">Ville de naissance ?</option>
-        </select>
-        <input type="text" id="inpSignA" placeholder="Réponse secrète">
-        <button class="btn-main" onclick="app.signup()">CRÉER ID</button>
-        <button class="btn-link" onclick="app.show('viewLogin')">Retour</button>
+    <!-- 2. MAIN APP SCREEN -->
+    <div id="screenApp" class="screen">
+        <!-- HUD -->
+        <div class="hud-top">
+            <div class="widget"><i class="fa-solid fa-star" style="color:gold"></i> <span id="uiPoints">0</span></div>
+            <div class="widget" id="gpsStatus"><i class="fa-solid fa-satellite-dish"></i> GPS</div>
+        </div>
+
+        <!-- Map -->
+        <div id="map"></div>
+
+        <!-- Navigation -->
+        <div class="nav-bar">
+            <button class="nav-item active" id="navMap"><i class="fa-solid fa-map"></i><span>Carte</span></button>
+            <button class="nav-item" id="navCompass"><i class="fa-regular fa-compass"></i><span>Boussole</span></button>
+            <button class="nav-item" id="navShop"><i class="fa-solid fa-store"></i><span>Boutique</span></button>
+            <button class="nav-item" id="navProfile"><i class="fa-solid fa-user"></i><span>Profil</span></button>
+        </div>
     </div>
 
-    <!-- 3. RECOVERY -->
-    <div id="viewForgot" class="login-box hidden">
-        <h2 style="margin:0; text-align:center; color:var(--danger)">RÉCUPÉRATION</h2>
-        <input type="text" id="inpForgotId" placeholder="Votre ID" inputmode="numeric" oninput="formatInput(this)">
-        <button class="btn-main" onclick="app.checkRecovery()">SUIVANT</button>
-        <button class="btn-link" onclick="app.show('viewLogin')">Retour</button>
+    <!-- 3. COMPASS FULLSCREEN -->
+    <div id="compassScreen" class="screen" style="z-index: 3000;">
+        <div style="position:absolute; top:40px; color:white; font-size:1.5rem">N</div>
+        <i id="compassArrow" class="fa-solid fa-location-arrow"></i>
+        <button id="btnCloseCompass" class="btn" style="position:absolute; bottom:50px; width:auto; padding:10px 30px; background:rgba(255,255,255,0.2)">Fermer</button>
     </div>
-    
-    <!-- 4. SECURITY CHECK -->
-    <div id="viewSecurity" class="login-box hidden">
-        <h2 style="margin:0; text-align:center; color:var(--danger)">SÉCURITÉ</h2>
-        <p id="txtSecLabel" style="text-align:center; color:var(--primary)">?</p>
-        <input type="text" id="inpSecAns" placeholder="Votre Réponse">
-        <button class="btn-main" onclick="app.verifyRecovery()">VÉRIFIER</button>
-        <button class="btn-link" onclick="app.show('viewLogin')">Annuler</button>
+
+    <!-- 4. PANELS -->
+    <!-- Shop Panel -->
+    <div id="panelShop" class="full-panel">
+        <div class="panel-header">
+            <h2>Boutique</h2>
+            <button class="close-panel btn-outline" style="border:none; font-size:1.5rem"><i class="fa-solid fa-times"></i></button>
+        </div>
+        <div class="panel-content">
+            <div class="shop-item">
+                <div class="item-info">
+                    <h4>Mode Sombre</h4>
+                    <p>Thème nuit pour la carte</p>
+                </div>
+                <button class="btn-sm btn" onclick="toggleTheme()">Activer</button>
+            </div>
+            <div class="shop-item">
+                <div class="item-info">
+                    <h4>Pack Boussole Pro</h4>
+                    <p>Débloque la boussole haute précision</p>
+                </div>
+                <button class="btn-sm btn" style="background:#ccc">Acheté</button>
+            </div>
+        </div>
     </div>
-</div>
 
-<!-- MAIN APP -->
-<div id="app">
-    <div id="map"></div>
-    <div class="nav-bar">
-        <i class="fa-solid fa-map nav-icon" onclick="app.closePanels()"></i>
-        <i class="fa-solid fa-cart-shopping nav-icon" onclick="app.openPanel('panelShop')"></i>
-        <i class="fa-solid fa-user nav-icon" onclick="app.openPanel('panelProfile')"></i>
+    <!-- Profile/Admin Panel -->
+    <div id="panelProfile" class="full-panel">
+        <div class="panel-header">
+            <h2>Mon Profil</h2>
+            <button class="close-panel btn-outline" style="border:none; font-size:1.5rem"><i class="fa-solid fa-times"></i></button>
+        </div>
+        <div class="panel-content">
+            <div style="text-align:center; margin-bottom:20px">
+                <i class="fa-solid fa-circle-user" style="font-size:4rem; color:#ccc"></i>
+                <h3 id="profileId">ID: --</h3>
+                <p id="profileRole">Utilisateur</p>
+            </div>
+            
+            <button id="btnLogout" class="btn btn-outline" style="width:100%">Déconnexion</button>
+
+            <!-- Admin Section (Hidden by default) -->
+            <div id="adminSection" style="margin-top:30px; border-top:1px solid #eee; padding-top:20px; display:none">
+                <h3 style="color:var(--danger)">ZONE ADMIN (God Mode)</h3>
+                <input type="text" placeholder="Message Broadcast" id="adminMsg">
+                <button id="btnAdminBroadcast" class="btn" style="background:var(--text); margin-top:5px">Envoyer à tous</button>
+                
+                <div style="margin-top:15px">
+                    <input type="text" placeholder="ID User Cible" id="adminTargetId">
+                    <input type="number" placeholder="Points" id="adminPoints">
+                    <button id="btnAdminGive" class="btn" style="background:var(--success); margin-top:5px">Donner Points</button>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
-
-<!-- PANELS -->
-<div id="panelProfile" class="panel">
-    <div class="panel-head">Profil <i class="fa-solid fa-xmark" onclick="app.closePanels()"></i></div>
-    <p>ID: <span id="txtProfileId" style="color:var(--primary); font-family:monospace;">-</span></p>
-    <p>Points: <span id="txtPoints">0</span></p>
-    <button class="btn-main" style="background:#333; color:#fff; margin-top:auto;" onclick="app.logout()">DÉCONNEXION</button>
-</div>
-
-<div id="panelShop" class="panel">
-    <div class="panel-head">Boutique <i class="fa-solid fa-xmark" onclick="app.closePanels()"></i></div>
-    <p>Items à venir...</p>
-</div>
 
 <script>
-// FORMATTER GLOBAL
-window.formatInput = function(e) {
-    e.value = e.value.replace(/\D/g,'').slice(0,16).replace(/(\d{4})(?=\d)/g,'$1 ').trim();
-};
-
-// APP LOGIC
-(function() {
-    // 1. INIT SUPABASE
-    if(typeof CONFIG === 'undefined') { alert("Config manquante !"); return; }
-    const sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
-
+    // --- 1. CONFIGURATION ---
+    const SB_URL = 'VOTRE_SUPABASE_URL'; 
+    const SB_KEY = 'VOTRE_SUPABASE_KEY';
+    const sb = supabase.createClient(SB_URL, SB_KEY);
+    
     let currentUser = null;
-    let recoveryId = null;
+    let map = null;
+    let watchId = null;
 
-    // 2. TOAST SYSTEM
-    function toast(msg) {
-        const t = document.getElementById('toast');
-        t.innerText = msg; t.style.display = 'block';
-        setTimeout(() => t.style.display = 'none', 3000);
-    }
-
-    // 3. EXPORT GLOBAL FUNCTIONS (Pour les onclick HTML)
-    window.app = {
-        show: function(viewId) {
-            ['viewLogin','viewSignup','viewForgot','viewSecurity'].forEach(id => document.getElementById(id).classList.add('hidden'));
-            document.getElementById(viewId).classList.remove('hidden');
-        },
-
-        // --- AUTH ---
-        signup: async function() {
-            const pass = document.getElementById('inpSignPass').value;
-            const q = document.getElementById('inpSignQ').value;
-            const a = document.getElementById('inpSignA').value.toLowerCase().trim();
-            if(!pass || !a) return toast("Remplissez tout !");
-
-            const newId = Array.from({length:16}, ()=>Math.floor(Math.random()*10)).join('');
-            const { error } = await sb.from('users').insert([{ id:newId, password:pass, secret_q:q, secret_a:a, points:50 }]);
-
-            if(error) return toast("Erreur: " + error.message);
-            
-            alert(`COMPTE CRÉÉ !\nVOTRE ID: ${newId.replace(/(\d{4})(?=\d)/g,'$1 ')}\nNotez-le bien !`);
-            document.getElementById('inpLoginId').value = window.formatInput({value:newId}); // Fake format
-            app.show('viewLogin');
-        },
-
-        login: async function() {
-            const id = document.getElementById('inpLoginId').value.replace(/\s/g,'');
-            const pass = document.getElementById('inpLoginPass').value;
-            if(!id || !pass) return toast("Infos manquantes");
-
-            const { data, error } = await sb.from('users').select('*').eq('id', id).eq('password', pass).single();
-            if(error || !data) return toast("Erreur ID ou Mot de Passe");
-
-            currentUser = data;
-            localStorage.setItem('cc_sess', id);
-            app.launch();
-        },
-
-        logout: function() {
-            localStorage.removeItem('cc_sess');
-            location.reload();
-        },
-
-        // --- RECOVERY ---
-        checkRecovery: async function() {
-            const id = document.getElementById('inpForgotId').value.replace(/\s/g,'');
-            if(id.length !== 16) return toast("ID incorrect");
-            
-            const { data } = await sb.from('users').select('secret_q').eq('id', id).single();
-            if(!data || !data.secret_q) return toast("Compte introuvable");
-
-            recoveryId = id;
-            document.getElementById('txtSecLabel').innerText = (data.secret_q === 'animal' ? "Nom animal ?" : "Ville naissance ?");
-            app.show('viewSecurity');
-        },
-
-        verifyRecovery: async function() {
-            const ans = document.getElementById('inpSecAns').value.toLowerCase().trim();
-            const { data } = await sb.from('users').select('secret_a').eq('id', recoveryId).single();
-
-            if(!data || data.secret_a !== ans) return toast("Mauvaise réponse !");
-
-            const tmp = "TMP-" + Math.floor(Math.random()*10000);
-            await sb.from('users').update({password:tmp}).eq('id', recoveryId);
-            
-            alert("VOTRE MOT DE PASSE PROVISOIRE :\n\n" + tmp);
-            app.show('viewLogin');
-        },
-
-        // --- APP UI ---
-        launch: function() {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('app').style.display = 'block';
-            app.initMap();
-            document.getElementById('txtProfileId').innerText = currentUser.id;
-            document.getElementById('txtPoints').innerText = currentUser.points;
-        },
-
-        openPanel: function(id) { document.getElementById(id).classList.add('open'); },
-        closePanels: function() { document.querySelectorAll('.panel').forEach(p => p.classList.remove('open')); },
-
-        initMap: function() {
-            if(window.mapInit) return;
-            const map = L.map('map', {zoomControl:false}).setView([43.6047, 1.4442], 13);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-            window.mapInit = true;
-        }
+    // --- 2. UTILITAIRES ---
+    const $ = (id) => document.getElementById(id);
+    const toast = (msg) => {
+        const t = $('toast');
+        $('toastMsg').innerText = msg;
+        t.classList.add('visible');
+        setTimeout(() => t.classList.remove('visible'), 3000);
     };
 
-    // AUTO LOGIN
-    const saved = localStorage.getItem('cc_sess');
-    if(saved) {
-        sb.from('users').select('*').eq('id', saved).single().then(({data})=>{
-            if(data) { currentUser=data; app.launch(); }
+    // --- 3. AUTHENTIFICATION ---
+    function switchAuthMode(mode) {
+        if(mode === 'register') {
+            $('formLogin').style.display = 'none';
+            $('formRegister').style.display = 'block';
+        } else {
+            $('formRegister').style.display = 'none';
+            $('formLogin').style.display = 'block';
+        }
+    }
+
+    // Gestion Inscription
+    $('btnToRegister').addEventListener('click', () => switchAuthMode('register'));
+    $('btnBackLogin').addEventListener('click', () => switchAuthMode('login'));
+    
+    $('btnRegister').addEventListener('click', async () => {
+        const pwd = $('inpRegPwd').value;
+        if(!pwd) return toast("Mot de passe requis");
+
+        // Génération ID 16 chiffres
+        const newId = Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString();
+        
+        // Création Supabase
+        const { data, error } = await sb.from('users').insert([{ id: newId, password: pwd, points: 50, role: 'user' }]).select();
+        
+        if(error) return toast("Erreur création: " + error.message);
+        
+        alert(`COMPTE CRÉÉ !\n\nVOTRE ID EST : ${newId}\nNOTEZ-LE BIEN !`);
+        $('inpLoginId').value = newId;
+        switchAuthMode('login');
+    });
+
+    // Gestion Connexion
+    $('btnLogin').addEventListener('click', async () => {
+        const id = $('inpLoginId').value.replace(/\s/g, '');
+        const pwd = $('inpLoginPwd').value;
+
+        if(!id || !pwd) return toast("ID et Mot de passe requis");
+
+        const { data, error } = await sb.from('users').select('*').eq('id', id).eq('password', pwd).single();
+
+        if(error || !data) return toast("Identifiants incorrects");
+
+        currentUser = data;
+        localStorage.setItem('cc_sess', id);
+        launchApp();
+    });
+
+    // Auto-connexion
+    const sess = localStorage.getItem('cc_sess');
+    if(sess) {
+        sb.from('users').select('*').eq('id', sess).single().then(({data}) => {
+            if(data) { currentUser = data; launchApp(); }
         });
     }
 
-})();
+    // --- 4. NAVIGATION & PANELS ---
+    function launchApp() {
+        $('screenLogin').classList.remove('active');
+        $('screenApp').classList.add('active');
+        
+        // Update UI info
+        $('uiPoints').innerText = currentUser.points;
+        $('profileId').innerText = "ID: " + currentUser.id.match(/.{1,4}/g).join(' ');
+        $('profileRole').innerText = currentUser.role.toUpperCase();
+
+        // Admin Check
+        if(currentUser.role === 'admin') $('adminSection').style.display = 'block';
+
+        initMap();
+    }
+
+    document.querySelectorAll('.close-panel').forEach(b => b.onclick = () => {
+        document.querySelectorAll('.full-panel').forEach(p => p.classList.remove('open'));
+    });
+
+    $('navShop').addEventListener('click', () => $('panelShop').classList.add('open'));
+    $('navProfile').addEventListener('click', () => $('panelProfile').classList.add('open'));
+    $('btnLogout').addEventListener('click', () => {
+        localStorage.removeItem('cc_sess');
+        location.reload();
+    });
+
+    // --- 5. CARTE (Map) ---
+    function initMap() {
+        if(map) return;
+        map = L.map('map', { zoomControl: false }).setView([48.8566, 2.3522], 13);
+        
+        // Tuiles "Clean" (CartoDB Positron) pour style Google
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Géolocalisation
+        map.locate({setView: true, maxZoom: 16, watch: true});
+        
+        const myIcon = L.divIcon({
+            className: 'my-div-icon',
+            html: '<div style="background:#2563eb; width:15px; height:15px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(37,99,235,0.5);"></div>'
+        });
+        const marker = L.marker([0,0], {icon: myIcon}).addTo(map);
+
+        map.on('locationfound', e => {
+            marker.setLatLng(e.latlng);
+            $('gpsStatus').style.color = 'var(--success)';
+        });
+        
+        map.on('locationerror', () => toast("GPS introuvable"));
+    }
+
+    // --- 6. BOUSSOLE (Compass) ---
+    $('navCompass').addEventListener('click', () => {
+        $('compassScreen').style.display = 'flex';
+        startCompass();
+    });
+    $('btnCloseCompass').addEventListener('click', () => {
+        $('compassScreen').style.display = 'none';
+        window.removeEventListener('deviceorientation', handleOrientation);
+    });
+
+    function startCompass() {
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            // iOS 13+
+            DeviceOrientationEvent.requestPermission()
+                .then(response => {
+                    if (response === 'granted') window.addEventListener('deviceorientation', handleOrientation);
+                    else toast("Permission boussole refusée");
+                })
+                .catch(console.error);
+        } else {
+            // Android / Non-iOS
+            window.addEventListener('deviceorientation', handleOrientation);
+        }
+    }
+
+    function handleOrientation(e) {
+        let compass = e.webkitCompassHeading || Math.abs(e.alpha - 360);
+        $('compassArrow').style.transform = `rotate(${-compass}deg)`;
+    }
+
+    // --- 7. ADMIN FUNCTIONS ---
+    $('btnAdminBroadcast').addEventListener('click', async () => {
+        const msg = $('adminMsg').value;
+        if(!msg) return;
+        // Simulation envoi (à connecter à une table 'messages' si besoin)
+        toast("Broadcast envoyé : " + msg);
+        $('adminMsg').value = '';
+    });
+
+    $('btnAdminGive').addEventListener('click', async () => {
+        const target = $('adminTargetId').value.replace(/\s/g,'');
+        const pts = parseInt($('adminPoints').value);
+        if(!target || !pts) return;
+
+        const { error } = await sb.from('users').update({points: pts}).eq('id', target); // Note: update remplace, il faudrait incrémenter via RPC idéalement
+        if(!error) toast(`Points envoyés à ${target}`);
+        else toast("Erreur update");
+    });
+
 </script>
 </body>
 </html>
