@@ -1,400 +1,335 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="theme-color" content="#000000" />
-  <title>City Compass v16 (Updated)</title>
-
-  <!-- LEAFLET CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  
-  <!-- LIBS -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <style>
-    /* =========================
-       VARIABLES & THEME
-       ========================== */
-    :root {
-      --bg-body: #F2F2F7; --bg-card: #FFFFFF; --bg-glass: rgba(255, 255, 255, 0.90);
-      --bg-input: rgba(118, 118, 128, 0.12);
-      --text-primary: #000000; --text-secondary: #8E8E93;
-      --separator: rgba(60, 60, 67, 0.12);
-      --accent: #007AFF; --accent-rgb: 0, 122, 255;
-      --gold: #FFD700; 
-      --danger: #FF3B30; --success: #34C759;
-      --radius-l: 24px; --nav-height: 85px;
-      --safe-top: env(safe-area-inset-top);
-      --safe-bottom: env(safe-area-inset-bottom);
-      --shadow-float: 0 12px 24px rgba(0,0,0,0.12);
-    }
-    [data-theme="dark"] {
-      --bg-body: #000000; --bg-card: #1C1C1E; --bg-glass: rgba(30, 30, 30, 0.90);
-      --bg-input: rgba(118, 118, 128, 0.24);
-      --text-primary: #FFFFFF; --text-secondary: #98989D;
-      --separator: rgba(84, 84, 88, 0.4);
-      --accent: #0A84FF; --accent-rgb: 10, 132, 255;
-    }
-
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
-    body {
-      margin: 0; padding: 0; height: 100dvh; overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-      background-color: var(--bg-body); color: var(--text-primary);
-      transition: background 0.3s ease, color 0.3s ease;
-      font-size: 17px;
-    }
-    .app { display: flex; flex-direction: column; height: 100%; position: relative; }
-
-    /* VIEW MANAGER */
-    .view { 
-      display: none; position: absolute; top: 0; left: 0; right: 0; bottom: var(--nav-height); 
-      overflow: hidden; opacity: 0; transition: opacity 0.3s ease; z-index: 0; pointer-events: none;
-    }
-    .view.active { display: block; opacity: 1; z-index: 10; pointer-events: auto; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CityCompass V31</title>
     
-    #viewLogin { bottom: 0; z-index: 3000; background: var(--bg-body); }
-    #viewLogin.active { display: flex; flex-direction: column; justify-content: center; padding: 30px; }
-    #viewDiscover { padding: 0 !important; }
-    #viewCam { background: black; z-index: 2500; } 
-    .scroll-container { height: 100%; overflow-y: auto; overflow-x: hidden; padding: max(20px, var(--safe-top)) 20px 40px 20px; }
-
-    /* COMPONENTS */
-    .btn { width: 100%; padding: 18px; border-radius: 18px; border: none; font-weight: 700; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: var(--shadow-float); transition: transform 0.1s; }
-    .btn:active { transform: scale(0.98); }
-    .btn-primary { background: var(--accent); color: white; }
-    .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--separator); }
-    .btn-admin { background: linear-gradient(135deg, #111, #333); color: var(--gold); border: 1px solid var(--gold); margin-bottom: 20px; }
-    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; width: auto; display: inline-flex; cursor:pointer; }
-    .badge-beta { background: var(--accent); color: white; font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 800; vertical-align: middle; }
-
-    /* LOGIN */
-    .login-container { width: 100%; max-width: 400px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
-    .login-logo-area { position: relative; width: 100px; height: 100px; margin-bottom: 40px; }
-    .compass-anim-ring { position: absolute; inset: 0; border: 4px solid var(--separator); border-radius: 50%; border-top-color: var(--accent); animation: spin 2s linear infinite; }
-    .compass-anim-arrow { position: absolute; inset: 15px; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23007AFF' d='M12 2L4.5 20.29C4.24 21.06 5.12 21.73 5.8 21.31L12 17.5L18.2 21.31C18.88 21.73 19.76 21.06 19.5 20.29L12 2Z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; background-size: contain; animation: breatheArrow 3s ease-in-out infinite; }
-    @keyframes spin { 100% { transform: rotate(360deg); } }
-    @keyframes breatheArrow { 0%, 100% { transform: rotate(-10deg) scale(1); } 50% { transform: rotate(10deg) scale(1.1); } }
-    .login-input { background: var(--bg-card); border: 1px solid var(--separator); border-radius: 16px; padding: 20px; font-size: 18px; letter-spacing: 2px; font-family: monospace; text-align: center; width: 100%; color: var(--text-primary); margin-bottom: 16px; box-shadow: var(--shadow-float); }
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    /* NAV BAR */
-    .nav-bar { position: absolute; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--separator); display: none; justify-content: space-around; padding-bottom: var(--safe-bottom); padding-top: 10px; z-index: 4000; box-shadow: 0 -5px 20px rgba(0,0,0,0.03); }
-    [data-theme="dark"] .nav-bar { background: rgba(28,28,30,0.9); border-top: 1px solid rgba(255,255,255,0.1); }
-    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; color: var(--text-secondary); background: none; border: none; cursor: pointer; padding-top: 4px; }
-    .nav-item svg { width: 26px; height: 26px; fill: currentColor; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    .nav-item.active { color: var(--accent); }
-    .nav-item.active svg { transform: translateY(-4px) scale(1.1); }
-    .nav-label { font-size: 10px; font-weight: 500; letter-spacing: -0.2px; }
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
-    /* MAP HUD */
-    .hud-top-left { position: absolute; top: max(10px, var(--safe-top)); left: 16px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
-    .hud-pill { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 8px 14px; border-radius: 100px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 6px; cursor: pointer; }
-    [data-theme="dark"] .hud-pill { background: rgba(30,30,30,0.85); color: white; border: 1px solid rgba(255,255,255,0.1); }
-    
-    /* MODALS & SHEETS */
-    .sheet-modal { position: fixed; inset: 0; z-index: 5000; pointer-events: none; opacity: 0; transition: opacity 0.3s; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: flex; flex-direction: column; justify-content: flex-end; }
-    .sheet-modal.active { pointer-events: auto; opacity: 1; }
-    .sheet-content { background: var(--bg-card); border-radius: 24px 24px 0 0; padding: 24px; width: 100%; max-height: 80vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 -10px 40px rgba(0,0,0,0.2); }
-    .sheet-modal.active .sheet-content { transform: translateY(0); }
-    .sheet-handle { width: 40px; height: 5px; background: var(--separator); border-radius: 10px; margin: 0 auto 20px; }
+    <style>
+        :root {
+            --primary: #3b82f6; --bg: #f8fafc; --text: #1e293b; --danger: #ef4444; --success: #22c55e;
+            --safe-top: env(safe-area-inset-top, 20px);
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+        }
+        [data-theme="dark"] { --bg: #0f172a; --text: #f1f5f9; --primary: #60a5fa; }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
-  </style>
+        /* SCREENS */
+        .screen { position: absolute; inset: 0; background: var(--bg); z-index: 10; display: none; flex-direction: column; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); overflow-y: auto; }
+        .screen.active { display: flex; z-index: 20; }
+
+        /* LOGIN */
+        .auth-box { width: 90%; max-width: 400px; margin: auto; text-align: center; padding: 20px; }
+        .logo { font-size: 3rem; color: var(--primary); margin-bottom: 10px; }
+        input { width: 100%; padding: 15px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 12px; font-size: 16px; background: rgba(255,255,255,0.9); color: #000; text-align:center; letter-spacing:1px; }
+        .btn { width: 100%; padding: 15px; border-radius: 12px; background: var(--primary); color: white; border: none; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.2s; }
+        .btn:active { transform: scale(0.98); opacity: 0.9; }
+        .link { color: var(--primary); margin-top: 15px; text-decoration: underline; font-size: 0.9rem; cursor: pointer; }
+
+        /* APP HUD */
+        #map { flex: 1; width: 100%; z-index: 1; }
+        .hud { position: absolute; top: calc(15px + var(--safe-top)); left: 15px; right: 15px; z-index: 500; display: flex; justify-content: space-between; pointer-events: none; }
+        .widget { background: rgba(255,255,255,0.95); padding: 8px 15px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); pointer-events: auto; display: flex; align-items: center; gap: 8px; font-weight: bold; color: #333; }
+        
+        /* NAV BAR */
+        .nav { background: #fff; padding: 10px 0 calc(10px + var(--safe-bottom)); display: flex; justify-content: space-around; border-top: 1px solid #eee; z-index: 1000; }
+        .nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 0.7rem; gap: 4px; }
+        .nav-btn.active { color: var(--primary); }
+        .nav-btn i { font-size: 1.4rem; }
+
+        /* PANELS */
+        .panel { position: fixed; inset: 0; background: var(--bg); z-index: 2000; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); display: flex; flex-direction: column; padding-top: var(--safe-top); }
+        .panel.open { transform: translateY(0); }
+        .panel-head { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 1.2rem; font-weight: bold; border-bottom: 1px solid #eee; }
+        .panel-body { padding: 20px; flex: 1; overflow-y: auto; }
+
+        /* SHOP ITEMS */
+        .shop-item { background: #fff; border-radius: 12px; padding: 15px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        [data-theme="dark"] .shop-item { background: #1e293b; }
+
+        /* COMPASS */
+        #compassScreen { background: #111; color: #fff; align-items: center; justify-content: center; z-index: 3000; }
+        #arrow { font-size: 8rem; color: var(--primary); transition: transform 0.1s linear; }
+
+        /* TOAST */
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #333; color: white; padding: 10px 20px; border-radius: 50px; z-index: 9999; transition: transform 0.3s; font-size: 0.9rem; }
+        #toast.visible { transform: translateX(-50%) translateY(0); }
+    </style>
 </head>
 <body>
 
-  <div class="app">
-    
+    <!-- NOTIF -->
+    <div id="toast">Info</div>
+
     <!-- 1. LOGIN -->
-    <div id="viewLogin" class="view active">
-      <div class="login-container">
-        <div class="login-logo-area">
-          <div class="compass-anim-ring"></div>
-          <div class="compass-anim-arrow"></div>
+    <div id="scrLogin" class="screen active">
+        <div class="auth-box">
+            <div class="logo"><i class="fa-solid fa-compass"></i></div>
+            <h2>CityCompass</h2>
+            <p>v31 Fusion</p>
+            
+            <input type="text" id="inpUserCode" placeholder="Code ID (16 chiffres)" inputmode="numeric">
+            <button id="btnLogin" class="btn" onclick="auth.login()">Connexion</button>
+            <div class="link" onclick="auth.create()">Créer un compte</div>
         </div>
-        <h2 style="margin: 0 0 10px 0; font-size: 28px; letter-spacing: -0.5px;">City Compass</h2>
-        <p style="margin: 0 0 40px 0; color: var(--text-secondary); font-size: 15px;">Exploration Urbaine Simplifiée</p>
+    </div>
+
+    <!-- 2. APP -->
+    <div id="scrApp" class="screen">
+        <div class="hud">
+            <div class="widget"><i class="fa-solid fa-coins" style="color:gold"></i> <span id="uiPts">0</span></div>
+            <div class="widget"><i class="fa-solid fa-satellite-dish"></i> <span id="uiGps">GPS</span></div>
+        </div>
         
-        <input type="text" id="inpUserCode" class="login-input" placeholder="0000 0000 0000 0000" maxlength="19" inputmode="numeric">
-        <div id="loginError" style="color:var(--danger); font-size:13px; height:20px; margin-bottom:10px;"></div>
+        <div id="map"></div>
         
-        <button id="btnLogin" class="btn btn-primary" onclick="login($('inpUserCode').value)">Entrer</button>
-        <button class="btn btn-secondary" style="margin-top:16px;" onclick="createAccount()">Créer un compte</button>
-      </div>
-    </div>
-
-    <!-- 2. DISCOVER (MAP) -->
-    <div id="viewDiscover" class="view">
-      <div class="hud-top-left">
-        <div class="hud-pill" onclick="toggleNav()">
-             <span style="font-size:16px;">🧭</span> <span id="displayPoints">0</span> pts
-        </div>
-        <div class="hud-pill" style="margin-top:4px;">
-             <span style="width:8px; height:8px; background:var(--success); border-radius:50%; display:inline-block;"></span> 
-             <span id="gpsStatus">GPS Actif</span>
-        </div>
-      </div>
-      <div id="map" style="width:100%; height:100%;"></div>
-    </div>
-    
-    <!-- NAV BAR -->
-    <div id="navBar" class="nav-bar">
-      <button class="nav-item active" onclick="switchView('viewDiscover', this)">
-        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
-        <span class="nav-label">Explorer</span>
-      </button>
-      <button class="nav-item" onclick="switchView('viewShop', this)">
-        <svg viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>
-        <span class="nav-label">Shop</span>
-      </button>
-      <button class="nav-item" onclick="switchView('viewSettings', this)">
-        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L3.04 8.87c-.11.21-.06.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.11-.22.06-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-        <span class="nav-label">Réglages</span>
-      </button>
-    </div>
-
-    <!-- 3. SHOP -->
-    <div id="viewShop" class="view">
-      <div class="scroll-container">
-        <h1>Boutique</h1>
-        <p style="color:var(--text-secondary)">Échangez vos points contre des fonctionnalités.</p>
-        <div id="shopList"></div>
-      </div>
-    </div>
-
-    <!-- 4. SETTINGS -->
-    <div id="viewSettings" class="view">
-      <div class="scroll-container">
-         <h1>Réglages</h1>
-         <div style="background:var(--bg-card); padding:20px; border-radius:24px; margin-bottom:20px;">
-            <h3>Compte</h3>
-            <h1 id="displayCode" style="font-family:monospace; color:var(--accent);">--</h1>
-            <p>Niveau <span id="profileLevel">1</span></p>
-            <button class="btn btn-secondary" onclick="logout()" style="color:var(--danger)">Déconnexion</button>
-         </div>
-         
-         <div id="adminControlsArea" style="display:none; background:#111; color:#fff; padding:20px; border-radius:24px; margin-top:20px;">
-             <h3 style="color:var(--gold)">ADMIN PANEL</h3>
-             <input id="adminBroadcastMsg" placeholder="Message Broadcast" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none;">
-             <button class="btn btn-sm btn-primary" onclick="sendBroadcast()">Envoyer Broadcast</button>
-             <hr style="border-color:#333; margin:15px 0;">
-             <input id="adminShopItem" placeholder="Nom Item Shop" style="width:100%; padding:10px; margin-bottom:5px;">
-             <input id="adminShopPrice" placeholder="Prix" type="number" style="width:100%; padding:10px; margin-bottom:10px;">
-             <button class="btn btn-sm btn-primary" onclick="addShopItemAdmin()">Ajouter au Shop</button>
-         </div>
-      </div>
-    </div>
-
-    <!-- SHEET: MAP DETAILS -->
-    <div id="mapSheet" class="sheet-modal">
-        <div class="sheet-content">
-            <div class="sheet-handle" onclick="closeSheet()"></div>
-            <h2 id="sheetTitle" style="margin:0 0 5px 0;">Titre</h2>
-            <p id="sheetDesc" style="color:var(--text-secondary); margin-bottom:20px;">Description</p>
-            <button class="btn btn-primary" onclick="closeSheet()">Fermer</button>
+        <div class="nav">
+            <button class="nav-btn active" onclick="ui.closePanels()"><i class="fa-solid fa-map"></i> Carte</button>
+            <button class="nav-btn" onclick="ui.openComp()"><i class="fa-regular fa-compass"></i> Boussole</button>
+            <button class="nav-btn" onclick="ui.openPanel('shop')"><i class="fa-solid fa-store"></i> Shop</button>
+            <button class="nav-btn" onclick="ui.openPanel('profile')"><i class="fa-solid fa-user"></i> Profil</button>
         </div>
     </div>
 
-  </div>
+    <!-- 3. PANELS -->
+    <div id="panel_shop" class="panel">
+        <div class="panel-head">Boutique <i class="fa-solid fa-xmark" onclick="ui.closePanels()"></i></div>
+        <div class="panel-body" id="shopList">
+            <!-- Items injected by JS -->
+        </div>
+    </div>
+
+    <div id="panel_profile" class="panel">
+        <div class="panel-head">Profil <i class="fa-solid fa-xmark" onclick="ui.closePanels()"></i></div>
+        <div class="panel-body">
+            <div style="text-align:center; margin-bottom:20px">
+                <i class="fa-solid fa-user-astronaut" style="font-size:4rem; color:#cbd5e1"></i>
+                <h3 id="pId">ID: --</h3>
+                <p>Niveau <span id="pLevel">1</span></p>
+            </div>
+            <button class="btn" style="background:var(--text)" onclick="auth.logout()">Déconnexion</button>
+
+            <!-- Admin Only -->
+            <div id="admZone" style="display:none; margin-top:30px; border:2px dashed var(--danger); padding:15px; border-radius:10px">
+                <h4 style="color:var(--danger); margin:0 0 10px 0">ADMIN</h4>
+                <input id="admPtsTgt" placeholder="ID Cible" style="width:100%; margin-bottom:5px;">
+                <input id="admPtsVal" placeholder="Montant" type="number" style="width:100%; margin-bottom:5px;">
+                <button class="btn" style="background:var(--success)" onclick="admin.give()">Donner Points</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. COMPASS -->
+    <div id="compassScreen" class="screen">
+        <div style="position:absolute; top:50px">NORD</div>
+        <i id="arrow" class="fa-solid fa-location-arrow"></i>
+        <button class="btn" style="width:auto; position:absolute; bottom:50px; background:#333" onclick="ui.closeComp()">Fermer</button>
+    </div>
 
 <script>
-// ===============================================
-// 1. CONFIGURATION SUPABASE (NOUVEAU PROJET)
-// ===============================================
+// ==========================================
+// CONFIGURATION SUPABASE
+// ==========================================
 const SB_URL = 'https://scbihxaceelyygrlacvm.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjYmloeGFjZWVseXlncmxhY3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1NjU3MTcsImV4cCI6MjA4NTE0MTcxN30.rgUH-kltyNX99-HTDmGEyzGyu8qFXR9LF1QxsjY0W44';
 
-const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
-const ADMIN_ID = "0000000000000000"; // Code Admin par defaut
+const sb = supabase.createClient(SB_URL, SB_KEY);
+const ADMIN_ID = "0000000000000000"; 
 
-// ===============================================
-// 2. CORE LOGIC
-// ===============================================
+// ==========================================
+// LOGIQUE
+// ==========================================
 const $ = (id) => document.getElementById(id);
+const toast = (m) => { $('toast').innerText=m; $('toast').classList.add('visible'); setTimeout(()=>$('toast').classList.remove('visible'), 3000); };
+
 let userCode = null;
 let userPoints = 0;
-let mapInstance = null;
+let mapObj = null;
 let mapTileLayer = null;
-let poiLayerGroup = null;
-let settings = { theme: 'light', highGPS: true };
-let activeFeatures = {}; // Stocke ce qui est acheté (ex: 'map_dark': true)
+let activeFeatures = {}; // Stocke les achats
+
+// Liste des objets (Logique de votre script paste.txt)
 let shopItems = [
     { id: 'theme_dark', name: 'Mode Sombre', price: 0, icon: '🌙' },
     { id: 'map_sat', name: 'Vue Satellite', price: 500, icon: '🛰️' },
     { id: 'map_retro', name: 'Vue Blueprint', price: 300, icon: '🗺️' },
     { id: 'style_marker_car', name: 'Icône Voiture', price: 1000, icon: '🚗' },
-    { id: 'style_marker_ufo', name: 'Icône OVNI', price: 5000, icon: '🛸' }
 ];
 
-/* LOGIN */
-async function login(c) {
-  const clean = c.replace(/\s/g, ''); 
-  if(clean.length < 4) { $('loginError').textContent = "Format invalide"; return; }
-  
-  $('btnLogin').textContent="Connexion..."; $('btnLogin').disabled=true;
-  
-  try {
-    const { data } = await supabaseClient.from('users').select('*').eq('id', clean);
-    if(data && data.length){ 
-        userCode=clean; 
-        userPoints=data[0].points; 
-        localStorage.setItem('cc_user_code', userCode); 
-        initApp(); 
-    }
-    else { $('loginError').textContent="Profil introuvable"; $('btnLogin').disabled=false; $('btnLogin').textContent="Entrer"; }
-  } catch(e) { $('loginError').textContent="Erreur connexion"; $('btnLogin').disabled=false; $('btnLogin').textContent="Entrer"; }
-}
+const auth = {
+    async login() {
+        const id = $('inpUserCode').value.replace(/\s/g, '');
+        if(id.length < 4) return toast("ID Invalide");
+        
+        const { data } = await sb.from('users').select('*').eq('id', id);
+        if(data && data.length) {
+            this.startSession(id, data[0].points);
+        } else {
+            toast("Compte introuvable");
+        }
+    },
+    async create() {
+        const id = Array(16).fill(0).map(()=>Math.floor(Math.random()*10)).join('');
+        await sb.from('users').insert([{ id: id, points: 200 }]);
+        alert("Votre ID : " + id);
+        this.startSession(id, 200);
+    },
+    startSession(id, points) {
+        userCode = id;
+        userPoints = points;
+        localStorage.setItem('cc_sess', id);
+        
+        $('scrLogin').classList.remove('active');
+        $('scrApp').classList.add('active');
+        
+        $('uiPts').innerText = points;
+        $('pId').innerText = "ID: " + id.replace(/(\d{4})(?=\d)/g, '$1 ');
+        $('pLevel').innerText = Math.floor(points/500) + 1;
+        
+        if(id === ADMIN_ID) $('admZone').style.display = 'block';
 
-async function createAccount() {
-  const c = Array(16).fill(0).map(()=>Math.floor(Math.random()*10)).join('');
-  await supabaseClient.from('users').insert([{ id: c, points: 200 }]);
-  alert("Compte créé ! Votre code est : " + c);
-  userCode=c; userPoints=200; localStorage.setItem('cc_user_code', c); initApp();
-}
+        app.loadPurchases(); // Charger les achats depuis Supabase
+        app.renderShop();
+        setTimeout(ui.initMap, 500);
+    },
+    logout() { localStorage.removeItem('cc_sess'); location.reload(); }
+};
 
-function initApp() {
-  $('viewLogin').classList.remove('active');
-  $('navBar').style.display = 'flex';
-  
-  const fmt = userCode ? userCode.replace(/(\d{4})(?=\d)/g, '$1 ').trim() : "--";
-  if($('displayCode')) $('displayCode').textContent = fmt;
-  if($('displayPoints')) $('displayPoints').textContent = userPoints;
-  if($('inpUserCode')) $('inpUserCode').value = fmt;
-
-  if(userCode === ADMIN_ID) { $('adminControlsArea').style.display = 'block'; }
-  
-  // Load Purchases
-  loadData();
-  renderShop();
-  
-  // Start Map
-  setTimeout(initMap, 500);
-}
-
-function logout() {
-    localStorage.removeItem('cc_user_code');
-    location.reload();
-}
-
-/* MAP */
-function initMap() { 
-    if (mapInstance) return; if (!$('map')) return; 
-    mapInstance = L.map('map', { zoomControl: false, attributionControl: false }).setView([48.8566, 2.3522], 13);
-    updateMapTiles(); 
+const app = {
+    async loadPurchases() {
+        // Charge les achats depuis user_favorites (format JSONB du script paste.txt)
+        const { data } = await sb.from('user_favorites').select('place_data').eq('user_id', userCode);
+        if(data) {
+            data.forEach(row => {
+                if(row.place_data && row.place_data.type === 'purchase') {
+                    activeFeatures[row.place_data.itemId] = true;
+                }
+            });
+            ui.updateMapTiles();
+            if(activeFeatures['theme_dark']) document.body.dataset.theme = 'dark';
+            this.renderShop();
+        }
+    },
     
-    // GPS
-    mapInstance.locate({setView: true, watch: true, maxZoom: 16});
-    
-    const m = L.marker([0,0]).addTo(mapInstance);
-    mapInstance.on('locationfound', e => {
-        m.setLatLng(e.latlng);
-        $('gpsStatus').style.color = 'var(--success)';
-    });
-    
-    // POI Click simulation (Long press context menu)
-    mapInstance.on('contextmenu', e => {
-        $('sheetTitle').textContent = "Point Repéré"; 
-        $('sheetDesc').textContent = e.latlng.toString(); 
-        $('mapSheet').classList.add('active'); 
-    });
-}
-
-function updateMapTiles() { 
-    if (!mapInstance) return; if (mapTileLayer) mapInstance.removeLayer(mapTileLayer); 
-    
-    let url = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'; 
-    if(activeFeatures['theme_dark']) url = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-    if(activeFeatures['map_sat']) url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-    
-    mapTileLayer = L.tileLayer(url, { maxZoom: 19 }).addTo(mapInstance); 
-}
-
-/* DATA LOADING */
-async function loadData() { 
-  if(!userCode)return;
-  // Load Purchases from user_favorites (used as storage)
-  try {
-      let { data } = await supabaseClient.from('user_favorites').select('place_data').eq('user_id', userCode);
-      if(data) {
-          data.forEach(row => {
-              if(row.place_data && row.place_data.type === 'purchase') {
-                  activeFeatures[row.place_data.itemId] = true;
-              }
-          });
-          updateMapTiles();
-      }
-  } catch(e) { console.error(e); }
-}
-
-/* SHOP LOGIC */
-function renderShop() {
-    const list = $('shopList'); list.innerHTML = '';
-    shopItems.forEach(item => {
-        const owned = activeFeatures[item.id];
-        const el = document.createElement('div');
-        el.style.cssText = "background:var(--bg-card); padding:15px; margin-bottom:10px; border-radius:18px; display:flex; align-items:center; justify-content:space-between;";
-        el.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span style="font-size:24px">${item.icon}</span>
+    renderShop() {
+        const list = $('shopList'); list.innerHTML = '';
+        shopItems.forEach(item => {
+            const owned = activeFeatures[item.id];
+            const div = document.createElement('div');
+            div.className = 'shop-item';
+            div.innerHTML = `
                 <div>
-                    <div style="font-weight:bold">${item.name}</div>
-                    <div style="font-size:12px; opacity:0.6">${item.price} pts</div>
+                    <strong>${item.icon} ${item.name}</strong>
+                    <div style="font-size:0.8rem; opacity:0.7">${item.price} pts</div>
                 </div>
-            </div>
-            <button class="btn-sm btn-primary" style="${owned?'background:gray':''}" onclick="buyItem('${item.id}', ${item.price})">
-                ${owned ? 'Acquis' : 'Acheter'}
-            </button>
-        `;
-        list.appendChild(el);
-    });
-}
+                <button class="btn" style="width:auto; padding:5px 15px; font-size:0.8rem; background:${owned?'#ccc':''}" 
+                        onclick="app.buy('${item.id}', ${item.price})" ${owned?'disabled':''}>
+                    ${owned ? 'Acquis' : 'Acheter'}
+                </button>
+            `;
+            list.appendChild(div);
+        });
+    },
 
-async function buyItem(id, price) {
-    if(activeFeatures[id]) return;
-    if(userPoints < price) return alert("Pas assez de points !");
-    
-    if(confirm(`Acheter ${id} pour ${price} pts ?`)) {
-        // 1. Deduct points
-        const newPts = userPoints - price;
-        await supabaseClient.from('users').update({points: newPts}).eq('id', userCode);
-        userPoints = newPts;
-        $('displayPoints').textContent = userPoints;
+    async buy(itemId, price) {
+        if(userPoints < price) return toast("Pas assez de points !");
         
-        // 2. Save purchase
-        await supabaseClient.from('user_favorites').insert([{
-            user_id: userCode,
-            place_data: { type: 'purchase', itemId: id, date: new Date() }
-        }]);
-        
-        activeFeatures[id] = true;
-        renderShop();
-        updateMapTiles();
-        alert("Achat réussi !");
+        if(confirm("Confirmer l'achat ?")) {
+            // 1. Débit points
+            const newPts = userPoints - price;
+            await sb.from('users').update({points: newPts}).eq('id', userCode);
+            userPoints = newPts;
+            $('uiPts').innerText = userPoints;
+            
+            // 2. Sauvegarde achat
+            await sb.from('user_favorites').insert([{
+                user_id: userCode,
+                place_data: { type: 'purchase', itemId: itemId, date: new Date() }
+            }]);
+            
+            activeFeatures[itemId] = true;
+            this.renderShop();
+            ui.updateMapTiles();
+            if(itemId === 'theme_dark') document.body.dataset.theme = 'dark';
+            toast("Achat réussi !");
+        }
     }
-}
+};
 
-/* ADMIN */
-async function sendBroadcast() {
-    const msg = $('adminBroadcastMsg').value;
-    alert("Broadcast simulé : " + msg);
-}
+const ui = {
+    openPanel: (name) => $('panel_'+name).classList.add('open'),
+    closePanels: () => document.querySelectorAll('.panel').forEach(p => p.classList.remove('open')),
+    
+    openComp: () => {
+        $('compassScreen').classList.add('active');
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            DeviceOrientationEvent.requestPermission().then(r => {
+                if(r === 'granted') window.addEventListener('deviceorientation', ui.handleComp);
+            });
+        } else {
+            window.addEventListener('deviceorientation', ui.handleComp);
+        }
+    },
+    closeComp: () => {
+        $('compassScreen').classList.remove('active');
+        window.removeEventListener('deviceorientation', ui.handleComp);
+    },
+    handleComp: (e) => {
+        const d = e.webkitCompassHeading || Math.abs(e.alpha - 360);
+        $('arrow').style.transform = `rotate(${-d}deg)`;
+    },
 
-/* UI UTILS */
-function switchView(vid, btn) {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    $(vid).classList.add('active');
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-    if(btn) btn.classList.add('active');
-    if(vid === 'viewDiscover' && mapInstance) mapInstance.invalidateSize();
-}
-function closeSheet() { $('mapSheet').classList.remove('active'); }
+    initMap: () => {
+        if(mapObj) return;
+        mapObj = L.map('map', {zoomControl: false}).setView([48.85, 2.35], 13);
+        ui.updateMapTiles();
+        
+        mapObj.locate({setView: true, watch: true});
+        const m = L.marker([0,0]).addTo(mapObj);
+        
+        mapObj.on('locationfound', e => {
+            m.setLatLng(e.latlng);
+            $('uiGps').style.color = '#22c55e';
+            
+            // Icone personnalisée si achetée
+            if(activeFeatures['style_marker_car']) {
+                m.setIcon(L.divIcon({html:'🚗', className:'', iconSize:[24,24]}));
+            }
+        });
+    },
+    
+    updateMapTiles: () => {
+        if(!mapObj) return;
+        if(mapTileLayer) mapObj.removeLayer(mapTileLayer);
+        
+        let url = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+        if(activeFeatures['theme_dark']) url = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+        if(activeFeatures['map_sat']) url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+        
+        mapTileLayer = L.tileLayer(url, {maxZoom: 19}).addTo(mapObj);
+    }
+};
 
-// Auto Init if session
-const sess = localStorage.getItem('cc_user_code');
-if(sess) { userCode=sess; login(sess); }
+const admin = {
+    async give() {
+        const id = $('admPtsTgt').value;
+        const pts = parseInt($('admPtsVal').value);
+        await sb.from('users').update({points: pts}).eq('id', id);
+        toast("Points envoyés !");
+    }
+};
+
+// Auto Login
+const sess = localStorage.getItem('cc_sess');
+if(sess) { $('inpUserCode').value = sess; auth.login(); }
 
 </script>
 </body>
