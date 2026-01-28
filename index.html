@@ -1,362 +1,385 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>CityCompass Liquid</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    <title>CityCompass v47 Ultimate</title>
 
-  <!-- LEAFLET & SUPABASE -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
-    /* --- THEME LIQUIDE & GLASSMORPHISM --- */
-    :root {
-      --bg-gradient: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-      --glass: rgba(255, 255, 255, 0.65);
-      --glass-border: rgba(255, 255, 255, 0.4);
-      --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-      --blur: blur(20px);
-      
-      --text: #1f1f1f; --text-muted: #666;
-      --accent: #007aff; --danger: #ff3b30;
-      
-      --safe-top: env(safe-area-inset-top);
-      --safe-bot: env(safe-area-inset-bottom);
-      --nav-height: 85px;
-    }
+    <!-- Leaflet CSS & FontAwesome -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    [data-theme="dark"] {
-      --bg-gradient: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-      --glass: rgba(0, 0, 0, 0.60);
-      --glass-border: rgba(255, 255, 255, 0.1);
-      --text: #ffffff; --text-muted: #aaa;
-      --accent: #0a84ff;
-    }
+    <!-- Supabase & Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-    
-    body {
-      margin: 0; padding: 0; height: 100vh; overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-      background: var(--bg-gradient); color: var(--text);
-      transition: background 0.5s;
-    }
-
-    /* --- COMPOSANTS GLASS --- */
-    .glass-card {
-      background: var(--glass);
-      backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
-      border: 1px solid var(--glass-border);
-      box-shadow: var(--glass-shadow);
-      border-radius: 24px;
-    }
-
-    .btn-liquid {
-      width: 100%; padding: 16px; border-radius: 16px; border: none;
-      background: var(--accent); color: white; font-weight: 700; font-size: 16px;
-      cursor: pointer; box-shadow: 0 4px 15px rgba(0,122,255,0.3);
-      transition: transform 0.1s; display: flex; align-items: center; justify-content: center;
-    }
-    .btn-liquid:active { transform: scale(0.97); }
-    
-    .input-glass {
-      width: 100%; padding: 16px; border-radius: 16px; border: 1px solid var(--glass-border);
-      background: rgba(255,255,255,0.2); color: var(--text); font-size: 16px;
-      margin-bottom: 12px; outline: none; transition: 0.3s;
-    }
-    .input-glass:focus { background: rgba(255,255,255,0.4); border-color: var(--accent); }
-
-    /* --- VUES --- */
-    #app { height: 100%; width: 100%; position: relative; }
-    
-    .view {
-      position: absolute; inset: 0 0 var(--nav-height) 0;
-      display: none; flex-direction: column; opacity: 0; transition: opacity 0.2s;
-    }
-    .view.active { display: flex; opacity: 1; z-index: 10; }
-    
-    .view-content { flex: 1; overflow-y: auto; padding: calc(var(--safe-top) + 20px) 20px 40px; }
-    
-    /* LOGIN VIEW */
-    #viewLogin { bottom: 0; z-index: 2000; justify-content: center; align-items: center; padding: 30px; }
-    
-    /* MAP VIEW */
-    #viewMap { padding: 0; }
-    #map { width: 100%; height: 100%; z-index: 1; }
-    .search-float {
-      position: absolute; top: calc(var(--safe-top) + 16px); left: 16px; right: 16px; z-index: 100;
-      display: flex; align-items: center; padding: 0 16px; height: 50px;
-    }
-    .search-input { flex: 1; border: none; background: transparent; font-size: 16px; color: var(--text); height: 100%; outline: none; }
-    .sugg-box { position: absolute; top: 60px; left: 0; right: 0; max-height: 250px; overflow-y: auto; display: none; }
-    .sugg-item { padding: 12px 16px; border-bottom: 1px solid var(--glass-border); font-size: 14px; background: rgba(255,255,255,0.1); cursor: pointer; }
-    
-    /* DRAWER */
-    #drawer {
-      position: absolute; bottom: 20px; left: 16px; right: 16px; padding: 24px; z-index: 200;
-      transform: translateY(150%); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    #drawer.visible { transform: translateY(0); }
-
-    /* COMPASS VIEW */
-    .compass-ui { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .ring {
-      width: 280px; height: 280px; border-radius: 50%; border: 4px solid var(--glass-border);
-      position: relative; display: flex; justify-content: center; transition: transform 0.1s linear;
-      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-      box-shadow: 0 0 40px rgba(0,122,255,0.1); margin-bottom: 30px;
-    }
-    .needle-n { width: 6px; height: 20px; background: var(--danger); position: absolute; top: -10px; border-radius: 4px; }
-    .needle-t { width: 8px; height: 35px; background: var(--accent); position: absolute; top: -15px; border-radius: 4px; display: none; box-shadow: 0 0 10px var(--accent); }
-    .deg-display { font-size: 60px; font-weight: 900; }
-    .nav-pill { background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px; font-weight: 700; font-size: 14px; margin-top: 10px; display: none; }
-
-    /* PROFILE & LISTS */
-    .list-group { overflow: hidden; margin-bottom: 20px; }
-    .list-item {
-      padding: 16px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;
-      background: rgba(255,255,255,0.02); transition: background 0.2s; cursor: pointer;
-    }
-    .list-item:active { background: rgba(255,255,255,0.1); }
-    .list-item:last-child { border-bottom: none; }
-
-    /* TAB BAR */
-    .tabbar {
-      position: fixed; bottom: 0; width: 100%; height: var(--nav-height);
-      display: flex; justify-content: space-around; padding-bottom: var(--safe-bot);
-      background: var(--glass); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
-      border-top: 1px solid var(--glass-border); z-index: 1000;
-    }
-    .tab { flex: 1; background: none; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 10px; transition: color 0.2s; cursor: pointer; }
-    .tab.active { color: var(--accent); }
-    .tab svg { width: 26px; height: 26px; margin-bottom: 4px; fill: currentColor; }
-
-    /* ADMIN */
-    #adminModal { position: absolute; inset:0; background: var(--bg-gradient); z-index: 5000; display:none; padding-top:var(--safe-top); }
-    .user-row { padding: 12px; border-bottom:1px solid rgba(0,0,0,0.1); display:flex; justify-content:space-between; align-items: center; }
-  </style>
-</head>
-<body>
-
-  <!-- 1. LOGIN -->
-  <div class="view active" id="viewLogin">
-    <div class="glass-card" style="padding:40px 30px; width:100%; max-width:360px; text-align:center;">
-      <div style="font-size:50px; margin-bottom:20px;">🧭</div>
-      <h1 style="margin:0 0 10px;">CityCompass</h1>
-      <p style="margin:0 0 30px; opacity:0.6;">Liquid Edition v44</p>
-      
-      <input type="email" id="email" class="input-glass" placeholder="Email" value="user@demo.com">
-      <input type="password" id="pass" class="input-glass" placeholder="Mot de passe" value="123456">
-      
-      <button class="btn-liquid" onclick="handleLogin()">Connexion</button>
-      <div style="margin-top:20px; font-size:14px; color:var(--accent); cursor:pointer;" onclick="handleSignup()">Pas de compte ? S'inscrire</div>
-      <div id="loginMsg" style="margin-top:15px; font-size:13px; color:var(--danger); min-height: 20px;"></div>
-    </div>
-  </div>
-
-  <!-- 2. APP -->
-  <div id="app" style="display:none;">
-    
-    <!-- MAP -->
-    <div class="view" id="viewMap">
-      <div class="search-float glass-card">
-        <span style="margin-right:10px;">🔍</span>
-        <input id="sInput" class="search-input" placeholder="Rechercher..." autocomplete="off">
-        <div id="sList" class="sugg-box glass-card"></div>
-      </div>
-      
-      <div id="map"></div>
-
-      <div id="drawer" class="glass-card">
-        <div style="font-weight:800; font-size:20px;" id="dTitle">Lieu</div>
-        <div style="font-size:13px; opacity:0.7; margin-bottom:15px;" id="dCoords">---</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-          <button class="btn-liquid" style="background:rgba(0,0,0,0.1); color:var(--text);" onclick="addToFavs()">⭐️ Favoris</button>
-          <button class="btn-liquid" onclick="goNav()">🧭 Boussole</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- COMPASS -->
-    <div class="view" id="viewCompass">
-      <div class="compass-ui">
-        <div class="ring" id="cRing">
-          <div class="needle-n"></div>
-          <div class="needle-t" id="cTarget"></div>
-        </div>
-        <div class="deg-display" id="cVal">---°</div>
-        <div class="nav-pill" id="navInfo">CIBLE À <span id="distVal">0</span> M</div>
-        <button class="btn-liquid" style="width:200px; margin-top:40px;" onclick="startSensors()" id="btnSensors">Activer Capteurs</button>
-      </div>
-    </div>
-
-    <!-- PROFILE -->
-    <div class="view" id="viewProfile">
-      <div class="view-content">
-        <h1 style="margin-bottom:20px;">Mon Profil</h1>
-        
-        <div class="glass-card list-group" style="padding:20px; text-align:center; margin-bottom:20px;">
-          <div style="font-size:40px; margin-bottom:10px;">👤</div>
-          <div style="font-weight:700;" id="pEmail">Chargement...</div>
-          <div style="font-size:24px; font-weight:800; color:var(--accent); margin-top:5px;"><span id="pPoints">...</span> Pts</div>
-        </div>
-
-        <h3 style="margin:20px 0 10px; font-size:14px; text-transform:uppercase; opacity:0.6; padding-left:10px;">Mes Favoris</h3>
-        <div class="glass-card list-group" id="favList">
-          <div class="list-item" style="color:var(--text-muted); justify-content:center;">Aucun favori</div>
-        </div>
-
-        <h3 style="margin:20px 0 10px; font-size:14px; text-transform:uppercase; opacity:0.6; padding-left:10px;">Réglages</h3>
-        <div class="glass-card list-group">
-          <div class="list-item">
-            <span>Mode Nuit</span>
-            <input type="checkbox" id="swTheme" onchange="toggleTheme()">
-          </div>
-          <div class="list-item" id="adminBtn" style="display:none;" onclick="showAdmin()">
-            <span style="color:var(--accent); font-weight:700;">Panel Admin 🛠️</span>
-          </div>
-          <div class="list-item" onclick="handleLogout()">
-            <span style="color:var(--danger); font-weight:700;">Déconnexion</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ADMIN OVERLAY -->
-  <div id="adminModal" class="view">
-    <div class="view-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h1>Admin Panel</h1>
-        <button onclick="$('adminModal').style.display='none'" style="border:none; background:none; font-size:20px;">✕</button>
-      </div>
-      <div style="background:rgba(255,255,255,0.1); padding:10px; border-radius:12px; margin-bottom:10px; font-size:12px;">
-        Gestion des utilisateurs Supabase (auth + table profiles)
-      </div>
-      <div class="glass-card list-group" id="userList">
-        <!-- Users populated by JS -->
-      </div>
-    </div>
-  </div>
-
-  <!-- TABS -->
-  <nav class="tabbar" id="tabbar" style="display:none;">
-    <button class="tab" onclick="switchView('viewMap', this)">
-      <svg viewBox="0 0 24 24"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
-      <span style="font-size:10px; font-weight:600;">Carte</span>
-    </button>
-    <button class="tab" onclick="switchView('viewCompass', this)">
-      <svg viewBox="0 0 24 24"><path d="M12 2L4.5 20.3l.7.7L12 18l6.8 3 .7-.7z"/></svg>
-      <span style="font-size:10px; font-weight:600;">Boussole</span>
-    </button>
-    <button class="tab" onclick="switchView('viewProfile', this)">
-      <svg viewBox="0 0 24 24"><path d="M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4z"/></svg>
-      <span style="font-size:10px; font-weight:600;">Profil</span>
-    </button>
-  </nav>
-
-  <script>
-// --- CONFIGURATION ---
-const SB_URL = https: vjlfbcwnfwyrxstfvefq.supabase.co ; // Remplacez par votre URL si besoin
-const SB_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGZiY3duZnd5cnhzdGZ2ZWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMDc2MjcsImV4cCI6MjA4NDc4MzYyN30.WTuWbxB-8isJOp2lNnq73njQmifDjxTNEWngMgKtmv4;            // Remplacez par votre CLÉ si besoin
-
-// Initialisation Supabase
-const { createClient } = supabase;
-const sb = createClient(SB_URL, SB_KEY);
-
-// --- FONCTIONS GLOBALES (Pour garantir que les boutons marchent) ---
-
-// 1. GESTION DE LA CARTE
-let map, userMarker;
-const initMap = () => {
-    if(map) return;
-    map = L.map('map').setView([43.604, 1.444], 13); // Toulouse par défaut
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap',
-        subdomains: 'abcd',
-        maxZoom: 19
-    }).addTo(map);
-    
-    // Géolocalisation
-    map.locate({setView: true, maxZoom: 16, watch: true});
-    map.on('locationfound', e => {
-        if(!userMarker) {
-            userMarker = L.marker(e.latlng).addTo(map).bindPopup("Vous êtes ici").openPopup();
-        } else {
-            userMarker.setLatLng(e.latlng);
+    <style>
+        /* --- DESIGN SYSTEM : LIQUID GLASS --- */
+        :root {
+            --bg-glass: rgba(255, 255, 255, 0.75);
+            --bg-panel: rgba(255, 255, 255, 0.95);
+            --text: #000000;
+            --accent: #007AFF;
+            --danger: #FF3B30;
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.25);
+            --blur: blur(20px);
         }
-    });
-};
+        body[data-theme="dark"] {
+            --bg-glass: rgba(28, 28, 30, 0.75);
+            --bg-panel: rgba(28, 28, 30, 0.95);
+            --text: #FFFFFF;
+            --accent: #0A84FF;
+        }
 
-// 2. GESTION COMPTE (Les fonctions qui manquaient)
-window.handleLogin = async () => {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    
-    if(!email || !password) return alert("Veuillez remplir tous les champs");
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { margin: 0; padding: 0; height: 100vh; overflow: hidden; background: #000; color: var(--text); }
 
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        /* CARTE */
+        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+
+        /* INTERFACE FLOTTANTE (HUD) */
+        .hud-layer {
+            position: absolute; z-index: 1000; width: 100%; height: 100%; pointer-events: none;
+            display: flex; flex-direction: column; justify-content: space-between; padding: 50px 20px 40px 20px;
+        }
+        .hud-group { display: flex; gap: 15px; pointer-events: auto; }
+        .hud-top { justify-content: space-between; align-items: flex-start; }
+        .hud-bottom { justify-content: space-between; align-items: flex-end; }
+
+        /* BOUTONS GLASS */
+        .glass-btn {
+            width: 50px; height: 50px; border-radius: 50%;
+            background: var(--bg-glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; color: var(--text); cursor: pointer; transition: transform 0.2s;
+        }
+        .glass-btn:active { transform: scale(0.9); }
+        .glass-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+        /* PANNEAUX (Shop, Settings, etc.) */
+        .panel {
+            position: absolute; bottom: 0; left: 0; width: 100%; max-height: 80%;
+            background: var(--bg-panel); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+            border-radius: 30px 30px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
+            transform: translateY(110%); transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: 2000; padding: 25px; display: flex; flex-direction: column;
+            overflow-y: auto; pointer-events: auto;
+        }
+        .panel.open { transform: translateY(0); }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .panel-title { font-size: 24px; font-weight: 800; }
+        .close-btn { background: none; border: none; font-size: 24px; color: var(--text); cursor: pointer; }
+
+        /* LOGIN OVERLAY (Fixé) */
+        #loginScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(30px); z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+        }
+        .login-card {
+            background: var(--bg-panel); padding: 40px; border-radius: 30px; width: 100%; max-width: 380px;
+            box-shadow: var(--shadow); text-align: center;
+        }
+        .login-input {
+            width: 100%; padding: 18px; margin-bottom: 12px; border-radius: 16px; border: 1px solid rgba(128,128,128,0.2);
+            background: rgba(128,128,128,0.1); font-size: 16px; color: var(--text); outline: none;
+        }
+        .login-btn {
+            width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 17px; font-weight: 700;
+            background: var(--accent); color: white; margin-top: 10px; cursor: pointer;
+        }
+        
+        /* WIDGETS INTERNES */
+        .widget-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(128,128,128,0.1); padding: 15px; border-radius: 16px; margin-bottom: 10px;
+        }
+        .switch {
+            position: relative; display: inline-block; width: 50px; height: 30px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* BOUSSOLE */
+        #compassRing {
+            width: 250px; height: 250px; border-radius: 50%; border: 4px solid var(--text);
+            position: relative; display: flex; align-items: center; justify-content: center;
+            margin: 40px auto; transition: transform 0.1s;
+        }
+        #compassArrow { font-size: 60px; color: var(--danger); transform-origin: center; }
+        
+    </style>
+</head>
+<body data-theme="light">
+
+    <!-- OVERLAY CONNEXION -->
+    <div id="loginScreen">
+        <div class="login-card">
+            <h1 style="margin-bottom: 20px;">CityCompass</h1>
+            <input type="email" id="email" class="login-input" placeholder="Email" autocomplete="username">
+            <input type="password" id="password" class="login-input" placeholder="Mot de passe" autocomplete="current-password">
+            
+            <button class="login-btn" onclick="handleLogin()">Connexion</button>
+            <button class="login-btn" style="background:transparent; color:var(--text); border:1px solid rgba(128,128,128,0.3);" onclick="handleSignup()">Créer un compte</button>
+            
+            <p onclick="handleForgot()" style="margin-top:20px; color:var(--accent); font-size:14px; cursor:pointer;">Mot de passe oublié ?</p>
+            <p id="msg" style="color:var(--danger); font-size:13px; min-height:20px;"></p>
+        </div>
+    </div>
+
+    <!-- CARTE -->
+    <div id="map"></div>
+
+    <!-- UI FLOTTANTE -->
+    <div class="hud-layer" id="hud" style="display:none;">
+        <div class="hud-top hud-group">
+            <div class="glass-btn" onclick="openPanel('panelProfile')"><i class="fa-solid fa-user"></i></div>
+            <div class="hud-group">
+                <div class="glass-btn" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i></div>
+                <div class="glass-btn" onclick="openPanel('panelShop')"><i class="fa-solid fa-bag-shopping"></i></div>
+            </div>
+        </div>
+
+        <div class="hud-bottom hud-group">
+            <div class="glass-btn" onclick="openPanel('panelCompass')"><i class="fa-regular fa-compass"></i></div>
+            <div class="glass-btn active" onclick="locateMe()"><i class="fa-solid fa-location-arrow"></i></div>
+            <div class="glass-btn" onclick="openPanel('panelLayers')"><i class="fa-solid fa-layer-group"></i></div>
+        </div>
+    </div>
+
+    <!-- PANNEAUX WIDGETS -->
     
-    if (error) {
-        alert("Erreur de connexion : " + error.message);
-    } else {
-        // Connexion réussie
+    <!-- SHOP / WIDGETS -->
+    <div id="panelShop" class="panel">
+        <div class="panel-header">
+            <span class="panel-title">Widgets</span>
+            <button class="close-btn" onclick="closePanels()">&times;</button>
+        </div>
+        <!-- Liste des widgets activables -->
+        <div class="widget-item">
+            <span>📡 Trafic en temps réel</span>
+            <label class="switch"><input type="checkbox" onchange="toggleLayer('traffic', this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="widget-item">
+            <span>🚇 Transports (Métro/Bus)</span>
+            <label class="switch"><input type="checkbox" onchange="toggleLayer('transit', this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="widget-item">
+            <span>🚲 Pistes Cyclables</span>
+            <label class="switch"><input type="checkbox" onchange="toggleLayer('bike', this.checked)"><span class="slider"></span></label>
+        </div>
+    </div>
+
+    <!-- LAYERS -->
+    <div id="panelLayers" class="panel">
+        <div class="panel-header">
+            <span class="panel-title">Fonds de carte</span>
+            <button class="close-btn" onclick="closePanels()">&times;</button>
+        </div>
+        <div class="widget-item" onclick="setBaseMap('standard')"><span>🗺️ Standard (Plan)</span></div>
+        <div class="widget-item" onclick="setBaseMap('sat')"><span>🛰️ Satellite</span></div>
+        <div class="widget-item" onclick="setBaseMap('dark')"><span>🌑 Dark Mode</span></div>
+    </div>
+
+    <!-- BOUSSOLE -->
+    <div id="panelCompass" class="panel">
+        <div class="panel-header">
+            <span class="panel-title">Navigation</span>
+            <button class="close-btn" onclick="closePanels()">&times;</button>
+        </div>
+        <div id="compassRing">
+            <i id="compassArrow" class="fa-solid fa-location-arrow"></i>
+        </div>
+        <div style="text-align:center; opacity:0.6;">Orientez votre téléphone</div>
+    </div>
+
+    <!-- PROFIL -->
+    <div id="panelProfile" class="panel">
+        <div class="panel-header">
+            <span class="panel-title">Mon Compte</span>
+            <button class="close-btn" onclick="closePanels()">&times;</button>
+        </div>
+        <p id="userEmail" style="text-align:center; margin-bottom:30px; font-size:18px;"></p>
+        <button class="login-btn" style="background:var(--danger);" onclick="logout()">Se déconnecter</button>
+    </div>
+
+<script>
+    // ---------------------------------------------------------
+    // 1. CONFIGURATION (Vos clés)
+    // ---------------------------------------------------------
+    const SB_URL = 'https://vjlfbcwnfwyrxstfvefq.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGZiY3duZnd5cnhzdGZ2ZWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMDc2MjcsImV4cCI6MjA4NDc4MzYyN30.WTuWbxB-8isJOp2lNnq73njQmifDjxTNEWngMgKtmv4';
+    
+    // Variables Globales
+    let map, userMarker, sb;
+    let layers = {}; 
+    let state = { theme: 'light', watchId: null };
+
+    // ---------------------------------------------------------
+    // 2. AUTHENTIFICATION (Fonctions Globales Sécurisées)
+    // ---------------------------------------------------------
+    
+    // Fonction utilitaire pour logs
+    const msg = (txt) => document.getElementById('msg').innerText = txt;
+
+    window.handleLogin = async () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        if(!email || !password) return msg("Remplissez tout.");
+        
+        msg("Connexion...");
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        if(error) msg(error.message);
+        else initApp(data.user);
+    };
+
+    window.handleSignup = async () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        if(!email || !password) return msg("Remplissez tout.");
+        
+        msg("Création...");
+        const { data, error } = await sb.auth.signUp({ email, password });
+        if(error) msg(error.message);
+        else {
+            if(data.session) initApp(data.user);
+            else msg("Compte créé ! Vérifiez vos emails.");
+        }
+    };
+
+    window.handleForgot = async () => {
+        const email = document.getElementById('email').value;
+        if(!email) return msg("Mettez votre email d'abord.");
+        await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+        msg("Email envoyé !");
+    };
+
+    window.logout = async () => {
+        await sb.auth.signOut();
+        location.reload();
+    };
+
+    // ---------------------------------------------------------
+    // 3. FONCTIONNALITES APP (Carte, UI, Widgets)
+    // ---------------------------------------------------------
+
+    function initApp(user) {
         document.getElementById('loginScreen').style.display = 'none';
-        initMap(); // Lancer la carte
+        document.getElementById('hud').style.display = 'flex';
+        document.getElementById('userEmail').innerText = user.email;
+        
+        // Initialiser la carte si pas encore fait
+        if(!map) initMap();
     }
-};
 
-window.handleSignup = async () => {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+    function initMap() {
+        map = L.map('map', { zoomControl: false }).setView([43.604, 1.444], 13);
+        
+        // Couche de base (Standard)
+        layers.base = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap', maxZoom: 19
+        }).addTo(map);
 
-    if(!email || !password) return alert("Veuillez remplir tous les champs pour l'inscription");
-
-    // Tente de créer le compte
-    const { data, error } = await sb.auth.signUp({ 
-        email, 
-        password,
-        options: { data: { full_name: email.split('@')[0] } } // Pseudo auto
-    });
-
-    if (error) {
-        alert("Erreur d'inscription : " + error.message);
-    } else {
-        alert("Compte créé ! Vous êtes connecté.");
-        document.getElementById('loginScreen').style.display = 'none';
-        initMap();
+        // Layers optionnels (Trafic etc.)
+        layers.traffic = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { opacity: 0.5 }); // Simulé pour l'exemple
+        
+        locateMe();
+        
+        // Gestion de la boussole
+        if(window.DeviceOrientationEvent) {
+            window.addEventListener('deviceorientation', (e) => {
+                const alpha = e.webkitCompassHeading || Math.abs(e.alpha - 360);
+                document.getElementById('compassArrow').style.transform = `rotate(${-alpha}deg)`;
+                // Rotation de la carte en mode navigation (optionnel)
+            });
+        }
     }
-};
 
-window.handleForgot = async () => {
-    const email = document.getElementById('email').value;
-    if(!email) return alert("Entrez votre email pour réinitialiser le mot de passe");
-    
-    const { error } = await sb.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.href,
-    });
-    
-    if(error) alert(error.message);
-    else alert("Email de réinitialisation envoyé !");
-};
+    // Actions UI
+    window.openPanel = (id) => {
+        // Fermer les autres
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
+        document.getElementById(id).classList.add('open');
+    };
 
-// --- LOGIQUE DE DEMARRAGE ---
-window.onload = async () => {
-    // Vérifie si déjà connecté
-    const { data: { session } } = await sb.auth.getSession();
-    
-    if (session) {
-        document.getElementById('loginScreen').style.display = 'none';
-        initMap();
-    } else {
-        document.getElementById('loginScreen').style.display = 'flex';
-    }
-};
+    window.closePanels = () => {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
+    };
+
+    window.locateMe = () => {
+        if(!map) return;
+        map.locate({setView: true, maxZoom: 16, watch: true});
+        map.on('locationfound', e => {
+            if(!userMarker) {
+                userMarker = L.circleMarker(e.latlng, {
+                    color: '#007AFF', fillColor: '#007AFF', fillOpacity: 1, radius: 8
+                }).addTo(map);
+                L.circle(e.latlng, { radius: e.accuracy/2, color: '#007AFF', opacity: 0.1 }).addTo(map);
+            } else {
+                userMarker.setLatLng(e.latlng);
+            }
+        });
+    };
+
+    window.toggleTheme = () => {
+        state.theme = state.theme === 'light' ? 'dark' : 'light';
+        document.body.setAttribute('data-theme', state.theme);
+        
+        // Changer la carte
+        const url = state.theme === 'dark' 
+            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+            : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+        layers.base.setUrl(url);
+    };
+
+    // Gestion des widgets (Shop)
+    window.toggleLayer = (type, isActive) => {
+        // Logique simulée : normalement on ajouterait de vrais layers Leaflet ici
+        if(isActive) alert("Layer " + type + " activé (Simulation)");
+    };
+
+    window.setBaseMap = (type) => {
+        let url = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+        if(type === 'dark') url = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+        if(type === 'sat') url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+        
+        layers.base.setUrl(url);
+        closePanels();
+    };
+
+    // ---------------------------------------------------------
+    // 4. DEMARRAGE (OnLoad)
+    // ---------------------------------------------------------
+    window.onload = async () => {
+        try {
+            sb = supabase.createClient(SB_URL, SB_KEY);
+            const { data: { session } } = await sb.auth.getSession();
+            
+            if(session) {
+                initApp(session.user);
+            } else {
+                // Reste sur le login
+                document.getElementById('loginScreen').style.display = 'flex';
+            }
+        } catch(e) {
+            alert("Erreur init: " + e.message);
+        }
+    };
+
 </script>
 </body>
 </html>
