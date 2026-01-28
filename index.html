@@ -3,413 +3,238 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>CityCompass v22.1</title>
+  <title>CityCompass v23 - Solid Connect</title>
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <!-- Assurez-vous que config.js est bien dans le même dossier ! -->
+  <!-- Assurez-vous d'avoir config.js -->
   <script src="config.js"></script>
 
   <style>
-    :root {
-      --primary: #00f2ff; --bg: #050505; --text: #fff; --danger: #ff4757;
-      --safe-bottom: env(safe-area-inset-bottom, 20px);
-      --safe-top: env(safe-area-inset-top, 20px);
-    }
+    :root { --primary: #00f2ff; --bg: #050505; --text: #fff; --danger: #ff4757; }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-    
-    body { 
-      margin: 0; font-family: 'Segoe UI', sans-serif; 
-      background: var(--bg); color: var(--text); 
-      height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
-    }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
 
-    /* --- LOGIN UI --- */
-    #loginScreen {
-      position: fixed; inset: 0; z-index: 9999; background: var(--bg);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 20px; transition: opacity 0.4s; overflow-y: auto;
-    }
-    .compass-logo {
-        font-size: 50px; color: var(--primary); margin-bottom: 20px;
-        animation: spin 8s infinite linear;
-    }
-    @keyframes spin { 100% { transform: rotate(360deg); } }
-    
-    .login-container {
-        width: 100%; max-width: 350px; background: #111;
-        padding: 25px; border-radius: 20px; border: 1px solid #333;
-        display: flex; flex-direction: column; gap: 12px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-    }
-    
-    input, select {
-        width: 100%; padding: 12px; background: #000; border: 1px solid #444;
-        color: white; border-radius: 10px; font-size: 16px; outline: none; text-align: center;
-    }
-    input:focus { border-color: var(--primary); }
-    
-    .btn-action {
-        width: 100%; padding: 12px; border-radius: 10px; border: none;
-        font-weight: bold; font-size: 16px; cursor: pointer; text-transform: uppercase;
-    }
-    .btn-primary { background: var(--primary); color: #000; transition: transform 0.1s; }
-    .btn-primary:active { transform: scale(0.95); }
-    .btn-text { background: transparent; color: #888; text-decoration: underline; font-size: 13px; }
-
-    /* --- APP UI --- */
-    #app { display: none; width: 100%; height: 100%; position: relative; opacity: 0; transition: opacity 0.5s; }
-    #map { width: 100%; height: 100%; z-index: 1; background: #222; }
-
-    .top-bar {
-        position: absolute; top: var(--safe-top); left: 15px; right: 15px;
-        z-index: 1000; display: flex; justify-content: space-between; pointer-events: none; margin-top: 10px;
-    }
-    .hud-btn {
-        pointer-events: auto; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
-        border: 1px solid #444; color: white; padding: 8px 16px; border-radius: 50px;
-        display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px;
-    }
-    
-    .bottom-nav {
-        position: absolute; bottom: calc(20px + var(--safe-bottom)); 
-        left: 20px; right: 20px; height: 60px;
-        background: rgba(15,15,15,0.95); backdrop-filter: blur(15px);
-        border-radius: 35px; border: 1px solid #333;
-        display: flex; justify-content: space-around; align-items: center;
-        z-index: 1000; padding: 0 10px; pointer-events: auto;
-    }
-    .nav-icon { font-size: 22px; color: #666; padding: 15px; transition: 0.2s; }
-    .nav-icon.active { color: var(--primary); transform: translateY(-3px); }
-
-    /* PANELS */
-    .full-panel {
-        position: fixed; inset: 0; background: var(--bg); z-index: 2000;
-        display: flex; flex-direction: column;
-        transform: translateY(110%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-        padding-top: var(--safe-top); padding-bottom: var(--safe-bottom);
-    }
-    .full-panel.open { transform: translateY(0); }
-    
-    .panel-header {
-        padding: 20px; display: flex; justify-content: space-between; align-items: center;
-        border-bottom: 1px solid #222; margin-top: 10px;
-    }
-    .panel-content { flex: 1; overflow-y: auto; padding: 20px; }
-
-    .widget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .widget { background: #151515; padding: 15px; border-radius: 15px; border: 1px solid #333; text-align: center; margin-bottom: 15px; }
-    .widget-btn { width: 100%; padding: 8px; margin-top: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
-    .btn-buy { background: var(--primary); color: black; }
-
-    #toast {
-        position: fixed; top: 50px; left: 50%; transform: translateX(-50%) translateY(-200%);
-        background: #222; color: white; padding: 12px 24px; border-radius: 30px;
-        border: 1px solid var(--primary); z-index: 10000; transition: 0.3s; font-weight: bold; width: max-content;
-    }
-    #toast.visible { transform: translateX(-50%) translateY(0); }
-    
+    /* UI LOGIN */
+    #loginScreen { position: fixed; inset: 0; z-index: 9999; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; transition: opacity 0.4s; }
     .hidden { display: none !important; }
+    
+    .login-box { width: 100%; max-width: 320px; background: #111; padding: 20px; border-radius: 20px; border: 1px solid #333; display: flex; flex-direction: column; gap: 15px; }
+    input, select { width: 100%; padding: 12px; background: #000; border: 1px solid #444; color: white; border-radius: 10px; font-size: 16px; outline: none; text-align: center; }
+    .btn-main { width: 100%; padding: 12px; background: var(--primary); color: #000; font-weight: bold; border: none; border-radius: 10px; font-size: 16px; margin-top: 5px; cursor: pointer; }
+    .btn-link { background: transparent; color: #888; border: none; text-decoration: underline; font-size: 13px; cursor: pointer; }
+
+    /* TOAST */
+    #toast { position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 20px; border-radius: 20px; border: 1px solid var(--primary); z-index: 10000; display: none; }
+    
+    /* APP */
+    #app { display: none; width: 100%; height: 100%; position: relative; }
+    #map { width: 100%; height: 100%; z-index: 1; }
+    
+    /* PANELS */
+    .panel { position: fixed; inset: 0; background: #000; z-index: 2000; transform: translateY(100%); transition: transform 0.3s; padding: 20px; display: flex; flex-direction: column; }
+    .panel.open { transform: translateY(0); }
+    .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 24px; font-weight: bold; }
+    
+    /* NAV */
+    .nav-bar { position: absolute; bottom: 30px; left: 20px; right: 20px; height: 60px; background: rgba(20,20,20,0.95); border-radius: 30px; display: flex; justify-content: space-around; align-items: center; z-index: 1000; border: 1px solid #333; }
+    .nav-icon { font-size: 24px; color: #666; padding: 10px; }
   </style>
 </head>
 <body>
 
 <div id="toast">Info</div>
 
-<!-- LOGIN -->
+<!-- LOGIN SCREEN -->
 <div id="loginScreen">
-    <div class="compass-logo"><i class="fa-regular fa-compass"></i></div>
+    <i class="fa-regular fa-compass" style="font-size: 60px; color: var(--primary); margin-bottom: 20px;"></i>
     
-    <!-- LOGIN FORM -->
-    <div class="login-container" id="formLogin">
-        <h2 style="margin:0; text-align:center;">CONNEXION</h2>
-        <input type="text" id="loginId" placeholder="ID (16 chiffres)" inputmode="numeric" maxlength="19">
-        <input type="password" id="loginPass" placeholder="Mot de Passe">
-        <button id="btnLogin" class="btn-action btn-primary">ENTRER</button>
-        <div style="display:flex; justify-content:space-between;">
-            <button id="btnShowSignup" class="btn-action btn-text">Créer un compte</button>
-            <button id="btnShowForgot" class="btn-action btn-text">Mot de passe oublié ?</button>
+    <!-- 1. LOGIN -->
+    <div id="viewLogin" class="login-box">
+        <h2 style="margin:0; text-align:center;">CONNEXION v23</h2>
+        <input type="text" id="inpLoginId" placeholder="ID (16 chiffres)" inputmode="numeric" oninput="formatInput(this)">
+        <input type="password" id="inpLoginPass" placeholder="Mot de Passe">
+        <button class="btn-main" onclick="app.login()">ENTRER</button>
+        <div style="display:flex; justify-content:space-between; margin-top:10px;">
+            <button class="btn-link" onclick="app.show('viewSignup')">Créer Compte</button>
+            <button class="btn-link" onclick="app.show('viewForgot')">Oublié ?</button>
         </div>
     </div>
 
-    <!-- SIGNUP FORM -->
-    <div class="login-container hidden" id="formSignup">
-        <h2 style="margin:0; text-align:center;">INSCRIPTION</h2>
-        <input type="password" id="signupPass" placeholder="Mot de Passe">
-        <p style="font-size:12px; color:var(--primary); margin:0;">Sécurité (Récupération)</p>
-        <select id="signupQ">
-            <option value="animal">Nom de mon premier animal ?</option>
+    <!-- 2. SIGNUP -->
+    <div id="viewSignup" class="login-box hidden">
+        <h2 style="margin:0; text-align:center;">NOUVEAU COMPTE</h2>
+        <input type="password" id="inpSignPass" placeholder="Mot de Passe">
+        <select id="inpSignQ">
+            <option value="animal">Nom de mon animal ?</option>
             <option value="ville">Ville de naissance ?</option>
-            <option value="sport">Sport favori ?</option>
         </select>
-        <input type="text" id="signupA" placeholder="Réponse secrète">
-        <button id="btnDoSignup" class="btn-action btn-primary">GÉNÉRER ID</button>
-        <button id="btnBackLogin1" class="btn-action btn-text">Retour</button>
+        <input type="text" id="inpSignA" placeholder="Réponse secrète">
+        <button class="btn-main" onclick="app.signup()">CRÉER ID</button>
+        <button class="btn-link" onclick="app.show('viewLogin')">Retour</button>
     </div>
 
-    <!-- RECOVERY FORM -->
-    <div class="login-container hidden" id="formForgot">
+    <!-- 3. RECOVERY -->
+    <div id="viewForgot" class="login-box hidden">
         <h2 style="margin:0; text-align:center; color:var(--danger)">RÉCUPÉRATION</h2>
-        <p style="font-size:13px; text-align:center; margin:0;">Étape 1/2 : Identifiant</p>
-        <input type="text" id="forgotId" placeholder="Votre ID (16 chiffres)" inputmode="numeric">
-        <button id="btnCheckId" class="btn-action btn-primary">SUIVANT</button>
-        <button id="btnBackLogin2" class="btn-action btn-text">Annuler</button>
+        <input type="text" id="inpForgotId" placeholder="Votre ID" inputmode="numeric" oninput="formatInput(this)">
+        <button class="btn-main" onclick="app.checkRecovery()">SUIVANT</button>
+        <button class="btn-link" onclick="app.show('viewLogin')">Retour</button>
     </div>
-
-    <!-- SECURITY QUESTION FORM -->
-    <div class="login-container hidden" id="formSecurity">
+    
+    <!-- 4. SECURITY CHECK -->
+    <div id="viewSecurity" class="login-box hidden">
         <h2 style="margin:0; text-align:center; color:var(--danger)">SÉCURITÉ</h2>
-        <p id="securityLabel" style="text-align:center; font-weight:bold; color:var(--primary)">?</p>
-        <input type="text" id="securityAnswer" placeholder="Votre Réponse">
-        <button id="btnVerify" class="btn-action btn-primary">VÉRIFIER</button>
-        <button id="btnBackLogin3" class="btn-action btn-text">Annuler</button>
+        <p id="txtSecLabel" style="text-align:center; color:var(--primary)">?</p>
+        <input type="text" id="inpSecAns" placeholder="Votre Réponse">
+        <button class="btn-main" onclick="app.verifyRecovery()">VÉRIFIER</button>
+        <button class="btn-link" onclick="app.show('viewLogin')">Annuler</button>
     </div>
 </div>
 
-<!-- APP -->
+<!-- MAIN APP -->
 <div id="app">
-    <div class="top-bar">
-        <div class="hud-btn" id="btnProfileHUD">
-            <i class="fa-solid fa-user-astronaut"></i> <span id="hudScore">0</span>
-        </div>
-        <div class="hud-btn" style="background:var(--primary); color:black;">
-            <i class="fa-regular fa-compass"></i> v22
-        </div>
-    </div>
     <div id="map"></div>
-    <div class="bottom-nav">
-        <i class="fa-solid fa-map-location-dot nav-icon active" id="navMap"></i>
-        <i class="fa-solid fa-cart-shopping nav-icon" id="navShop"></i>
-        <i class="fa-solid fa-bars nav-icon" id="navProfile"></i>
+    <div class="nav-bar">
+        <i class="fa-solid fa-map nav-icon" onclick="app.closePanels()"></i>
+        <i class="fa-solid fa-cart-shopping nav-icon" onclick="app.openPanel('panelShop')"></i>
+        <i class="fa-solid fa-user nav-icon" onclick="app.openPanel('panelProfile')"></i>
     </div>
 </div>
 
 <!-- PANELS -->
-<div id="panelProfile" class="full-panel">
-    <div class="panel-header">
-        <h2>Profil</h2>
-        <i class="fa-solid fa-xmark close-trigger" style="font-size:24px"></i>
-    </div>
-    <div class="panel-content">
-        <div class="widget">
-            <h3 id="displayId" style="font-family:monospace; color:var(--primary); font-size:20px;">-</h3>
-            <p>Connecté</p>
-        </div>
-        <div class="widget">
-            <h4>Changer Mot de Passe</h4>
-            <input type="password" id="newPassProfile" placeholder="Nouveau mot de passe" style="margin-bottom:10px;">
-            <button id="btnUpdatePass" class="widget-btn btn-buy">Mettre à jour</button>
-        </div>
-        <div id="adminZone" class="hidden">
-             <div class="widget" style="border-color:var(--danger)">
-                <h4 style="color:var(--danger)">ADMIN ZONE</h4>
-                <button class="widget-btn" onclick="alert('Broadcast sent!')">📢 Message Global</button>
-             </div>
-        </div>
-        <button id="btnLogout" class="btn-action btn-text" style="color:var(--danger); margin-top:20px;">Déconnexion</button>
-    </div>
+<div id="panelProfile" class="panel">
+    <div class="panel-head">Profil <i class="fa-solid fa-xmark" onclick="app.closePanels()"></i></div>
+    <p>ID: <span id="txtProfileId" style="color:var(--primary); font-family:monospace;">-</span></p>
+    <p>Points: <span id="txtPoints">0</span></p>
+    <button class="btn-main" style="background:#333; color:#fff; margin-top:auto;" onclick="app.logout()">DÉCONNEXION</button>
 </div>
 
-<div id="panelShop" class="full-panel">
-    <div class="panel-header">
-        <h2>Boutique</h2>
-        <i class="fa-solid fa-xmark close-trigger" style="font-size:24px"></i>
-    </div>
-    <div class="panel-content">
-        <div class="widget-grid" id="shopGrid"></div>
-    </div>
+<div id="panelShop" class="panel">
+    <div class="panel-head">Boutique <i class="fa-solid fa-xmark" onclick="app.closePanels()"></i></div>
+    <p>Items à venir...</p>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-    // --- VARIABLES & SELECTEURS ---
-    const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
-    const $ = (id) => document.getElementById(id);
-    const toast = (msg) => {
-        const t = $('toast'); t.innerText = msg; t.classList.add('visible');
-        setTimeout(()=>t.classList.remove('visible'), 3000);
-    };
-    const formatID = (s) => s.replace(/\D/g,'').slice(0,16).replace(/(\d{4})(?=\d)/g,'$1 ').trim();
-    
+// FORMATTER GLOBAL
+window.formatInput = function(e) {
+    e.value = e.value.replace(/\D/g,'').slice(0,16).replace(/(\d{4})(?=\d)/g,'$1 ').trim();
+};
+
+// APP LOGIC
+(function() {
+    // 1. INIT SUPABASE
+    if(typeof CONFIG === 'undefined') { alert("Config manquante !"); return; }
+    const sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+
     let currentUser = null;
-    let recoveryTempId = null;
+    let recoveryId = null;
 
-    // --- EVENEMENTS DES BOUTONS (Attachés manuellement pour être sûr) ---
-    
-    // NAVIGATION FORMULAIRES
-    const showForm = (id) => {
-        ['formLogin', 'formSignup', 'formForgot', 'formSecurity'].forEach(f => $(f).classList.add('hidden'));
-        $(id).classList.remove('hidden');
-    };
-
-    $('btnShowSignup').onclick = () => showForm('formSignup');
-    $('btnShowForgot').onclick = () => showForm('formForgot');
-    $('btnBackLogin1').onclick = () => showForm('formLogin');
-    $('btnBackLogin2').onclick = () => showForm('formLogin');
-    $('btnBackLogin3').onclick = () => showForm('formLogin');
-
-    // FORMATAGE INPUTS
-    $('loginId').oninput = (e) => e.target.value = formatID(e.target.value);
-    $('forgotId').oninput = (e) => e.target.value = formatID(e.target.value);
-
-    // 1. LOGIN
-    $('btnLogin').onclick = async () => {
-        const id = $('loginId').value.replace(/\s/g,'');
-        const pass = $('loginPass').value;
-        if(!id || !pass) return toast("Remplissez tout !");
-
-        const { data, error } = await supabaseClient.from('users').select('*').eq('id', id).eq('password', pass).single();
-        if(error || !data) return toast("Erreur ID/Mot de passe");
-        
-        currentUser = data;
-        localStorage.setItem('cc_session', id);
-        launchApp();
-    };
-
-    // 2. SIGNUP
-    $('btnDoSignup').onclick = async () => {
-        const pass = $('signupPass').value;
-        const q = $('signupQ').value;
-        const a = $('signupA').value.trim().toLowerCase();
-        if(!pass || !a) return toast("Tout est obligatoire");
-
-        const newId = Array.from({length:16}, ()=>Math.floor(Math.random()*10)).join('');
-        const { error } = await supabaseClient.from('users').insert([{
-            id: newId, password: pass, secret_q: q, secret_a: a, points: 50, role: 'user', inventory: {}
-        }]);
-
-        if(error) return toast("Erreur: "+error.message);
-        toast("Compte créé !");
-        $('loginId').value = formatID(newId);
-        showForm('formLogin');
-    };
-
-    // 3. RECOVERY STEP 1
-    $('btnCheckId').onclick = async () => {
-        const id = $('forgotId').value.replace(/\s/g,'');
-        if(id.length !== 16) return toast("ID invalide");
-
-        const { data, error } = await supabaseClient.from('users').select('secret_q').eq('id', id).single();
-        if(error || !data || !data.secret_q) return toast("Compte introuvable ou sans sécurité");
-
-        recoveryTempId = id;
-        const labels = { animal: "Animal ?", ville: "Ville ?", sport: "Sport ?" };
-        $('securityLabel').innerText = labels[data.secret_q] || "Question ?";
-        showForm('formSecurity');
-    };
-
-    // 4. RECOVERY STEP 2
-    $('btnVerify').onclick = async () => {
-        const ans = $('securityAnswer').value.trim().toLowerCase();
-        const { data } = await supabaseClient.from('users').select('secret_a').eq('id', recoveryTempId).single();
-        
-        if(!data || data.secret_a !== ans) return toast("Mauvaise réponse !");
-
-        const tempPass = "TEMP-" + Math.floor(Math.random()*9999);
-        await supabaseClient.from('users').update({password: tempPass}).eq('id', recoveryTempId);
-        
-        alert(`NOUVEAU MOT DE PASSE : ${tempPass}\n\nCopiez-le !`);
-        $('loginId').value = formatID(recoveryTempId);
-        $('loginPass').value = tempPass;
-        showForm('formLogin');
-    };
-
-    // 5. UPDATE PASSWORD
-    $('btnUpdatePass').onclick = async () => {
-        const p = $('newPassProfile').value;
-        if(p.length < 4) return toast("Trop court");
-        await supabaseClient.from('users').update({password: p}).eq('id', currentUser.id);
-        toast("Mot de passe changé !");
-        $('newPassProfile').value = "";
-    };
-
-    // 6. LOGOUT
-    $('btnLogout').onclick = () => {
-        localStorage.removeItem('cc_session');
-        location.reload();
-    };
-
-    // --- APP UI ---
-    function launchApp() {
-        $('loginScreen').style.opacity = 0;
-        setTimeout(() => {
-            $('loginScreen').style.display = 'none';
-            $('app').style.display = 'block';
-            setTimeout(()=>$('app').style.opacity = 1, 50);
-            initMap();
-            updateUI();
-        }, 400);
+    // 2. TOAST SYSTEM
+    function toast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg; t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 3000);
     }
 
-    function updateUI() {
-        $('hudScore').innerText = currentUser.points;
-        $('displayId').innerText = formatID(currentUser.id);
-        if(currentUser.role==='admin' || currentUser.id==='3339683758546584') $('adminZone').classList.remove('hidden');
-        renderShop();
-    }
+    // 3. EXPORT GLOBAL FUNCTIONS (Pour les onclick HTML)
+    window.app = {
+        show: function(viewId) {
+            ['viewLogin','viewSignup','viewForgot','viewSecurity'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+        },
 
-    // --- NAVIGATION PANELS ---
-    const openPanel = (id) => $(id).classList.add('open');
-    const closePanels = () => document.querySelectorAll('.full-panel').forEach(p => p.classList.remove('open'));
+        // --- AUTH ---
+        signup: async function() {
+            const pass = document.getElementById('inpSignPass').value;
+            const q = document.getElementById('inpSignQ').value;
+            const a = document.getElementById('inpSignA').value.toLowerCase().trim();
+            if(!pass || !a) return toast("Remplissez tout !");
 
-    $('navMap').onclick = closePanels;
-    $('navShop').onclick = () => openPanel('panelShop');
-    $('navProfile').onclick = () => openPanel('panelProfile');
-    $('btnProfileHUD').onclick = () => openPanel('panelProfile');
-    
-    document.querySelectorAll('.close-trigger').forEach(b => b.onclick = closePanels);
+            const newId = Array.from({length:16}, ()=>Math.floor(Math.random()*10)).join('');
+            const { error } = await sb.from('users').insert([{ id:newId, password:pass, secret_q:q, secret_a:a, points:50 }]);
 
-    // --- SHOP ---
-    function renderShop() {
-        const ITEMS = [{id:'vision', name:'Vision Nocturne', price:100}, {id:'radar', name:'Radar', price:500}];
-        const c = $('shopGrid'); c.innerHTML = '';
-        ITEMS.forEach(i => {
-            const owned = (currentUser.inventory||{})[i.id];
-            const div = document.createElement('div'); div.className = 'widget';
-            div.innerHTML = `<h4>${i.name}</h4><button class="widget-btn btn-buy" data-id="${i.id}" data-price="${i.price}">${owned?'ACQUIS':i.price+'pts'}</button>`;
+            if(error) return toast("Erreur: " + error.message);
             
-            // Attacher event sur le bouton généré
-            div.querySelector('button').onclick = async (e) => {
-                if(owned) return;
-                const p = parseInt(e.target.dataset.price);
-                if(currentUser.points < p) return toast("Pas assez de points");
-                
-                const inv = {...currentUser.inventory, [i.id]:true};
-                await supabaseClient.from('users').update({points: currentUser.points-p, inventory:inv}).eq('id', currentUser.id);
-                currentUser.points -= p; currentUser.inventory = inv;
-                updateUI(); toast("Acheté !");
-            };
-            c.appendChild(div);
-        });
-    }
+            alert(`COMPTE CRÉÉ !\nVOTRE ID: ${newId.replace(/(\d{4})(?=\d)/g,'$1 ')}\nNotez-le bien !`);
+            document.getElementById('inpLoginId').value = window.formatInput({value:newId}); // Fake format
+            app.show('viewLogin');
+        },
 
-    // --- MAP ---
-    let map;
-    function initMap() {
-        if(map) return;
-        map = L.map('map', {zoomControl:false}).setView([43.6047, 1.4442], 13);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {maxZoom: 20}).addTo(map);
-        
-        // Marker User
-        const icon = L.divIcon({className:'user-icon', html:`<div style="width:16px;height:16px;background:#00f2ff;border-radius:50%;border:2px solid white;box-shadow:0 0 10px cyan"></div>`});
-        const marker = L.marker([43.6047, 1.4442], {icon:icon}).addTo(map);
+        login: async function() {
+            const id = document.getElementById('inpLoginId').value.replace(/\s/g,'');
+            const pass = document.getElementById('inpLoginPass').value;
+            if(!id || !pass) return toast("Infos manquantes");
 
-        if(navigator.geolocation) {
-            navigator.geolocation.watchPosition(p => {
-                marker.setLatLng([p.coords.latitude, p.coords.longitude]);
-            });
+            const { data, error } = await sb.from('users').select('*').eq('id', id).eq('password', pass).single();
+            if(error || !data) return toast("Erreur ID ou Mot de Passe");
+
+            currentUser = data;
+            localStorage.setItem('cc_sess', id);
+            app.launch();
+        },
+
+        logout: function() {
+            localStorage.removeItem('cc_sess');
+            location.reload();
+        },
+
+        // --- RECOVERY ---
+        checkRecovery: async function() {
+            const id = document.getElementById('inpForgotId').value.replace(/\s/g,'');
+            if(id.length !== 16) return toast("ID incorrect");
+            
+            const { data } = await sb.from('users').select('secret_q').eq('id', id).single();
+            if(!data || !data.secret_q) return toast("Compte introuvable");
+
+            recoveryId = id;
+            document.getElementById('txtSecLabel').innerText = (data.secret_q === 'animal' ? "Nom animal ?" : "Ville naissance ?");
+            app.show('viewSecurity');
+        },
+
+        verifyRecovery: async function() {
+            const ans = document.getElementById('inpSecAns').value.toLowerCase().trim();
+            const { data } = await sb.from('users').select('secret_a').eq('id', recoveryId).single();
+
+            if(!data || data.secret_a !== ans) return toast("Mauvaise réponse !");
+
+            const tmp = "TMP-" + Math.floor(Math.random()*10000);
+            await sb.from('users').update({password:tmp}).eq('id', recoveryId);
+            
+            alert("VOTRE MOT DE PASSE PROVISOIRE :\n\n" + tmp);
+            app.show('viewLogin');
+        },
+
+        // --- APP UI ---
+        launch: function() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            app.initMap();
+            document.getElementById('txtProfileId').innerText = currentUser.id;
+            document.getElementById('txtPoints').innerText = currentUser.points;
+        },
+
+        openPanel: function(id) { document.getElementById(id).classList.add('open'); },
+        closePanels: function() { document.querySelectorAll('.panel').forEach(p => p.classList.remove('open')); },
+
+        initMap: function() {
+            if(window.mapInit) return;
+            const map = L.map('map', {zoomControl:false}).setView([43.6047, 1.4442], 13);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+            window.mapInit = true;
         }
-    }
+    };
 
-    // AUTO START
-    const sess = localStorage.getItem('cc_session');
-    if(sess) {
-        supabaseClient.from('users').select('*').eq('id', sess).single().then(({data}) => {
-            if(data) { currentUser=data; launchApp(); }
+    // AUTO LOGIN
+    const saved = localStorage.getItem('cc_sess');
+    if(saved) {
+        sb.from('users').select('*').eq('id', saved).single().then(({data})=>{
+            if(data) { currentUser=data; app.launch(); }
         });
     }
-});
+
+})();
 </script>
 </body>
 </html>
