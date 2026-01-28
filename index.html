@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>CityCompass v22</title>
+  <title>CityCompass v22.1</title>
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <!-- Assurez-vous que config.js est bien dans le même dossier ! -->
   <script src="config.js"></script>
 
   <style>
@@ -24,7 +25,7 @@
       height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
     }
 
-    /* --- LOGIN & RECOVERY --- */
+    /* --- LOGIN UI --- */
     #loginScreen {
       position: fixed; inset: 0; z-index: 9999; background: var(--bg);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -47,24 +48,23 @@
         width: 100%; padding: 12px; background: #000; border: 1px solid #444;
         color: white; border-radius: 10px; font-size: 16px; outline: none; text-align: center;
     }
-    input:focus, select:focus { border-color: var(--primary); }
+    input:focus { border-color: var(--primary); }
     
     .btn-action {
         width: 100%; padding: 12px; border-radius: 10px; border: none;
         font-weight: bold; font-size: 16px; cursor: pointer; text-transform: uppercase;
     }
-    .btn-primary { background: var(--primary); color: #000; }
+    .btn-primary { background: var(--primary); color: #000; transition: transform 0.1s; }
+    .btn-primary:active { transform: scale(0.95); }
     .btn-text { background: transparent; color: #888; text-decoration: underline; font-size: 13px; }
 
     /* --- APP UI --- */
     #app { display: none; width: 100%; height: 100%; position: relative; opacity: 0; transition: opacity 0.5s; }
     #map { width: 100%; height: 100%; z-index: 1; background: #222; }
 
-    /* HUD */
     .top-bar {
         position: absolute; top: var(--safe-top); left: 15px; right: 15px;
-        z-index: 1000; display: flex; justify-content: space-between; pointer-events: none;
-        margin-top: 10px;
+        z-index: 1000; display: flex; justify-content: space-between; pointer-events: none; margin-top: 10px;
     }
     .hud-btn {
         pointer-events: auto; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
@@ -98,13 +98,11 @@
     }
     .panel-content { flex: 1; overflow-y: auto; padding: 20px; }
 
-    /* WIDGETS */
     .widget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     .widget { background: #151515; padding: 15px; border-radius: 15px; border: 1px solid #333; text-align: center; margin-bottom: 15px; }
     .widget-btn { width: 100%; padding: 8px; margin-top: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
     .btn-buy { background: var(--primary); color: black; }
 
-    /* TOAST */
     #toast {
         position: fixed; top: 50px; left: 50%; transform: translateX(-50%) translateY(-200%);
         background: #222; color: white; padding: 12px 24px; border-radius: 30px;
@@ -119,23 +117,23 @@
 
 <div id="toast">Info</div>
 
-<!-- ECRANS D'AUTHENTIFICATION -->
+<!-- LOGIN -->
 <div id="loginScreen">
     <div class="compass-logo"><i class="fa-regular fa-compass"></i></div>
     
-    <!-- 1. LOGIN -->
+    <!-- LOGIN FORM -->
     <div class="login-container" id="formLogin">
         <h2 style="margin:0; text-align:center;">CONNEXION</h2>
         <input type="text" id="loginId" placeholder="ID (16 chiffres)" inputmode="numeric" maxlength="19">
         <input type="password" id="loginPass" placeholder="Mot de Passe">
-        <button class="btn-action btn-primary" onclick="doLogin()">Entrer</button>
+        <button id="btnLogin" class="btn-action btn-primary">ENTRER</button>
         <div style="display:flex; justify-content:space-between;">
-            <button class="btn-action btn-text" onclick="showForm('formSignup')">Créer un compte</button>
-            <button class="btn-action btn-text" onclick="showForm('formForgot')">Mot de passe oublié ?</button>
+            <button id="btnShowSignup" class="btn-action btn-text">Créer un compte</button>
+            <button id="btnShowForgot" class="btn-action btn-text">Mot de passe oublié ?</button>
         </div>
     </div>
 
-    <!-- 2. INSCRIPTION -->
+    <!-- SIGNUP FORM -->
     <div class="login-container hidden" id="formSignup">
         <h2 style="margin:0; text-align:center;">INSCRIPTION</h2>
         <input type="password" id="signupPass" placeholder="Mot de Passe">
@@ -146,85 +144,77 @@
             <option value="sport">Sport favori ?</option>
         </select>
         <input type="text" id="signupA" placeholder="Réponse secrète">
-        <button class="btn-action btn-primary" onclick="doSignup()">Générer ID</button>
-        <button class="btn-action btn-text" onclick="showForm('formLogin')">Retour</button>
+        <button id="btnDoSignup" class="btn-action btn-primary">GÉNÉRER ID</button>
+        <button id="btnBackLogin1" class="btn-action btn-text">Retour</button>
     </div>
 
-    <!-- 3. RECUPERATION -->
+    <!-- RECOVERY FORM -->
     <div class="login-container hidden" id="formForgot">
         <h2 style="margin:0; text-align:center; color:var(--danger)">RÉCUPÉRATION</h2>
         <p style="font-size:13px; text-align:center; margin:0;">Étape 1/2 : Identifiant</p>
         <input type="text" id="forgotId" placeholder="Votre ID (16 chiffres)" inputmode="numeric">
-        <button class="btn-action btn-primary" onclick="checkRecoveryId()">Suivant</button>
-        <button class="btn-action btn-text" onclick="showForm('formLogin')">Annuler</button>
+        <button id="btnCheckId" class="btn-action btn-primary">SUIVANT</button>
+        <button id="btnBackLogin2" class="btn-action btn-text">Annuler</button>
     </div>
 
-    <!-- 4. QUESTION SECRETE -->
+    <!-- SECURITY QUESTION FORM -->
     <div class="login-container hidden" id="formSecurity">
         <h2 style="margin:0; text-align:center; color:var(--danger)">SÉCURITÉ</h2>
         <p id="securityLabel" style="text-align:center; font-weight:bold; color:var(--primary)">?</p>
         <input type="text" id="securityAnswer" placeholder="Votre Réponse">
-        <button class="btn-action btn-primary" onclick="verifyRecovery()">Vérifier</button>
+        <button id="btnVerify" class="btn-action btn-primary">VÉRIFIER</button>
+        <button id="btnBackLogin3" class="btn-action btn-text">Annuler</button>
     </div>
 </div>
 
-<!-- APPLICATION -->
+<!-- APP -->
 <div id="app">
-    <!-- HUD -->
     <div class="top-bar">
-        <div class="hud-btn" onclick="openPanel('profile')">
+        <div class="hud-btn" id="btnProfileHUD">
             <i class="fa-solid fa-user-astronaut"></i> <span id="hudScore">0</span>
         </div>
         <div class="hud-btn" style="background:var(--primary); color:black;">
             <i class="fa-regular fa-compass"></i> v22
         </div>
     </div>
-
-    <!-- CARTE -->
     <div id="map"></div>
-
-    <!-- NAV -->
     <div class="bottom-nav">
-        <i class="fa-solid fa-map-location-dot nav-icon active" onclick="closePanels()"></i>
-        <i class="fa-solid fa-cart-shopping nav-icon" onclick="openPanel('shop')"></i>
-        <i class="fa-solid fa-bars nav-icon" onclick="openPanel('profile')"></i>
+        <i class="fa-solid fa-map-location-dot nav-icon active" id="navMap"></i>
+        <i class="fa-solid fa-cart-shopping nav-icon" id="navShop"></i>
+        <i class="fa-solid fa-bars nav-icon" id="navProfile"></i>
     </div>
 </div>
 
-<!-- PROFIL -->
+<!-- PANELS -->
 <div id="panelProfile" class="full-panel">
     <div class="panel-header">
         <h2>Profil</h2>
-        <i class="fa-solid fa-xmark" style="font-size:24px" onclick="closePanels()"></i>
+        <i class="fa-solid fa-xmark close-trigger" style="font-size:24px"></i>
     </div>
     <div class="panel-content">
         <div class="widget">
             <h3 id="displayId" style="font-family:monospace; color:var(--primary); font-size:20px;">-</h3>
             <p>Connecté</p>
         </div>
-        
         <div class="widget">
             <h4>Changer Mot de Passe</h4>
             <input type="password" id="newPassProfile" placeholder="Nouveau mot de passe" style="margin-bottom:10px;">
-            <button class="widget-btn btn-buy" onclick="updatePassword()">Mettre à jour</button>
+            <button id="btnUpdatePass" class="widget-btn btn-buy">Mettre à jour</button>
         </div>
-
         <div id="adminZone" class="hidden">
              <div class="widget" style="border-color:var(--danger)">
                 <h4 style="color:var(--danger)">ADMIN ZONE</h4>
                 <button class="widget-btn" onclick="alert('Broadcast sent!')">📢 Message Global</button>
              </div>
         </div>
-
-        <button class="btn-action btn-text" style="color:var(--danger); margin-top:20px;" onclick="logout()">Déconnexion</button>
+        <button id="btnLogout" class="btn-action btn-text" style="color:var(--danger); margin-top:20px;">Déconnexion</button>
     </div>
 </div>
 
-<!-- BOUTIQUE -->
 <div id="panelShop" class="full-panel">
     <div class="panel-header">
         <h2>Boutique</h2>
-        <i class="fa-solid fa-xmark" style="font-size:24px" onclick="closePanels()"></i>
+        <i class="fa-solid fa-xmark close-trigger" style="font-size:24px"></i>
     </div>
     <div class="panel-content">
         <div class="widget-grid" id="shopGrid"></div>
@@ -232,197 +222,194 @@
 </div>
 
 <script>
-// --- SYSTEME DE BASE ---
-const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
-const $ = id => document.getElementById(id);
-const toast = (msg) => {
-    const t = $('toast'); t.innerText = msg; t.classList.add('visible');
-    setTimeout(()=>t.classList.remove('visible'), 3000);
-};
-const formatID = (s) => s.replace(/\D/g,'').slice(0,16).replace(/(\d{4})(?=\d)/g,'$1 ').trim();
-
-let currentUser = null;
-let recoveryTempId = null; // ID stocké pendant la procédure de récup
-
-// --- GESTION DES FORMULAIRES ---
-function showForm(id) {
-    ['formLogin', 'formSignup', 'formForgot', 'formSecurity'].forEach(f => $(f).classList.add('hidden'));
-    $(id).classList.remove('hidden');
-}
-
-// FORMATAGE AUTO
-['loginId', 'forgotId'].forEach(id => {
-    $(id).addEventListener('input', (e) => e.target.value = formatID(e.target.value));
-});
-
-// --- 1. INSCRIPTION AVEC QUESTION SECRETE ---
-async function doSignup() {
-    const pass = $('signupPass').value;
-    const q = $('signupQ').value;
-    const a = $('signupA').value.toLowerCase().trim();
-
-    if(!pass || !a) return toast("Tout remplir !");
-
-    const newId = Array.from({length:16}, ()=>Math.floor(Math.random()*10)).join('');
-
-    const { error } = await supabaseClient.from('users').insert([{
-        id: newId,
-        password: pass,
-        secret_q: q,    // Nouvelle colonne
-        secret_a: a,    // Nouvelle colonne
-        points: 50,
-        role: 'user',
-        inventory: {}
-    }]);
-
-    if(error) return toast("Erreur: " + error.message);
-
-    toast("Compte créé !");
-    $('loginId').value = formatID(newId);
-    showForm('formLogin');
-}
-
-// --- 2. LOGIN ---
-async function doLogin() {
-    const id = $('loginId').value.replace(/\s/g,'');
-    const pass = $('loginPass').value;
+document.addEventListener("DOMContentLoaded", () => {
+    // --- VARIABLES & SELECTEURS ---
+    const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+    const $ = (id) => document.getElementById(id);
+    const toast = (msg) => {
+        const t = $('toast'); t.innerText = msg; t.classList.add('visible');
+        setTimeout(()=>t.classList.remove('visible'), 3000);
+    };
+    const formatID = (s) => s.replace(/\D/g,'').slice(0,16).replace(/(\d{4})(?=\d)/g,'$1 ').trim();
     
-    if(!id || !pass) return toast("Infos manquantes");
+    let currentUser = null;
+    let recoveryTempId = null;
 
-    const { data, error } = await supabaseClient
-        .from('users').select('*').eq('id', id).eq('password', pass).single();
-
-    if(error || !data) return toast("Erreur identifiants");
-
-    currentUser = data;
-    localStorage.setItem('cc_session', id);
-    launchApp();
-}
-
-// --- 3. RECUPERATION MDP ---
-async function checkRecoveryId() {
-    const id = $('forgotId').value.replace(/\s/g,'');
-    if(id.length !== 16) return toast("ID invalide");
-
-    // On cherche l'utilisateur pour récupérer sa question
-    const { data, error } = await supabaseClient
-        .from('users').select('secret_q').eq('id', id).single();
-
-    if(error || !data) return toast("Compte introuvable");
-    if(!data.secret_q) return toast("Pas de sécurité configurée sur ce compte");
-
-    // Affichage Question
-    recoveryTempId = id;
-    const labels = { animal: "Nom de votre animal ?", ville: "Ville de naissance ?", sport: "Sport favori ?" };
-    $('securityLabel').innerText = labels[data.secret_q] || "Question Secrète ?";
+    // --- EVENEMENTS DES BOUTONS (Attachés manuellement pour être sûr) ---
     
-    showForm('formSecurity');
-}
+    // NAVIGATION FORMULAIRES
+    const showForm = (id) => {
+        ['formLogin', 'formSignup', 'formForgot', 'formSecurity'].forEach(f => $(f).classList.add('hidden'));
+        $(id).classList.remove('hidden');
+    };
 
-async function verifyRecovery() {
-    const ans = $('securityAnswer').value.toLowerCase().trim();
-    
-    // Vérification Réponse
-    const { data, error } = await supabaseClient
-        .from('users').select('secret_a').eq('id', recoveryTempId).single();
+    $('btnShowSignup').onclick = () => showForm('formSignup');
+    $('btnShowForgot').onclick = () => showForm('formForgot');
+    $('btnBackLogin1').onclick = () => showForm('formLogin');
+    $('btnBackLogin2').onclick = () => showForm('formLogin');
+    $('btnBackLogin3').onclick = () => showForm('formLogin');
 
-    if(error || data.secret_a !== ans) return toast("Mauvaise réponse !");
+    // FORMATAGE INPUTS
+    $('loginId').oninput = (e) => e.target.value = formatID(e.target.value);
+    $('forgotId').oninput = (e) => e.target.value = formatID(e.target.value);
 
-    // SUCCES : Génération mot de passe provisoire
-    const tempPass = "TEMP-" + Math.floor(Math.random()*9999);
-    
-    // Mise à jour Supabase
-    await supabaseClient.from('users').update({ password: tempPass }).eq('id', recoveryTempId);
+    // 1. LOGIN
+    $('btnLogin').onclick = async () => {
+        const id = $('loginId').value.replace(/\s/g,'');
+        const pass = $('loginPass').value;
+        if(!id || !pass) return toast("Remplissez tout !");
 
-    alert(`SUCCÈS !\n\nVotre mot de passe provisoire est :\n\n${tempPass}\n\nNotez-le et connectez-vous pour le changer.`);
-    
-    $('loginId').value = formatID(recoveryTempId);
-    $('loginPass').value = tempPass;
-    showForm('formLogin');
-}
+        const { data, error } = await supabaseClient.from('users').select('*').eq('id', id).eq('password', pass).single();
+        if(error || !data) return toast("Erreur ID/Mot de passe");
+        
+        currentUser = data;
+        localStorage.setItem('cc_session', id);
+        launchApp();
+    };
 
-// --- 4. CHANGEMENT MDP (Profil) ---
-async function updatePassword() {
-    const newP = $('newPassProfile').value;
-    if(newP.length < 4) return toast("Trop court");
+    // 2. SIGNUP
+    $('btnDoSignup').onclick = async () => {
+        const pass = $('signupPass').value;
+        const q = $('signupQ').value;
+        const a = $('signupA').value.trim().toLowerCase();
+        if(!pass || !a) return toast("Tout est obligatoire");
 
-    const { error } = await supabaseClient.from('users').update({password: newP}).eq('id', currentUser.id);
-    if(!error) {
-        toast("Mot de passe modifié !");
+        const newId = Array.from({length:16}, ()=>Math.floor(Math.random()*10)).join('');
+        const { error } = await supabaseClient.from('users').insert([{
+            id: newId, password: pass, secret_q: q, secret_a: a, points: 50, role: 'user', inventory: {}
+        }]);
+
+        if(error) return toast("Erreur: "+error.message);
+        toast("Compte créé !");
+        $('loginId').value = formatID(newId);
+        showForm('formLogin');
+    };
+
+    // 3. RECOVERY STEP 1
+    $('btnCheckId').onclick = async () => {
+        const id = $('forgotId').value.replace(/\s/g,'');
+        if(id.length !== 16) return toast("ID invalide");
+
+        const { data, error } = await supabaseClient.from('users').select('secret_q').eq('id', id).single();
+        if(error || !data || !data.secret_q) return toast("Compte introuvable ou sans sécurité");
+
+        recoveryTempId = id;
+        const labels = { animal: "Animal ?", ville: "Ville ?", sport: "Sport ?" };
+        $('securityLabel').innerText = labels[data.secret_q] || "Question ?";
+        showForm('formSecurity');
+    };
+
+    // 4. RECOVERY STEP 2
+    $('btnVerify').onclick = async () => {
+        const ans = $('securityAnswer').value.trim().toLowerCase();
+        const { data } = await supabaseClient.from('users').select('secret_a').eq('id', recoveryTempId).single();
+        
+        if(!data || data.secret_a !== ans) return toast("Mauvaise réponse !");
+
+        const tempPass = "TEMP-" + Math.floor(Math.random()*9999);
+        await supabaseClient.from('users').update({password: tempPass}).eq('id', recoveryTempId);
+        
+        alert(`NOUVEAU MOT DE PASSE : ${tempPass}\n\nCopiez-le !`);
+        $('loginId').value = formatID(recoveryTempId);
+        $('loginPass').value = tempPass;
+        showForm('formLogin');
+    };
+
+    // 5. UPDATE PASSWORD
+    $('btnUpdatePass').onclick = async () => {
+        const p = $('newPassProfile').value;
+        if(p.length < 4) return toast("Trop court");
+        await supabaseClient.from('users').update({password: p}).eq('id', currentUser.id);
+        toast("Mot de passe changé !");
         $('newPassProfile').value = "";
-    } else {
-        toast("Erreur sauvegarde");
+    };
+
+    // 6. LOGOUT
+    $('btnLogout').onclick = () => {
+        localStorage.removeItem('cc_session');
+        location.reload();
+    };
+
+    // --- APP UI ---
+    function launchApp() {
+        $('loginScreen').style.opacity = 0;
+        setTimeout(() => {
+            $('loginScreen').style.display = 'none';
+            $('app').style.display = 'block';
+            setTimeout(()=>$('app').style.opacity = 1, 50);
+            initMap();
+            updateUI();
+        }, 400);
     }
-}
 
-// --- APP & MAP ---
-function launchApp() {
-    $('loginScreen').style.opacity = 0;
-    setTimeout(() => {
-        $('loginScreen').style.display = 'none';
-        $('app').style.display = 'block';
-        $('app').style.opacity = 1;
-        initMap();
-        updateUI();
-    }, 400);
-}
+    function updateUI() {
+        $('hudScore').innerText = currentUser.points;
+        $('displayId').innerText = formatID(currentUser.id);
+        if(currentUser.role==='admin' || currentUser.id==='3339683758546584') $('adminZone').classList.remove('hidden');
+        renderShop();
+    }
 
-function updateUI() {
-    $('hudScore').innerText = currentUser.points;
-    $('displayId').innerText = formatID(currentUser.id);
-    if(currentUser.role === 'admin' || currentUser.id === '3339683758546584') $('adminZone').classList.remove('hidden');
-    renderShop();
-}
+    // --- NAVIGATION PANELS ---
+    const openPanel = (id) => $(id).classList.add('open');
+    const closePanels = () => document.querySelectorAll('.full-panel').forEach(p => p.classList.remove('open'));
 
-function logout() {
-    localStorage.removeItem('cc_session');
-    location.reload();
-}
-
-// LEAFLET MAP
-let map;
-function initMap() {
-    if(map) return;
-    map = L.map('map', {zoomControl: false}).setView([43.6047, 1.4442], 15);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {maxZoom: 20}).addTo(map);
+    $('navMap').onclick = closePanels;
+    $('navShop').onclick = () => openPanel('panelShop');
+    $('navProfile').onclick = () => openPanel('panelProfile');
+    $('btnProfileHUD').onclick = () => openPanel('panelProfile');
     
-    // Fake content pour demo
-    L.circleMarker([43.6045, 1.4440], {color:'#00f2ff'}).addTo(map).bindPopup("Point d'intérêt");
-}
+    document.querySelectorAll('.close-trigger').forEach(b => b.onclick = closePanels);
 
-// BOUTIQUE
-const ITEMS = [{id:'vision', name:'Vision Nocturne', price:100}, {id:'radar', name:'Radar', price:500}];
-function renderShop() {
-    const c = $('shopGrid'); c.innerHTML = '';
-    ITEMS.forEach(i => {
-        const owned = (currentUser.inventory||{})[i.id];
-        const div = document.createElement('div'); div.className = 'widget';
-        div.innerHTML = `<h4>${i.name}</h4><button class="widget-btn btn-buy" onclick="buy('${i.id}',${i.price})">${owned?'Acquis':i.price+'pts'}</button>`;
-        c.appendChild(div);
-    });
-}
-async function buy(id, p) {
-    if(currentUser.points < p) return toast("Pas assez de points");
-    const inv = {...currentUser.inventory, [id]:true};
-    await supabaseClient.from('users').update({points: currentUser.points-p, inventory:inv}).eq('id', currentUser.id);
-    currentUser.points -= p; currentUser.inventory = inv;
-    updateUI(); toast("Acheté !");
-}
-
-// NAV
-window.openPanel = (id) => $('panel'+id.charAt(0).toUpperCase()+id.slice(1)).classList.add('open');
-window.closePanels = () => document.querySelectorAll('.full-panel').forEach(p => p.classList.remove('open'));
-
-// START
-async function checkSession() {
-    const s = localStorage.getItem('cc_session');
-    if(s) {
-        const {data} = await supabaseClient.from('users').select('*').eq('id', s).single();
-        if(data) { currentUser = data; launchApp(); }
+    // --- SHOP ---
+    function renderShop() {
+        const ITEMS = [{id:'vision', name:'Vision Nocturne', price:100}, {id:'radar', name:'Radar', price:500}];
+        const c = $('shopGrid'); c.innerHTML = '';
+        ITEMS.forEach(i => {
+            const owned = (currentUser.inventory||{})[i.id];
+            const div = document.createElement('div'); div.className = 'widget';
+            div.innerHTML = `<h4>${i.name}</h4><button class="widget-btn btn-buy" data-id="${i.id}" data-price="${i.price}">${owned?'ACQUIS':i.price+'pts'}</button>`;
+            
+            // Attacher event sur le bouton généré
+            div.querySelector('button').onclick = async (e) => {
+                if(owned) return;
+                const p = parseInt(e.target.dataset.price);
+                if(currentUser.points < p) return toast("Pas assez de points");
+                
+                const inv = {...currentUser.inventory, [i.id]:true};
+                await supabaseClient.from('users').update({points: currentUser.points-p, inventory:inv}).eq('id', currentUser.id);
+                currentUser.points -= p; currentUser.inventory = inv;
+                updateUI(); toast("Acheté !");
+            };
+            c.appendChild(div);
+        });
     }
-}
-checkSession();
 
+    // --- MAP ---
+    let map;
+    function initMap() {
+        if(map) return;
+        map = L.map('map', {zoomControl:false}).setView([43.6047, 1.4442], 13);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {maxZoom: 20}).addTo(map);
+        
+        // Marker User
+        const icon = L.divIcon({className:'user-icon', html:`<div style="width:16px;height:16px;background:#00f2ff;border-radius:50%;border:2px solid white;box-shadow:0 0 10px cyan"></div>`});
+        const marker = L.marker([43.6047, 1.4442], {icon:icon}).addTo(map);
+
+        if(navigator.geolocation) {
+            navigator.geolocation.watchPosition(p => {
+                marker.setLatLng([p.coords.latitude, p.coords.longitude]);
+            });
+        }
+    }
+
+    // AUTO START
+    const sess = localStorage.getItem('cc_session');
+    if(sess) {
+        supabaseClient.from('users').select('*').eq('id', sess).single().then(({data}) => {
+            if(data) { currentUser=data; launchApp(); }
+        });
+    }
+});
 </script>
 </body>
 </html>
