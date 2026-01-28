@@ -6,7 +6,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
-    <title>CityCompass v47 Ultimate</title>
+    <title>CityCompass v50 Ultimate</title>
 
     <!-- Leaflet CSS & FontAwesome -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -137,7 +137,7 @@
             <button class="login-btn" style="background:transparent; color:var(--text); border:1px solid rgba(128,128,128,0.3);" onclick="handleSignup()">Créer un compte</button>
             
             <p onclick="handleForgot()" style="margin-top:20px; color:var(--accent); font-size:14px; cursor:pointer;">Mot de passe oublié ?</p>
-            <p id="msg" style="color:var(--danger); font-size:13px; min-height:20px;"></p>
+            <p id="msg" style="color:var(--danger); font-size:13px; min-height:20px; margin-top:10px;"></p>
         </div>
     </div>
 
@@ -219,22 +219,22 @@
 
 <script>
     // ---------------------------------------------------------
-    // 1. CONFIGURATION (Vos clés)
+    // 1. CONFIGURATION (CORRIGÉE)
     // ---------------------------------------------------------
-    const SB_URL = 'https://vjlfbcwnfwyrxstfvefq.supabase.co';
+    const SB_URL = 'https://vjlfbcwnfwyrxstfvefq.supabase.co'; // URL Corrigée (plus de ..)
     const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGZiY3duZnd5cnhzdGZ2ZWZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyMDc2MjcsImV4cCI6MjA4NDc4MzYyN30.WTuWbxB-8isJOp2lNnq73njQmifDjxTNEWngMgKtmv4';
     
     // Variables Globales
     let map, userMarker, sb;
     let layers = {}; 
     let state = { theme: 'light', watchId: null };
+    
+    // Fonction utilitaire pour logs
+    const msg = (txt) => document.getElementById('msg').innerText = txt;
 
     // ---------------------------------------------------------
     // 2. AUTHENTIFICATION (Fonctions Globales Sécurisées)
     // ---------------------------------------------------------
-    
-    // Fonction utilitaire pour logs
-    const msg = (txt) => document.getElementById('msg').innerText = txt;
 
     window.handleLogin = async () => {
         const email = document.getElementById('email').value;
@@ -242,9 +242,13 @@
         if(!email || !password) return msg("Remplissez tout.");
         
         msg("Connexion...");
-        const { data, error } = await sb.auth.signInWithPassword({ email, password });
-        if(error) msg(error.message);
-        else initApp(data.user);
+        try {
+            const { data, error } = await sb.auth.signInWithPassword({ email, password });
+            if(error) throw error;
+            initApp(data.user);
+        } catch(e) {
+            msg(e.message);
+        }
     };
 
     window.handleSignup = async () => {
@@ -253,19 +257,23 @@
         if(!email || !password) return msg("Remplissez tout.");
         
         msg("Création...");
-        const { data, error } = await sb.auth.signUp({ email, password });
-        if(error) msg(error.message);
-        else {
+        try {
+            const { data, error } = await sb.auth.signUp({ email, password });
+            if(error) throw error;
+            
             if(data.session) initApp(data.user);
             else msg("Compte créé ! Vérifiez vos emails.");
+        } catch(e) {
+            msg(e.message);
         }
     };
 
     window.handleForgot = async () => {
         const email = document.getElementById('email').value;
         if(!email) return msg("Mettez votre email d'abord.");
-        await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
-        msg("Email envoyé !");
+        
+        const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+        msg(error ? error.message : "Email envoyé !");
     };
 
     window.logout = async () => {
@@ -294,9 +302,6 @@
             attribution: '&copy; OpenStreetMap', maxZoom: 19
         }).addTo(map);
 
-        // Layers optionnels (Trafic etc.)
-        layers.traffic = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { opacity: 0.5 }); // Simulé pour l'exemple
-        
         locateMe();
         
         // Gestion de la boussole
@@ -304,14 +309,12 @@
             window.addEventListener('deviceorientation', (e) => {
                 const alpha = e.webkitCompassHeading || Math.abs(e.alpha - 360);
                 document.getElementById('compassArrow').style.transform = `rotate(${-alpha}deg)`;
-                // Rotation de la carte en mode navigation (optionnel)
             });
         }
     }
 
     // Actions UI
     window.openPanel = (id) => {
-        // Fermer les autres
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
         document.getElementById(id).classList.add('open');
     };
@@ -346,9 +349,7 @@
         layers.base.setUrl(url);
     };
 
-    // Gestion des widgets (Shop)
     window.toggleLayer = (type, isActive) => {
-        // Logique simulée : normalement on ajouterait de vrais layers Leaflet ici
         if(isActive) alert("Layer " + type + " activé (Simulation)");
     };
 
@@ -372,11 +373,10 @@
             if(session) {
                 initApp(session.user);
             } else {
-                // Reste sur le login
                 document.getElementById('loginScreen').style.display = 'flex';
             }
         } catch(e) {
-            alert("Erreur init: " + e.message);
+            msg("Erreur init: " + e.message);
         }
     };
 
