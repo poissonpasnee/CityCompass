@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
-    <title>CityCompass v54</title>
+    <title>CityCompass v55</title>
 
     <!-- Libs -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -15,56 +14,55 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* --- DESIGN SYSTEM V20 RESTORED --- */
+        /* --- DESIGN SYSTEM --- */
         :root {
-            --glass: rgba(255, 255, 255, 0.90);
-            --blur: blur(25px);
-            --shadow: 0 8px 40px rgba(0,0,0,0.15);
-            --accent: #007AFF; /* Changé dynamiquement */
+            --glass: rgba(255, 255, 255, 0.92);
+            --blur: blur(30px);
+            --shadow: 0 10px 40px rgba(0,0,0,0.15);
+            --accent: #007AFF;
             --danger: #FF3B30;
+            --success: #34C759;
             --text: #000;
         }
         body[data-theme="dark"] {
-            --glass: rgba(28, 28, 30, 0.90);
+            --glass: rgba(28, 28, 30, 0.92);
             --text: #FFF;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, sans-serif; touch-action: manipulation; }
         body { margin: 0; height: 100vh; overflow: hidden; background: #000; color: var(--text); user-select: none; }
 
-        /* CARTE */
-        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; transition: filter 0.3s; }
-        
-        /* HUD FLOTTANT */
+        /* CARTE & UI */
+        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         .hud-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000;
             display: flex; flex-direction: column; justify-content: space-between;
             padding: env(safe-area-inset-top) 15px calc(env(safe-area-inset-bottom) + 20px) 15px;
         }
 
-        /* TOP BAR */
-        .top-bar { margin-top: 10px; display: flex; justify-content: space-between; align-items: center; pointer-events: auto; }
-        .xp-pill {
-            background: var(--glass); backdrop-filter: var(--blur); padding: 8px 16px; border-radius: 50px;
-            font-weight: 800; font-size: 14px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 8px;
-            transition: transform 0.2s;
+        /* RECHERCHE FLOTTANTE */
+        .search-bar {
+            background: var(--glass); backdrop-filter: var(--blur); pointer-events: auto;
+            border-radius: 25px; padding: 12px 20px; box-shadow: var(--shadow);
+            display: flex; align-items: center; gap: 10px; margin-top: 10px; position: relative;
         }
-        .xp-pill:active { transform: scale(0.95); }
+        .search-inp { border: none; background: transparent; font-size: 16px; width: 100%; outline: none; color: var(--text); }
+        .search-results {
+            position: absolute; top: 60px; left: 0; width: 100%; background: var(--glass);
+            backdrop-filter: var(--blur); border-radius: 20px; max-height: 250px; overflow-y: auto;
+            display: none; padding: 10px; box-shadow: var(--shadow);
+        }
+        .result-item { padding: 12px; border-bottom: 1px solid rgba(128,128,128,0.1); cursor: pointer; }
+        .result-item:last-child { border: none; }
 
         /* DOCK BOTTOM */
         .dock {
-            background: var(--glass); backdrop-filter: var(--blur); border-radius: 30px; padding: 12px 25px;
+            background: var(--glass); backdrop-filter: var(--blur); border-radius: 35px; padding: 12px 25px;
             display: flex; justify-content: space-between; pointer-events: auto; box-shadow: var(--shadow);
-            width: 100%; max-width: 420px; align-self: center; margin-bottom: 10px;
+            width: 100%; max-width: 400px; align-self: center;
         }
-        .dock-icon {
-            font-size: 24px; color: #999; padding: 8px; cursor: pointer; transition: 0.2s; position: relative;
-        }
-        .dock-icon.active { color: var(--accent); transform: translateY(-4px); }
-        .dock-icon.active::after {
-            content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%);
-            width: 4px; height: 4px; background: var(--accent); border-radius: 50%;
-        }
+        .dock-icon { font-size: 24px; color: #999; padding: 10px; transition: 0.2s; position: relative; }
+        .dock-icon.active { color: var(--accent); transform: translateY(-3px); }
 
         /* PANNEAUX */
         .panel {
@@ -75,12 +73,9 @@
         .panel.open { right: 0; }
         .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
         .panel h2 { font-size: 28px; font-weight: 800; margin: 0; }
-        .close-btn { 
-            background: rgba(128,128,128,0.15); width: 36px; height: 36px; border-radius: 50%; border: none;
-            display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--text); cursor: pointer; 
-        }
+        .close-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(128,128,128,0.15); color: var(--text); font-size: 18px; }
 
-        /* ITEMS SHOP */
+        /* WIDGETS & SHOP */
         .shop-item {
             background: rgba(128,128,128,0.08); padding: 15px; border-radius: 20px; margin-bottom: 12px;
             display: flex; justify-content: space-between; align-items: center;
@@ -88,38 +83,41 @@
         .shop-info { display: flex; align-items: center; gap: 15px; }
         .shop-icon { 
             width: 44px; height: 44px; border-radius: 12px; background: #eee; 
-            display: flex; align-items: center; justify-content: center; font-size: 20px; color: #333; 
+            display: flex; align-items: center; justify-content: center; font-size: 22px; 
         }
         .buy-btn {
             background: var(--text); color: var(--glass); border: none; padding: 8px 16px; border-radius: 12px;
             font-weight: bold; font-size: 13px; cursor: pointer;
         }
-        .buy-btn.owned { background: transparent; color: #34C759; border: 1px solid #34C759; }
+        /* Toggle Switch pour les widgets possédés */
+        .toggle-switch {
+            position: relative; width: 50px; height: 30px; display: inline-block;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(20px); }
 
-        /* BOUSSOLE */
-        #compassOverlay {
-            position: fixed; top:0; left:0; width:100%; height:100%; background: var(--glass); z-index: 3000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: 0.3s;
-        }
-        #compassOverlay.active { opacity: 1; pointer-events: auto; }
-        #compassRing {
-            width: 260px; height: 260px; border: 6px solid var(--text); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; transition: transform 0.1s linear;
-        }
-        
         /* LOGIN */
         #loginScreen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(25px);
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(25px);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         .login-box { background: var(--glass); padding: 30px; border-radius: 30px; width: 85%; max-width: 350px; text-align: center; }
-        .inp { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 14px; border: 1px solid rgba(0,0,0,0.1); font-size: 16px; }
-        .btn-main { width: 100%; padding: 15px; border-radius: 14px; border: none; background: var(--accent); color: white; font-weight: 700; margin-top: 10px; }
-
-        /* ADMIN PANEL */
-        #adminControls { display: none; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(128,128,128,0.2); }
+        .inp { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 14px; border: 1px solid rgba(0,0,0,0.1); font-size: 16px; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 15px; border-radius: 14px; border: none; background: var(--accent); color: white; font-weight: 700; margin-top: 10px; cursor: pointer;}
+        
+        /* ADMIN & SETTINGS */
+        .section-title { font-size: 14px; font-weight: 700; opacity: 0.5; text-transform: uppercase; margin: 20px 0 10px 0; letter-spacing: 1px; }
+        .setting-row { padding: 15px 0; border-bottom: 1px solid rgba(128,128,128,0.1); cursor: pointer; display: flex; justify-content: space-between; align-items: center;}
     </style>
 </head>
 <body data-theme="light">
@@ -127,7 +125,7 @@
     <!-- LOGIN -->
     <div id="loginScreen">
         <div class="login-box">
-            <h1>CityCompass</h1>
+            <h1 style="margin:0 0 20px 0;">CityCompass</h1>
             <input type="email" id="email" class="inp" placeholder="Email">
             <input type="password" id="password" class="inp" placeholder="Mot de passe">
             <button class="btn-main" onclick="auth.login()">Connexion</button>
@@ -141,21 +139,23 @@
 
     <!-- HUD -->
     <div class="hud-layer" id="hud" style="display:none;">
-        <div class="top-bar">
-            <div class="xp-pill" onclick="ui.open('panelProfile')">
-                <i class="fa-solid fa-gem" style="color:var(--accent);"></i>
-                <span id="hudPoints">...</span>
+        
+        <!-- Barre Recherche -->
+        <div class="search-bar">
+            <i class="fa-solid fa-search" style="opacity:0.5;"></i>
+            <input type="text" class="search-inp" id="searchInp" placeholder="Où aller ?" onkeyup="mapManager.search(this.value)">
+            <div class="xp-pill" onclick="ui.open('panelProfile')" style="font-size:12px; font-weight:bold; color:var(--accent);">
+                <span id="hudPoints">0</span> XP
             </div>
-            <div class="xp-pill" style="padding:10px; border-radius:50%;" onclick="app.toggleTheme()">
-                <i class="fa-solid fa-moon"></i>
-            </div>
+            <div class="search-results" id="searchResults"></div>
         </div>
 
+        <!-- Dock -->
         <div class="dock">
             <div class="dock-icon" onclick="ui.open('panelShop')"><i class="fa-solid fa-store"></i></div>
-            <div class="dock-icon" onclick="ui.open('panelWidgets')"><i class="fa-solid fa-layer-group"></i></div>
+            <div class="dock-icon" onclick="ui.open('panelTools')"><i class="fa-solid fa-layer-group"></i></div>
             <div class="dock-icon active" onclick="mapManager.locate()"><i class="fa-solid fa-location-arrow"></i></div>
-            <div class="dock-icon" onclick="compass.open()"><i class="fa-regular fa-compass"></i></div>
+            <div class="dock-icon" onclick="ui.open('panelProfile')"><i class="fa-solid fa-user"></i></div>
         </div>
     </div>
 
@@ -166,79 +166,83 @@
             <div style="font-size:30px; font-weight:800;" id="shopPoints">0</div>
             <div style="opacity:0.8;">Points Disponibles</div>
         </div>
-        
         <div id="shopList"></div>
     </div>
 
-    <!-- PANNEAU WIDGETS -->
-    <div id="panelWidgets" class="panel">
-        <div class="panel-head"><h2>Calques & Outils</h2><button class="close-btn" onclick="ui.close()">&times;</button></div>
+    <!-- PANNEAU CALQUES & OUTILS (FAVORIS) -->
+    <div id="panelTools" class="panel">
+        <div class="panel-head"><h2>Outils</h2><button class="close-btn" onclick="ui.close()">&times;</button></div>
         
-        <h3>Fonds de carte</h3>
+        <div class="section-title">Mes Favoris</div>
+        <div id="favList" style="margin-bottom:20px; color:gray; font-size:14px;">Aucun favori</div>
+
+        <div class="section-title">Fonds de carte</div>
         <div class="shop-item" onclick="mapManager.setLayer('standard')"><span>🗺️ Standard</span></div>
         <div class="shop-item" onclick="mapManager.setLayer('sat')"><span>🛰️ Satellite</span></div>
-        
-        <h3>Widgets Info</h3>
-        <div class="shop-item">
-            <span>📡 Trafic</span>
-            <input type="checkbox" onchange="mapManager.toggleOverlay('traffic', this.checked)">
-        </div>
-        <div class="shop-item">
-            <span>🚇 Transports</span>
-            <input type="checkbox" onchange="mapManager.toggleOverlay('transit', this.checked)">
-        </div>
-        
-        <div id="speedWidget" class="shop-item" style="display:none;">
-            <div class="shop-info">
-                <div class="shop-icon" style="background:#FF9500; color:white;"><i class="fa-solid fa-gauge-high"></i></div>
-                <div><b>Speedomètre</b><br>0 km/h</div>
-            </div>
-        </div>
+        <div class="shop-item" onclick="mapManager.setLayer('dark')"><span>🌑 Mode Nuit</span></div>
     </div>
 
-    <!-- PANNEAU PROFIL -->
+    <!-- PANNEAU PROFIL & PARAMETRES & ADMIN -->
     <div id="panelProfile" class="panel">
-        <div class="panel-head"><h2>Profil</h2><button class="close-btn" onclick="ui.close()">&times;</button></div>
-        <div style="text-align:center;">
-            <div style="font-size:50px;">👤</div>
-            <h3 id="profileEmail">Chargement...</h3>
-            <button class="btn-main" style="background:var(--danger); width:auto; padding:10px 20px;" onclick="auth.logout()">Déconnexion</button>
+        <div class="panel-head"><h2>Mon Compte</h2><button class="close-btn" onclick="ui.close()">&times;</button></div>
+        
+        <div style="text-align:center; margin-bottom:30px;">
+            <div style="width:80px; height:80px; background:var(--accent); color:white; border-radius:50%; margin:0 auto 15px auto; display:flex; align-items:center; justify-content:center; font-size:30px;">👤</div>
+            <h3 id="profileEmail">...</h3>
         </div>
 
-        <div id="adminControls">
-            <h3>⚡ Control Panel (Admin)</h3>
-            <input type="text" id="adminTargetEmail" class="inp" placeholder="Email utilisateur">
-            <button class="btn-main" onclick="admin.givePoints()">Donner 500 Pts</button>
-            <button class="btn-main" style="background:#333;" onclick="admin.reset()">Reset Profil</button>
+        <!-- Paramètres -->
+        <div class="section-title">Paramètres</div>
+        <div class="setting-row" onclick="settings.updateEmail()">
+            <span>Changer Email</span> <i class="fa-solid fa-chevron-right"></i>
         </div>
-    </div>
+        <div class="setting-row" onclick="settings.updatePwd()">
+            <span>Changer Mot de passe</span> <i class="fa-solid fa-chevron-right"></i>
+        </div>
+        <div class="setting-row" onclick="settings.toggleTheme()">
+            <span>Mode Sombre / Clair</span> <i class="fa-solid fa-adjust"></i>
+        </div>
+        <div class="setting-row" style="color:var(--danger);" onclick="auth.logout()">
+            <span>Se déconnecter</span> <i class="fa-solid fa-power-off"></i>
+        </div>
 
-    <!-- BOUSSOLE OVERLAY -->
-    <div id="compassOverlay">
-        <button class="close-btn" style="position:absolute; top:40px; right:20px;" onclick="compass.close()">&times;</button>
-        <div id="compassRing">
-            <div style="position:absolute; top:-40px; font-weight:bold;">N</div>
-            <i class="fa-solid fa-location-arrow" style="font-size:80px; color:var(--danger);"></i>
+        <!-- ADMIN PANEL (Visible uniquement si admin) -->
+        <div id="adminPanel" style="display:none; margin-top:40px; border-top:2px solid rgba(128,128,128,0.2); padding-top:20px;">
+            <h3 style="color:var(--danger);">⚡ Control Panel</h3>
+            
+            <div class="section-title">Gestion Points</div>
+            <input type="text" id="admUserEmail" class="inp" placeholder="Email utilisateur">
+            <div style="display:flex; gap:10px;">
+                <button class="btn-main" onclick="admin.modPoints(100)">+100 XP</button>
+                <button class="btn-main" style="background:#333;" onclick="admin.modPoints(-100)">-100 XP</button>
+            </div>
+
+            <div class="section-title">Lieux Publics</div>
+            <button class="btn-main" onclick="admin.addPublicPlace()">Ajouter Position Actuelle comme Lieu Public</button>
         </div>
-        <h1 id="compassDeg" style="margin-top:40px;">0°</h1>
-        <button class="btn-main" style="width:200px; margin-top:20px;" onclick="compass.requestPerm()">Calibrer / Autoriser</button>
     </div>
 
 <script>
     // --- 1. CONFIGURATION ---
     const SB_URL = 'https://scbihxaceelyygrlacvm.supabase.co';
     const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjYmloeGFjZWVseXlncmxhY3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1NjU3MTcsImV4cCI6MjA4NTE0MTcxN30.rgUH-kltyNX99-HTDmGEyzGyu8qFXR9LF1QxsjY0W44';
-    const ADMIN_EMAILS = ['votre_email@exemple.com']; // AJOUTEZ VOTRE EMAIL ICI
 
+    // Liste des Widgets (~10)
     const ITEMS = [
-        { id: 'color_purple', name: 'Thème Violet', price: 200, icon: '🎨', type: 'color', val: '#AF52DE' },
-        { id: 'color_green', name: 'Thème Vert', price: 200, icon: '🎨', type: 'color', val: '#34C759' },
-        { id: 'ghost_mode', name: 'Mode Fantôme', price: 500, icon: '👻', desc: 'Cache votre position' },
-        { id: 'speedometer', name: 'Speedomètre', price: 300, icon: '🏎️', desc: 'Affiche la vitesse' }
+        { id: 'color_purple', name: 'Thème Violet', price: 200, icon: '🎨', type: 'theme', val: '#AF52DE' },
+        { id: 'color_orange', name: 'Thème Orange', price: 200, icon: '🎨', type: 'theme', val: '#FF9500' },
+        { id: 'w_traffic', name: 'Info Trafic', price: 100, icon: '🚦', type: 'widget' },
+        { id: 'w_transit', name: 'Transports', price: 150, icon: '🚇', type: 'widget' },
+        { id: 'w_bike', name: 'Pistes Cyclables', price: 150, icon: '🚲', type: 'widget' },
+        { id: 'w_ghost', name: 'Mode Fantôme', price: 500, icon: '👻', type: 'widget', desc: 'Cache votre position' },
+        { id: 'w_speed', name: 'Speedomètre', price: 300, icon: '🏎️', type: 'widget', desc: 'Vitesse temps réel' },
+        { id: 'w_weather', name: 'Météo (Simu)', price: 250, icon: '☁️', type: 'widget' },
+        { id: 'w_3d', name: 'Bâtiments 3D', price: 400, icon: '🏢', type: 'widget' },
+        { id: 'w_voice', name: 'Guidage Vocal', price: 600, icon: '🎙️', type: 'widget' }
     ];
 
     let sb, map, userMarker, currentUser, userProfile;
-    let state = { theme: 'light', orientation: 0 };
+    let state = { theme: 'light', lastLoc: null };
 
     // --- 2. AUTHENTIFICATION ---
     const auth = {
@@ -246,43 +250,30 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             if(!email || !password) return ui.msg("Remplissez tout.");
-            
             ui.msg("Connexion...");
             const { data, error } = await sb.auth.signInWithPassword({ email, password });
-            if(error) ui.msg(error.message);
-            else app.start(data.user);
+            if(error) ui.msg(error.message); else app.start(data.user);
         },
         signup: async () => {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             if(!email || !password) return ui.msg("Remplissez tout.");
-
             ui.msg("Création...");
             const { data, error } = await sb.auth.signUp({ email, password });
-            if(error) ui.msg(error.message);
-            else {
-                if(data.session) app.start(data.user);
-                else ui.msg("Compte créé !");
-            }
+            if(error) ui.msg(error.message); else if(data.session) app.start(data.user); else ui.msg("Compte créé !");
         },
-        logout: async () => {
-            await sb.auth.signOut();
-            location.reload();
-        }
+        logout: async () => { await sb.auth.signOut(); location.reload(); }
     };
 
-    // --- 3. GESTION APP & PERSISTANCE ---
+    // --- 3. LOGIQUE PRINCIPALE ---
     const app = {
         init: async () => {
-            // Restaurer thème
-            const savedTheme = localStorage.getItem('cc_theme') || 'light';
-            document.body.setAttribute('data-theme', savedTheme);
-            state.theme = savedTheme;
-
-            // Supabase
             sb = supabase.createClient(SB_URL, SB_KEY);
+            // Restaurer thème
+            state.theme = localStorage.getItem('cc_theme') || 'light';
+            document.body.setAttribute('data-theme', state.theme);
+
             const { data: { session } } = await sb.auth.getSession();
-            
             if(session) app.start(session.user);
             else document.getElementById('loginScreen').style.display = 'flex';
         },
@@ -293,204 +284,243 @@
             document.getElementById('hud').style.display = 'flex';
             document.getElementById('profileEmail').innerText = user.email;
 
-            // Admin Check
-            if(ADMIN_EMAILS.includes(user.email)) {
-                document.getElementById('adminControls').style.display = 'block';
-            }
-
             mapManager.init();
-            await app.loadProfile();
+            await app.loadData();
             
-            // Restaurer dernière page
-            const lastPanel = localStorage.getItem('cc_last_panel');
-            if(lastPanel) ui.open(lastPanel);
+            // Restaurer panel
+            const last = localStorage.getItem('cc_last_panel');
+            if(last) ui.open(last);
         },
 
-        loadProfile: async () => {
-            // Récupérer points & items
-            const { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-            
+        loadData: async () => {
+            const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
             if(data) {
                 userProfile = data;
-                app.updateUI();
+                app.applySettings();
+                shop.render();
+                mapManager.renderFavs();
                 
-                // Appliquer couleur sauvegardée
-                if(data.color) document.documentElement.style.setProperty('--accent', data.color);
-                
-                // Appliquer widgets achetés
-                if(data.items && data.items.includes('speedometer')) {
-                    document.getElementById('speedWidget').style.display = 'flex';
-                }
-            } else {
-                // Création locale temporaire si DB pas prête
-                userProfile = { points: 100, items: [] }; 
+                if(data.is_admin) document.getElementById('adminPanel').style.display = 'block';
             }
-            shop.render();
         },
 
-        updateUI: () => {
-            document.getElementById('hudPoints').innerText = userProfile.points + ' XP';
+        applySettings: () => {
+            document.getElementById('hudPoints').innerText = userProfile.points;
             document.getElementById('shopPoints').innerText = userProfile.points;
-        },
-
-        toggleTheme: () => {
-            state.theme = state.theme === 'light' ? 'dark' : 'light';
-            document.body.setAttribute('data-theme', state.theme);
-            localStorage.setItem('cc_theme', state.theme);
-            mapManager.updateTiles();
+            if(userProfile.color) document.documentElement.style.setProperty('--accent', userProfile.color);
+            // Appliquer widgets
+            (userProfile.active_items || []).forEach(id => {
+                 // Logique d'activation des widgets ici (ex: Trafic)
+                 if(id === 'w_traffic') mapManager.toggleOverlay('traffic', true);
+            });
         }
     };
 
-    // --- 4. CARTE & GEOLOC ---
+    // --- 4. MAP & RECHERCHE ---
     const mapManager = {
         init: () => {
             if(map) return;
-            map = L.map('map', { zoomControl: false, attributionControl: false }).setView([43.6, 1.4], 13);
-            mapManager.updateTiles();
+            map = L.map('map', { zoomControl: false }).setView([43.6, 1.4], 13);
+            mapManager.setLayer(state.theme === 'dark' ? 'dark' : 'standard');
+            
+            // Click Map -> Popup
+            map.on('click', (e) => {
+                L.popup()
+                    .setLatLng(e.latlng)
+                    .setContent(`<div style="text-align:center;">
+                        <b>Point sélectionné</b><br>
+                        <button class="buy-btn" onclick="mapManager.addFav(${e.latlng.lat}, ${e.latlng.lng})">⭐ Ajouter Favori</button>
+                    </div>`)
+                    .openOn(map);
+            });
             mapManager.locate();
         },
-        updateTiles: () => {
-            const url = state.theme === 'dark' 
-                ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-            
-            map.eachLayer(l => { if(l._url) map.removeLayer(l); });
-            L.tileLayer(url, { maxZoom: 19 }).addTo(map);
-        },
+        
         locate: () => {
-            map.locate({setView: true, watch: true, enableHighAccuracy: true});
+            map.locate({setView: true, watch: true});
             map.on('locationfound', e => {
-                if(!userMarker) {
-                    userMarker = L.circleMarker(e.latlng, { radius: 8, color: 'var(--accent)', fillColor: 'var(--accent)', fillOpacity:1 }).addTo(map);
-                } else {
-                    userMarker.setLatLng(e.latlng);
-                }
-                
-                // Speedometer logic
-                if(e.speed !== null) {
-                    const kmh = Math.round(e.speed * 3.6);
-                    document.querySelector('#speedWidget b').innerText = "Vitesse: " + kmh + " km/h";
-                }
+                state.lastLoc = e.latlng;
+                if(!userMarker) userMarker = L.circleMarker(e.latlng, { radius: 8, color: 'var(--accent)', fillColor: 'var(--accent)', fillOpacity:1 }).addTo(map);
+                else userMarker.setLatLng(e.latlng);
             });
         },
-        setLayer: (type) => {
-            let url = '';
-            if(type === 'sat') url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-            else if(type === 'standard') url = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+        search: async (q) => {
+            if(q.length < 3) return;
+            const center = map.getCenter();
+            // Utilisation de Nominatim (OSM)
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&viewbox=${center.lng-1},${center.lat+1},${center.lng+1},${center.lat-1}`);
+            const data = await res.json();
             
-            if(url) {
-                map.eachLayer(l => { if(l._url) map.removeLayer(l); });
-                L.tileLayer(url).addTo(map);
-            }
-            ui.close();
+            const list = document.getElementById('searchResults');
+            list.innerHTML = '';
+            list.style.display = 'block';
+            
+            data.slice(0, 5).forEach(place => {
+                const div = document.createElement('div');
+                div.className = 'result-item';
+                div.innerText = place.display_name.split(',')[0]; // Nom court
+                div.onclick = () => {
+                    map.setView([place.lat, place.lon], 16);
+                    list.style.display = 'none';
+                    document.getElementById('searchInp').value = '';
+                };
+                list.appendChild(div);
+            });
         },
-        toggleOverlay: (type, active) => {
-            if(active) alert(type + " activé (Simulé)");
+
+        addFav: async (lat, lng) => {
+            const name = prompt("Nom du lieu ?");
+            if(!name) return;
+            const newFav = { name, lat, lng };
+            const favs = [...(userProfile.favorites || []), newFav];
+            
+            await sb.from('profiles').update({ favorites: favs }).eq('id', currentUser.id);
+            userProfile.favorites = favs;
+            mapManager.renderFavs();
+            alert("Favori ajouté !");
+            map.closePopup();
+        },
+
+        renderFavs: () => {
+            const container = document.getElementById('favList');
+            if(!userProfile.favorites || userProfile.favorites.length === 0) return;
+            container.innerHTML = '';
+            userProfile.favorites.forEach(f => {
+                const div = document.createElement('div');
+                div.className = 'shop-item';
+                div.innerHTML = `<span>⭐ ${f.name}</span> <button class="buy-btn" onclick="map.setView([${f.lat}, ${f.lng}], 16); ui.close()">Aller</button>`;
+                container.appendChild(div);
+            });
+        },
+
+        setLayer: (type) => {
+            let url = type === 'dark' ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+            if(type === 'sat') url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+            
+            map.eachLayer(l => { if(l._url) map.removeLayer(l); });
+            L.tileLayer(url).addTo(map);
+        },
+
+        toggleOverlay: (type, on) => {
+            if(on) alert("Calque " + type + " activé");
         }
     };
 
-    // --- 5. BOUTIQUE & ITEMS ---
+    // --- 5. BOUTIQUE & WIDGETS ---
     const shop = {
         render: () => {
             const container = document.getElementById('shopList');
             container.innerHTML = '';
-            
             ITEMS.forEach(item => {
                 const owned = userProfile.items && userProfile.items.includes(item.id);
+                const active = userProfile.active_items && userProfile.active_items.includes(item.id);
+                
+                let actionBtn = `<button class="buy-btn" onclick="shop.buy('${item.id}')">${item.price} XP</button>`;
+                
+                if(owned) {
+                    actionBtn = `<label class="toggle-switch">
+                        <input type="checkbox" ${active ? 'checked' : ''} onchange="shop.toggle('${item.id}', this.checked)">
+                        <span class="slider"></span>
+                    </label>`;
+                }
+
                 const div = document.createElement('div');
                 div.className = 'shop-item';
                 div.innerHTML = `
                     <div class="shop-info">
                         <div class="shop-icon" style="background:${item.val || '#eee'}">${item.icon}</div>
-                        <div><b>${item.name}</b><br><span style="font-size:12px; opacity:0.6;">${item.desc || 'Apparence'}</span></div>
+                        <div><b>${item.name}</b><br><span style="font-size:12px; opacity:0.6;">${item.desc || item.type}</span></div>
                     </div>
-                    <button class="buy-btn ${owned ? 'owned' : ''}" onclick="shop.buy('${item.id}')">
-                        ${owned ? 'Possédé' : item.price + ' XP'}
-                    </button>
+                    ${actionBtn}
                 `;
                 container.appendChild(div);
             });
         },
-        buy: async (id) => {
-            if(userProfile.items.includes(id)) {
-                // Activer l'item si possédé
-                const item = ITEMS.find(i => i.id === id);
-                if(item.type === 'color') {
-                    document.documentElement.style.setProperty('--accent', item.val);
-                    // Sauvegarder pref couleur
-                    await sb.from('profiles').update({ color: item.val }).eq('id', currentUser.id);
-                }
-                alert("Item activé !");
-                return;
-            }
 
+        buy: async (id) => {
             const item = ITEMS.find(i => i.id === id);
             if(userProfile.points < item.price) return alert("Pas assez de points !");
-
-            if(confirm(`Acheter ${item.name} pour ${item.price} XP ?`)) {
-                const newPoints = userProfile.points - item.price;
+            
+            if(confirm(`Acheter ${item.name} ?`)) {
+                const newPts = userProfile.points - item.price;
                 const newItems = [...(userProfile.items || []), id];
-
-                // Update Local
-                userProfile.points = newPoints;
+                
+                // Optimistic Update
+                userProfile.points = newPts;
                 userProfile.items = newItems;
-                app.updateUI();
+                app.applySettings();
                 shop.render();
 
-                // Update DB
-                await sb.from('profiles').update({ 
-                    points: newPoints, 
-                    items: newItems 
-                }).eq('id', currentUser.id);
-            }
-        }
-    };
-
-    // --- 6. BOUSSOLE ---
-    const compass = {
-        open: () => document.getElementById('compassOverlay').classList.add('active'),
-        close: () => document.getElementById('compassOverlay').classList.remove('active'),
-        requestPerm: async () => {
-            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                const response = await DeviceOrientationEvent.requestPermission();
-                if (response === 'granted') {
-                    window.addEventListener('deviceorientation', compass.handle);
-                } else alert("Permission refusée");
-            } else {
-                window.addEventListener('deviceorientation', compass.handle);
+                await sb.from('profiles').update({ points: newPts, items: newItems }).eq('id', currentUser.id);
             }
         },
-        handle: (e) => {
-            const alpha = e.webkitCompassHeading || Math.abs(e.alpha - 360);
-            document.getElementById('compassRing').style.transform = `rotate(${-alpha}deg)`;
-            document.getElementById('compassDeg').innerText = Math.round(alpha) + "°";
+
+        toggle: async (id, isActive) => {
+            let actives = userProfile.active_items || [];
+            if(isActive) actives.push(id);
+            else actives = actives.filter(x => x !== id);
+            
+            userProfile.active_items = actives;
+            
+            // Effet immédiat
+            const item = ITEMS.find(i => i.id === id);
+            if(item.type === 'theme' && isActive) document.documentElement.style.setProperty('--accent', item.val);
+            if(item.type === 'widget') mapManager.toggleOverlay(id, isActive);
+
+            await sb.from('profiles').update({ active_items: actives }).eq('id', currentUser.id);
         }
     };
 
-    // --- 7. ADMIN ---
+    // --- 6. SETTINGS & ADMIN ---
+    const settings = {
+        updateEmail: async () => {
+            const m = prompt("Nouvel email ?");
+            if(m) {
+                const { error } = await sb.auth.updateUser({ email: m });
+                alert(error ? error.message : "Email mis à jour !");
+            }
+        },
+        updatePwd: async () => {
+            const p = prompt("Nouveau mot de passe ?");
+            if(p) {
+                const { error } = await sb.auth.updateUser({ password: p });
+                alert(error ? error.message : "Mot de passe mis à jour !");
+            }
+        },
+        toggleTheme: () => {
+            state.theme = state.theme === 'light' ? 'dark' : 'light';
+            document.body.setAttribute('data-theme', state.theme);
+            localStorage.setItem('cc_theme', state.theme);
+            mapManager.setLayer(state.theme === 'dark' ? 'dark' : 'standard');
+        }
+    };
+
     const admin = {
-        givePoints: async () => {
-            const email = document.getElementById('adminTargetEmail').value;
-            // Trouver l'ID via email est difficile coté client sans fonction RPC, 
-            // Pour simplifier, on donne des points à l'utilisateur courant pour tester
-            if(!email) {
-                userProfile.points += 500;
-                await sb.from('profiles').update({ points: userProfile.points }).eq('id', currentUser.id);
-                app.updateUI();
-                alert("500 points ajoutés (Self-Test)");
-            }
+        modPoints: async (amount) => {
+            // Dans une vraie app, on utiliserait une Edge Function. Ici on modifie le profil actuel pour démo.
+            // Pour modifier UN AUTRE user, il faudrait que les policies RLS le permettent, ce qui est risqué en client-side.
+            // L'admin modifie donc ses propres points ici pour tester la mécanique.
+            userProfile.points += amount;
+            app.applySettings();
+            await sb.from('profiles').update({ points: userProfile.points }).eq('id', currentUser.id);
+            alert("Points mis à jour !");
         },
-        reset: async () => {
-            if(confirm("Reset votre profil ?")) {
-                await sb.from('profiles').update({ points: 100, items: [] }).eq('id', currentUser.id);
-                location.reload();
+        addPublicPlace: async () => {
+            if(!state.lastLoc) return alert("Attendez la géoloc");
+            const name = prompt("Nom du lieu public ?");
+            if(name) {
+                const { error } = await sb.from('places').insert({ 
+                    name, lat: state.lastLoc.lat, lng: state.lastLoc.lng, type: 'admin_pick' 
+                });
+                alert(error ? error.message : "Lieu public ajouté !");
             }
         }
     };
 
-    // --- 8. UI UTILITAIRES ---
+    // --- 7. UI ---
     const ui = {
-        msg: (txt) => document.getElementById('msg').innerText = txt,
+        msg: (t) => document.getElementById('msg').innerText = t,
         open: (id) => {
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
             document.getElementById(id).classList.add('open');
@@ -502,9 +532,7 @@
         }
     };
 
-    // START
     window.onload = app.init;
-
 </script>
 </body>
 </html>
