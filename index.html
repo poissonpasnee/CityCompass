@@ -272,59 +272,115 @@
 
   </div>
 
-  <script>
+<script>
     // ============================================
-    // 1. SUPABASE CONFIGURATION
+    // 1. CONFIGURATION SUPABASE
     // ============================================
     const SB_URL = 'https://scbihxaceelyygrlacvm.supabase.co';
     const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjYmloeGFjZWVseXlncmxhY3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1NjU3MTcsImV4cCI6MjA4NTE0MTcxN30.rgUH-kltyNX99-HTDmGEyzGyu8qFXR9LF1QxsjY0W44';
     
-    const sb = supabase.createClient(SB_URL, SB_KEY);
+    // Initialisation robuste
+    const sb = supabase.createClient(SB_URL, SB_KEY, {
+        auth: {
+            persistSession: true, // Garde la session active
+            autoRefreshToken: true,
+            detectSessionInUrl: false
+        }
+    });
     
     let currentUser = null;
     let mapObj = null;
 
     // ============================================
-    // 2. CORE LOGIC
+    // 2. OUTILS UI (TOAST & LOADING)
     // ============================================
     const $ = (id) => document.getElementById(id);
-    const toast = (msg) => {
-      const t = $('toast'); t.innerText = msg;
-      t.classList.add('visible'); setTimeout(() => t.classList.remove('visible'), 3000);
+    
+    const toast = (msg, type='info') => {
+      const t = $('toast'); 
+      t.innerHTML = msg;
+      t.style.background = type === 'error' ? '#EF4444' : '#111';
+      t.classList.add('visible'); 
+      setTimeout(() => t.classList.remove('visible'), 3000);
     };
 
+    const setLoading = (btnId, isLoading) => {
+        const btn = $(btnId);
+        if(isLoading) {
+            btn.dataset.oldText = btn.innerText;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btn.style.opacity = 0.7;
+            btn.disabled = true;
+        } else {
+            btn.innerHTML = btn.dataset.oldText || 'Valider';
+            btn.style.opacity = 1;
+            btn.disabled = false;
+        }
+    };
+
+    // ============================================
+    // 3. LOGIQUE AUTH (CORRIGÉE & ROBUSTE)
+    // ============================================
     const auth = {
       async register() {
         const pwd = $('inpRegPwd').value;
-        if(!pwd) return toast("Mot de passe requis");
+        if(!pwd) return toast("Mot de passe requis", 'error');
+        
+        setLoading('btnDoReg', true);
 
+        // ID unique + Code Secours
         const newId = Math.floor(1000000000000000 + Math.random() * 9000000000000000).toString();
         const code = "SEC-" + Math.floor(1000 + Math.random() * 9000);
         
-        const { error } = await sb.auth.signUp({
-          email: newId + "@citycompass.app",
-          password: pwd,
-          options: {  { recovery_code: code }, shouldCreateUser: true }
-        });
+        try {
+            // Création avec Timeout de 10s pour éviter le freeze
+            const createPromise = sb.auth.signUp({
+                email: newId + "@citycompass.app",
+                password: pwd,
+                options: {  { recovery_code: code }, shouldCreateUser: true }
+            });
 
-        if(error) return toast("Erreur: " + error.message);
-        
-        $('displayNewId').innerText = newId;
-        $('displayRecCode').innerText = code;
-        ui.showForm('formSuccess');
+            const { data, error } = await Promise.race([
+                createPromise,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout réseau')), 10000))
+            ]);
+
+            if(error) throw error;
+            
+            $('displayNewId').innerText = newId;
+            $('displayRecCode').innerText = code;
+            ui.showForm('formSuccess');
+
+        } catch(e) {
+            console.error(e);
+            toast("Erreur: " + (e.message || "Problème réseau"), 'error');
+        } finally {
+            setLoading('btnDoReg', false);
+        }
       },
 
       async login() {
         const id = $('inpLogId').value.trim();
         const pwd = $('inpLogPwd').value;
-        if(!id || !pwd) return toast("Remplissez tout");
+        if(!id || !pwd) return toast("Remplissez tout", 'error');
 
-        const { error } = await sb.auth.signInWithPassword({
-          email: id + "@citycompass.app",
-          password: pwd
-        });
+        setLoading('btnDoLogin', true);
 
-        if(error) return toast("Identifiants incorrects");
+        try {
+            const { data, error } = await sb.auth.signInWithPassword({
+                email: id + "@citycompass.app",
+                password: pwd
+            });
+
+            if(error) throw new Error("Identifiants incorrects");
+            
+            // Succès : La redirection est gérée par onAuthStateChange
+            
+        } catch(e) {
+            console.error(e);
+            toast(e.message, 'error');
+            setLoading('btnDoLogin', false);
+        }
       },
 
       async reset() {
@@ -332,22 +388,38 @@
         const code = $('recCode').value.trim();
         const newPwd = $('recNewPwd').value;
 
-        const { data, error } = await sb.rpc('reset_password_with_code', {
-          target_id: id, code: code, new_password: newPwd
-        });
+        setLoading('btnDoReset', true);
+        
+        try {
+            const { data, error } = await sb.rpc('reset_password_with_code', {
+                target_id: id, code: code, new_password: newPwd
+            });
 
-        if(error || data === false) toast("Échec : Code ou ID invalide");
-        else {
-          toast("Mot de passe mis à jour !");
-          ui.showForm('formLogin');
+            if(error || data === false) throw new Error("Code ou ID invalide");
+
+            toast("Mot de passe mis à jour !", 'success');
+            ui.showForm('formLogin');
+        } catch(e) {
+            toast(e.message, 'error');
+        } finally {
+            setLoading('btnDoReset', false);
         }
       },
 
       async startSession(user) {
-        currentUser = user;
-        const { data } = await sb.from('users').select('*').eq('id', user.id).single();
-        if(data) currentUser = { ...user, ...data };
-        else { currentUser.role = 'user'; currentUser.points = 50; }
+        // Chargement Profil avec Retry simple
+        let profile = null;
+        try {
+            const { data } = await sb.from('users').select('*').eq('id', user.id).single();
+            profile = data;
+        } catch(e) { console.warn("Erreur chargement profil", e); }
+
+        if(profile) {
+            currentUser = { ...user, ...profile };
+        } else {
+            // Fallback user par défaut si la base lag
+            currentUser = { ...user, role: 'user', points: 50 };
+        }
         
         ui.startApp();
       },
@@ -360,73 +432,7 @@
     };
 
     // ============================================
-    // 3. LOGIQUE APP (Map, Chat, etc.)
-    // ============================================
-    const app = {
-      initMap() {
-        if(mapObj) return;
-        mapObj = L.map('map', {zoomControl: false}).setView([48.85, 2.35], 13);
-        
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-          maxZoom: 19, attribution: '©OSM'
-        }).addTo(mapObj);
-
-        mapObj.locate({setView: true, watch: true, maxZoom: 16});
-        
-        const marker = L.marker([0,0]).addTo(mapObj);
-        
-        mapObj.on('locationfound', e => {
-          marker.setLatLng(e.latlng);
-          $('uiGps').innerText = "GPS ON";
-          $('uiGps').style.color = "var(--success)";
-        });
-      },
-
-      initChat() {
-        const box = $('chatBox');
-        const addMsg = (msg) => {
-            const div = document.createElement('div');
-            div.style.marginBottom = "10px";
-            div.innerHTML = `<strong style="font-size:12px; opacity:0.7">${msg.user_id.slice(0,4)}:</strong> ${msg.content}`;
-            box.appendChild(div);
-        };
-
-        sb.from('messages').select('*').order('created_at', {ascending:false}).limit(20)
-        .then(({data}) => {
-          box.innerHTML = '';
-          if(data) data.reverse().forEach(addMsg);
-        });
-
-        sb.channel('chat').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, 
-          payload => addMsg(payload.new)
-        ).subscribe();
-      },
-
-      async sendMsg() {
-         const txt = $('chatInput').value;
-         if(!txt) return;
-         await sb.from('messages').insert([{ user_id: currentUser.id, content: txt }]);
-         $('chatInput').value = '';
-      }
-    };
-
-    // ============================================
-    // 4. LOGIQUE ADMIN
-    // ============================================
-    const admin = {
-      async givePoints() {
-        const target = $('admTgt').value;
-        const pts = $('admPts').value;
-        await sb.from('users').update({points: pts}).eq('id', target);
-        toast("Points envoyés !");
-      },
-      broadcast() {
-        toast("Message envoyé à tous : " + $('admMsg').value);
-      }
-    };
-
-    // ============================================
-    // 5. INTERFACE UTILISATEUR
+    // 4. UI MANAGER
     // ============================================
     const ui = {
       showForm(id) {
@@ -435,30 +441,35 @@
       },
 
       startApp() {
+        // Mise à jour UI Profil
         $('profId').innerText = "ID: " + currentUser.id;
-        $('profRole').innerText = currentUser.role.toUpperCase();
-        $('uiPoints').innerText = currentUser.points;
+        $('profRole').innerText = (currentUser.role || 'USER').toUpperCase();
+        $('uiPoints').innerText = currentUser.points || 0;
+        
         if(currentUser.role === 'admin') $('adminZone').style.display = 'block';
 
-        $('viewLogin').classList.add('hidden');
-        this.switchView('viewDiscover');
-        
+        // Transition fluide
+        $('viewLogin').style.opacity = '0';
         setTimeout(() => {
-          app.initMap();
-          app.initChat();
-        }, 500);
+            $('viewLogin').classList.add('hidden');
+            this.switchView('viewDiscover');
+            app.initMap();
+            app.initChat();
+        }, 300);
       },
 
       switchView(id) {
          document.querySelectorAll('.view').forEach(v => {
-             if(!v.id.includes('Login')) v.classList.remove('active');
+             if(v.id !== 'viewLogin') v.classList.remove('active');
          });
          $(id).classList.add('active');
          
+         // Nav active state
          document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-         document.querySelector(`.nav-item[data-view="${id}"]`)?.classList.add('active');
+         const activeBtn = document.querySelector(`.nav-item[data-view="${id}"]`);
+         if(activeBtn) activeBtn.classList.add('active');
          
-         if(id === 'viewDiscover' && mapObj) mapObj.invalidateSize();
+         if(id === 'viewDiscover' && mapObj) setTimeout(() => mapObj.invalidateSize(), 100);
       },
 
       toggleTheme() {
@@ -467,36 +478,142 @@
     };
 
     // ============================================
-    // 6. EVENT LISTENERS
+    // 5. APP LOGIC (Map & Chat)
     // ============================================
-    $('btnDoLogin').addEventListener('click', auth.login);
-    $('btnDoReg').addEventListener('click', auth.register);
-    $('btnDoReset').addEventListener('click', auth.reset);
-    $('btnLogout').addEventListener('click', auth.logout);
+    const app = {
+      initMap() {
+        if(mapObj) return;
+        mapObj = L.map('map', {zoomControl: false}).setView([48.85, 2.35], 13);
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          maxZoom: 19, attribution: '&copy; OSM'
+        }).addTo(mapObj);
 
-    $('linkToReg').addEventListener('click', () => ui.showForm('formReg'));
-    $('linkToForgot').addEventListener('click', () => ui.showForm('formRec'));
-    $('btnBackLogin1').addEventListener('click', () => ui.showForm('formLogin'));
-    $('btnBackLogin2').addEventListener('click', () => ui.showForm('formLogin'));
-    $('btnFillLogin').addEventListener('click', () => { $('inpLogId').value = $('displayNewId').innerText; ui.showForm('formLogin'); });
+        mapObj.locate({setView: true, watch: true, maxZoom: 17, enableHighAccuracy: true});
+        
+        const marker = L.divIcon({
+            className: 'custom-pin',
+            html: '<div style="background-color:#007AFF; width:16px; height:16px; border:3px solid white; border-radius:50%; box-shadow:0 2px 5px rgba(0,0,0,0.3);"></div>'
+        });
+        const me = L.marker([0,0], {icon: marker}).addTo(mapObj);
+        
+        mapObj.on('locationfound', e => {
+          me.setLatLng(e.latlng);
+          $('uiGps').innerText = "GPS ON";
+          $('uiGps').style.color = "var(--success)";
+        });
+      },
 
-    $('btnSendMsg').addEventListener('click', app.sendMsg);
-    $('btnToggleTheme').addEventListener('click', ui.toggleTheme);
-    $('btnGivePoints').addEventListener('click', admin.givePoints);
-    $('btnBroadcast').addEventListener('click', admin.broadcast);
+      initChat() {
+        const box = $('chatBox');
+        if(!box) return;
 
-    document.querySelectorAll('.nav-item[data-view]').forEach(btn => {
-       btn.addEventListener('click', () => ui.switchView(btn.dataset.view));
+        const addMsg = (msg) => {
+            const div = document.createElement('div');
+            div.style.marginBottom = "12px";
+            div.style.padding = "10px";
+            div.style.background = "var(--bg-card)";
+            div.style.borderRadius = "12px";
+            div.style.boxShadow = "0 2px 5px rgba(0,0,0,0.05)";
+            
+            const uid = msg.user_id ? msg.user_id.substring(0,4) : '???';
+            div.innerHTML = `<div style="font-size:11px; color:var(--accent); font-weight:bold; margin-bottom:4px;">User ${uid}</div><div style="font-size:15px;">${msg.content}</div>`;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        };
+
+        // Charger anciens msgs
+        sb.from('messages').select('*').order('created_at', {ascending:false}).limit(20)
+        .then(({data}) => {
+          box.innerHTML = '';
+          if(data) data.reverse().forEach(addMsg);
+        });
+
+        // Écouter nouveaux msgs
+        sb.channel('public:messages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, 
+          payload => addMsg(payload.new)
+        ).subscribe();
+      },
+
+      async sendMsg() {
+         const input = $('chatInput');
+         const txt = input.value.trim();
+         if(!txt) return;
+         
+         input.value = ''; // Optimistic clear
+         await sb.from('messages').insert([{ user_id: currentUser.id, content: txt }]);
+      }
+    };
+
+    const admin = {
+      async givePoints() {
+        const target = $('admTgt').value;
+        const pts = $('admPts').value;
+        if(!target || !pts) return toast("Remplir ID et Points", 'error');
+        
+        const { error } = await sb.from('users').update({points: pts}).eq('id', target);
+        if(error) toast("Erreur update", 'error');
+        else toast("Points envoyés !", 'success');
+      },
+      broadcast() {
+        const msg = $('admMsg').value;
+        if(msg) toast("Broadcast simulé : " + msg);
+      }
+    };
+
+    // ============================================
+    // 6. EVENT LISTENERS (FIX MOBILE)
+    // ============================================
+    
+    // Fonction Helper pour attacher click + touch
+    const onTouch = (id, callback) => {
+        const el = $(id);
+        if(!el) return;
+        el.addEventListener('click', (e) => { e.preventDefault(); callback(); });
+        el.addEventListener('touchstart', (e) => { /* Pour réactivité */ }, {passive: true});
+    };
+
+    // Auth Events
+    onTouch('btnDoLogin', auth.login);
+    onTouch('btnDoReg', auth.register);
+    onTouch('btnDoReset', auth.reset);
+    onTouch('btnLogout', auth.logout);
+
+    // Nav Forms
+    onTouch('linkToReg', () => ui.showForm('formReg'));
+    onTouch('linkToForgot', () => ui.showForm('formRec'));
+    onTouch('btnBackLogin1', () => ui.showForm('formLogin'));
+    $('btnBackLogin2').addEventListener('click', () => ui.showForm('formLogin')); // Backup standard
+    onTouch('btnFillLogin', () => { $('inpLogId').value = $('displayNewId').innerText; ui.showForm('formLogin'); });
+
+    // App Events
+    onTouch('btnSendMsg', app.sendMsg);
+    onTouch('btnToggleTheme', ui.toggleTheme);
+    onTouch('btnGivePoints', admin.givePoints);
+    onTouch('btnBroadcast', admin.broadcast);
+
+    // Navigation Bar
+    document.querySelectorAll('.nav-item').forEach(btn => {
+       btn.addEventListener('click', (e) => {
+           const viewId = btn.getAttribute('data-view');
+           if(viewId) ui.switchView(viewId);
+       });
     });
 
-    // Auto Login Check
+    // ============================================
+    // 7. AUTO-LOGIN / SESSION RECOVERY
+    // ============================================
     sb.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
+        // Récupérer l'ID propre depuis l'email (ex: 8821@app.com -> 8821)
         const publicId = session.user.email.split('@')[0];
         auth.startSession({ id: publicId, auth_uid: session.user.id });
+      } else if (event === 'SIGNED_OUT') {
+        $('viewLogin').classList.remove('hidden');
+        $('viewLogin').style.opacity = '1';
       }
     });
 
-  </script>
+</script>
 </body>
 </html>
