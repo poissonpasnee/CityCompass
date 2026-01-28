@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#ffffff" />
-  <title>CityCompass v26</title>
+  <title>CityCompass v40</title>
 
   <!-- LIBS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -15,212 +15,236 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    /* --- DESIGN SYSTEM v26 (Google Maps Style) --- */
+    /* --- VARIABLES & DESIGN SYSTEM v40 --- */
     :root {
       --primary: #4285F4; --surface: #FFFFFF; --bg: #F8F9FA;
-      --text: #202124; --text-sub: #5F6368;
-      --shadow: 0 2px 6px rgba(0,0,0,0.15); --shadow-hover: 0 4px 12px rgba(0,0,0,0.15);
-      --radius: 16px; --nav-h: 70px;
+      --text: #202124; --text-sub: #5F6368; --danger: #D93025;
+      --shadow: 0 2px 6px rgba(0,0,0,0.15);
+      --radius: 16px; 
+      --nav-h: 80px; /* Hauteur Nav augmentée pour confort */
+      --safe-top: env(safe-area-inset-top, 20px);
+      --safe-bottom: env(safe-area-inset-bottom, 20px);
     }
     
     * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; outline:none; user-select:none; }
-    body { margin:0; font-family:'Google Sans', Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); height:100dvh; overflow:hidden; }
+    
+    body { margin:0; font-family:'Google Sans', Roboto, sans-serif; background:var(--bg); color:var(--text); height:100dvh; overflow:hidden; display:flex; flex-direction:column; }
 
-    /* LAYOUT */
-    .view { position:absolute; inset:0; display:none; flex-direction:column; background:var(--bg); z-index:1; }
+    /* LAYOUT ENGINE */
+    .view { position:absolute; inset:0; display:none; flex-direction:column; background:var(--bg); z-index:1; padding-bottom:calc(var(--nav-h) + var(--safe-bottom)); }
     .view.active { display:flex; z-index:10; }
-    
-    /* MAP VIEW (Full Screen) */
-    #viewMap { padding-bottom:var(--nav-h); }
-    #map { flex:1; width:100%; height:100%; z-index:0; }
-    
-    /* SEARCH BAR (Floating) */
+    .full-screen { padding-bottom:0 !important; z-index:2000; }
+
+    /* SEARCH BAR (Smart) */
     .search-floater {
-      position:absolute; top:max(15px, env(safe-area-inset-top)); left:15px; right:15px;
-      background:var(--surface); height:48px; border-radius:8px; display:flex; align-items:center;
-      box-shadow:var(--shadow); padding:0 15px; z-index:1000;
+      position:absolute; top:calc(10px + var(--safe-top)); left:15px; right:15px;
+      background:var(--surface); height:50px; border-radius:25px; display:flex; align-items:center;
+      box-shadow:var(--shadow); padding:0 20px; z-index:1000; transition:all 0.3s;
     }
-    .avatar-btn { width:32px; height:32px; background:#eee; border-radius:50%; margin-left:auto; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer; }
-    
-    /* WIDGETS (Shop Preview) */
+    .search-input { border:none; background:none; font-size:16px; flex:1; margin-left:10px; height:100%; color:var(--text); }
+    .search-results {
+      position:absolute; top:calc(65px + var(--safe-top)); left:15px; right:15px;
+      background:var(--surface); border-radius:12px; box-shadow:var(--shadow);
+      max-height:250px; overflow-y:auto; z-index:999; display:none;
+    }
+    .search-item { padding:12px 15px; border-bottom:1px solid #eee; display:flex; align-items:center; cursor:pointer; font-size:14px; }
+    .search-item:last-child { border-bottom:none; }
+    .search-item i { margin-right:10px; color:var(--text-sub); }
+
+    /* WIDGETS SCROLL */
     .widget-scroller {
-      position:absolute; top:80px; left:0; right:0; overflow-x:auto; white-space:nowrap;
-      padding:0 15px; -webkit-overflow-scrolling:touch; z-index:900;
-      scrollbar-width:none;
+      position:absolute; top:calc(70px + var(--safe-top)); left:0; right:0; overflow-x:auto; white-space:nowrap;
+      padding:10px 15px; -webkit-overflow-scrolling:touch; z-index:900; scrollbar-width:none;
     }
     .widget-scroller::-webkit-scrollbar { display:none; }
-    
     .widget-pill {
       display:inline-flex; align-items:center; gap:6px; background:var(--surface); 
       padding:8px 16px; border-radius:20px; box-shadow:var(--shadow); margin-right:10px;
       font-size:14px; font-weight:500; color:var(--text); cursor:pointer;
     }
-    .widget-pill i { color:var(--primary); }
 
-    /* AUTH OVERLAY (Clean & Simple) */
-    #viewAuth { z-index:5000; background:var(--surface); justify-content:center; padding:30px; }
-    .auth-card { max-width:400px; margin:0 auto; text-align:center; width:100%; }
-    
-    .input-mat {
-      width:100%; padding:14px 16px; border:1px solid #ddd; border-radius:8px;
-      font-size:16px; margin-bottom:12px; transition:0.2s;
-    }
-    .input-mat:focus { border-color:var(--primary); box-shadow:0 0 0 2px rgba(66,133,244,0.2); }
-    
-    .btn-mat {
-      width:100%; padding:14px; background:var(--primary); color:white; border:none;
-      border-radius:8px; font-weight:500; font-size:16px; cursor:pointer; 
-      box-shadow:var(--shadow); margin-bottom:12px;
-    }
-    .btn-mat:active { transform:scale(0.98); }
-    .btn-text { background:none; color:var(--primary); box-shadow:none; font-size:14px; padding:10px; }
+    /* AUTH & FORMS */
+    #viewAuth { z-index:5000; background:var(--surface); justify-content:center; padding:30px; padding-bottom:var(--safe-bottom); }
+    .input-mat { width:100%; padding:14px; border:1px solid #ddd; border-radius:8px; margin-bottom:12px; font-size:16px; }
+    .btn-mat { width:100%; padding:14px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:600; font-size:16px; margin-bottom:10px; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+    .btn-text { background:none; color:var(--primary); font-weight:500; border:none; padding:10px; }
 
-    /* BOTTOM SHEET (Shop/Profile) */
+    /* SHEET (Shop/Profile) */
     .sheet {
-      position:absolute; top:100%; left:0; right:0; height:90%; background:var(--surface);
-      border-radius:24px 24px 0 0; box-shadow:0 -5px 20px rgba(0,0,0,0.1);
-      transition:transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); z-index:2000;
-      display:flex; flex-direction:column; padding:20px;
+      position:absolute; top:100%; left:0; right:0; height:92%; background:var(--surface);
+      border-radius:24px 24px 0 0; box-shadow:0 -5px 30px rgba(0,0,0,0.2);
+      transition:transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); z-index:3000;
+      display:flex; flex-direction:column; padding:20px; padding-bottom:calc(20px + var(--safe-bottom));
     }
     .sheet.open { transform:translateY(-100%); }
-    .sheet-handle { width:40px; height:4px; background:#ddd; border-radius:2px; margin:0 auto 20px; }
+    .sheet-handle { width:40px; height:5px; background:#ddd; border-radius:3px; margin:0 auto 20px; }
+    .sheet-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 
-    /* ITEMS LIST */
-    .shop-item {
-      display:flex; align-items:center; padding:15px 0; border-bottom:1px solid #eee;
+    /* NAV BAR (Bottom) */
+    .nav-bar {
+      position:absolute; bottom:0; left:0; right:0; height:calc(var(--nav-h) + var(--safe-bottom));
+      background:rgba(255,255,255,0.95); border-top:1px solid #eee; display:flex; padding-top:10px;
+      z-index:4000; backdrop-filter:blur(10px); padding-bottom:var(--safe-bottom);
     }
-    .item-icon { width:50px; height:50px; background:#f1f3f4; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--primary); margin-right:15px; }
-    .item-info { flex:1; }
-    .item-title { font-weight:500; font-size:16px; margin-bottom:4px; }
-    .item-desc { font-size:13px; color:var(--text-sub); }
-    .btn-buy { padding:6px 14px; background:var(--bg); color:var(--primary); border-radius:20px; font-weight:600; font-size:13px; border:none; }
-    
-    /* COMPASS OVERLAY */
+    .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--text-sub); background:none; border:none; cursor:pointer; }
+    .nav-item.active { color:var(--primary); }
+    .nav-item svg { width:24px; height:24px; fill:currentColor; }
+
+    /* COMPASS */
     #viewCompass { background:#000; color:#fff; align-items:center; justify-content:center; }
-    .compass-ring { width:200px; height:200px; border:2px solid #333; border-radius:50%; display:flex; align-items:center; justify-content:center; position:relative; }
-    .compass-arrow { font-size:80px; color:var(--primary); transition:transform 0.1s linear; }
+    .compass-ring { width:220px; height:220px; border:3px solid #333; border-radius:50%; display:flex; align-items:center; justify-content:center; position:relative; box-shadow:0 0 50px rgba(66,133,244,0.1); }
+    .compass-arrow { font-size:90px; color:var(--primary); transition:transform 0.1s linear; }
 
   </style>
 </head>
 <body>
 
-  <!-- AUTH VIEW -->
-  <div id="viewAuth" class="view active">
-    <div class="auth-card">
-      <div style="font-size:50px; color:var(--primary); margin-bottom:20px;"><i class="fa-solid fa-map-location-dot"></i></div>
+  <!-- 1. AUTH SCREEN -->
+  <div id="viewAuth" class="view full-screen active">
+    <div style="max-width:400px; width:100%; text-align:center;">
+      <div style="width:80px; height:80px; background:#e8f0fe; border-radius:50%; margin:0 auto 20px; display:flex; align-items:center; justify-content:center; font-size:40px; color:var(--primary);"><i class="fa-solid fa-map-location"></i></div>
       <h2 style="margin:0 0 40px 0;">CityCompass</h2>
       
-      <div id="authLogin">
+      <!-- Login -->
+      <div id="secLogin">
         <input id="lEmail" class="input-mat" placeholder="Email" type="email">
         <input id="lPass" class="input-mat" placeholder="Mot de passe" type="password">
-        <button class="btn-mat" onclick="auth.login()">Connexion</button>
-        <div style="display:flex; justify-content:space-between; margin-top:10px;">
-           <button class="btn-text" onclick="ui.toAuth('authReg')">Créer un compte</button>
-           <button class="btn-text" style="color:#999" onclick="ui.toAuth('authReset')">Oublié ?</button>
+        <button class="btn-mat" onclick="auth.login()">Se Connecter</button>
+        <div style="margin-top:15px; display:flex; justify-content:space-between;">
+           <button class="btn-text" onclick="ui.toAuth('secReg')">Créer compte</button>
+           <button class="btn-text" style="color:#999" onclick="ui.toAuth('secReset')">Oublié ?</button>
         </div>
       </div>
-
-      <div id="authReg" style="display:none;">
-        <h3 style="margin-top:0;">Rejoindre</h3>
-        <input id="rEmail" class="input-mat" placeholder="Votre Email" type="email">
-        <input id="rPass" class="input-mat" placeholder="Choisir Mot de passe" type="password">
-        <button class="btn-mat" onclick="auth.register()">S'inscrire</button>
-        <button class="btn-text" onclick="ui.toAuth('authLogin')">Retour</button>
-      </div>
       
-      <div id="authReset" style="display:none;">
-        <h3>Récupération</h3>
-        <input id="resEmail" class="input-mat" placeholder="Email du compte" type="email">
+      <!-- Register -->
+      <div id="secReg" style="display:none;">
+        <h3 style="margin-top:0;">Inscription</h3>
+        <input id="rEmail" class="input-mat" placeholder="Votre Email" type="email">
+        <input id="rPass" class="input-mat" placeholder="Mot de passe" type="password">
+        <button class="btn-mat" onclick="auth.register()">Créer & Entrer</button>
+        <button class="btn-text" style="color:#666" onclick="ui.toAuth('secLogin')">Annuler</button>
+      </div>
+
+      <!-- Reset -->
+      <div id="secReset" style="display:none;">
+        <h3>Mot de passe oublié</h3>
+        <input id="resEmail" class="input-mat" placeholder="Votre Email" type="email">
         <button class="btn-mat" onclick="auth.reset()">Envoyer lien</button>
-        <button class="btn-text" onclick="ui.toAuth('authLogin')">Annuler</button>
+        <button class="btn-text" style="color:#666" onclick="ui.toAuth('secLogin')">Retour</button>
       </div>
     </div>
   </div>
 
-  <!-- MAP VIEW (MAIN) -->
+  <!-- 2. MAP (Main) -->
   <div id="viewMap" class="view">
-    <!-- Search Bar -->
+    <!-- Search -->
     <div class="search-floater">
-       <i class="fa-solid fa-bars" style="color:var(--text-sub); margin-right:15px;" onclick="ui.toggleSheet('sheetMenu')"></i>
-       <span style="color:var(--text-sub); font-size:15px;">Rechercher un lieu...</span>
-       <div class="avatar-btn" onclick="ui.toggleSheet('sheetProfile')">
-          <i class="fa-solid fa-user"></i>
-       </div>
+       <i class="fa-solid fa-magnifying-glass" style="color:var(--text-sub)"></i>
+       <input id="searchInp" class="search-input" placeholder="Rechercher (Toulouse...)">
+       <div onclick="ui.toggleSheet('sheetMenu')" style="width:32px; height:32px; background:#f1f3f4; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-user" style="font-size:14px;"></i></div>
     </div>
+    <div id="searchResults" class="search-results"></div>
 
     <!-- Widgets -->
     <div class="widget-scroller">
        <div class="widget-pill" onclick="ui.toggleSheet('sheetShop')"><i class="fa-solid fa-bag-shopping"></i> Boutique</div>
        <div class="widget-pill" onclick="ui.openCompass()"><i class="fa-regular fa-compass"></i> Boussole</div>
-       <div class="widget-pill"><i class="fa-solid fa-star"></i> <span id="ptsBadge">0</span> pts</div>
-       <div class="widget-pill" style="background:#E8F0FE; color:var(--primary);" onclick="app.gpsCenter()"><i class="fa-solid fa-location-crosshairs"></i> Ma Position</div>
+       <div class="widget-pill"><i class="fa-solid fa-star" style="color:#FBBC04"></i> <span id="ptsBadge">0</span></div>
+       <div class="widget-pill" onclick="app.centerGps()" style="background:#E8F0FE; color:var(--primary);"><i class="fa-solid fa-location-crosshairs"></i> Moi</div>
     </div>
 
-    <div id="map"></div>
+    <div id="map" style="flex:1; width:100%;"></div>
   </div>
 
-  <!-- COMPASS VIEW -->
-  <div id="viewCompass" class="view">
+  <!-- 3. COMPASS -->
+  <div id="viewCompass" class="view full-screen">
     <div class="compass-ring">
-        <div style="position:absolute; top:-30px; font-weight:bold; color:var(--primary)">N</div>
+        <div style="position:absolute; top:-40px; font-weight:bold; letter-spacing:2px; color:var(--primary)">NORD</div>
         <i id="compassArrow" class="fa-solid fa-location-arrow compass-arrow"></i>
     </div>
-    <div style="position:absolute; bottom:50px;">
-       <button class="btn-mat" style="width:auto; padding:10px 30px; background:#333;" onclick="ui.closeCompass()">Fermer</button>
-    </div>
+    <button class="btn-mat" style="position:absolute; bottom:100px; width:auto; padding:10px 40px; background:#333;" onclick="ui.closeCompass()">Fermer</button>
   </div>
 
-  <!-- SHEET: SHOP -->
+  <!-- 4. CHAT -->
+  <div id="viewChat" class="view">
+     <div style="flex:1; display:flex; flex-direction:column; padding:20px;">
+        <h2 style="margin:10px 0;">Chat Local</h2>
+        <div id="chatBox" style="flex:1; background:#fff; border-radius:12px; padding:15px; margin-bottom:15px; overflow-y:auto; box-shadow:var(--shadow);"></div>
+        <div style="display:flex; gap:10px;">
+           <input id="chatInp" class="input-mat" style="margin:0;" placeholder="Message...">
+           <button class="btn-mat" style="width:auto; margin:0;" onclick="app.sendMsg()">></button>
+        </div>
+     </div>
+  </div>
+
+  <!-- SHEETS -->
+  <!-- Profile Sheet -->
+  <div id="sheetMenu" class="sheet">
+     <div class="sheet-handle" onclick="ui.closeSheets()"></div>
+     <div class="sheet-scroll">
+        <div style="text-align:center; padding-bottom:20px; border-bottom:1px solid #eee;">
+           <div style="width:80px; height:80px; background:#f1f3f4; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:30px;">👤</div>
+           <h3 id="profEmail" style="margin:0;">Chargement...</h3>
+           <div id="profRole" style="color:var(--text-sub); font-size:13px; margin-top:5px;">USER</div>
+        </div>
+
+        <h4 style="color:var(--text-sub); margin-bottom:10px; margin-top:20px;">MON COMPTE</h4>
+        <div onclick="alert('Fonction mot de passe à venir via email')" style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; cursor:pointer;">
+           <span>Changer mot de passe</span> <i class="fa-solid fa-chevron-right" style="color:#ccc"></i>
+        </div>
+        <div onclick="auth.logout()" style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; cursor:pointer; color:var(--danger);">
+           <span>Se déconnecter</span> <i class="fa-solid fa-right-from-bracket"></i>
+        </div>
+
+        <h4 style="color:var(--text-sub); margin-bottom:10px; margin-top:30px;">ZONE DANGER</h4>
+        <button class="btn-mat" style="background:#fff; border:1px solid var(--danger); color:var(--danger);" onclick="confirm('Supprimer définitivement ?') && alert('Contactez le support pour supprimer.')">Supprimer mon compte</button>
+        
+        <!-- Admin Hidden -->
+        <div id="adminArea" style="display:none; margin-top:30px; border:2px dashed gold; padding:15px; border-radius:12px;">
+           <h4 style="margin-top:0; color:#d4af37">ADMIN</h4>
+           <input id="admTgt" class="input-mat" placeholder="ID User">
+           <input id="admPts" type="number" class="input-mat" placeholder="Points">
+           <button class="btn-mat" style="background:#0F9D58" onclick="app.adminGive()">Give Points</button>
+        </div>
+     </div>
+  </div>
+
+  <!-- Shop Sheet -->
   <div id="sheetShop" class="sheet">
      <div class="sheet-handle" onclick="ui.closeSheets()"></div>
-     <h2 style="margin:0 0 20px 0;">Boutique</h2>
-     <div style="flex:1; overflow-y:auto;">
-        <!-- Item 1 -->
-        <div class="shop-item">
-           <div class="item-icon"><i class="fa-solid fa-moon"></i></div>
-           <div class="item-info">
-              <div class="item-title">Mode Sombre</div>
-              <div class="item-desc">Interface nuit pour la carte</div>
+     <div class="sheet-scroll">
+        <h2 style="margin-top:0;">Boutique</h2>
+        
+        <div style="display:flex; align-items:center; padding:15px 0; border-bottom:1px solid #eee;">
+           <div style="width:40px; height:40px; background:#333; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; margin-right:15px;"><i class="fa-solid fa-moon"></i></div>
+           <div style="flex:1;">
+              <div style="font-weight:600">Mode Nuit</div>
+              <div style="font-size:12px; color:var(--text-sub)">Thème sombre pour la carte</div>
            </div>
-           <button class="btn-buy" onclick="app.toggleDark()">ACTIVER</button>
-        </div>
-        <!-- Item 2 -->
-        <div class="shop-item">
-           <div class="item-icon" style="color:#FBBC04"><i class="fa-solid fa-crown"></i></div>
-           <div class="item-info">
-              <div class="item-title">Statut VIP</div>
-              <div class="item-desc">Badge spécial sur le profil</div>
-           </div>
-           <button class="btn-buy">500 PTS</button>
+           <button class="btn-mat" style="width:auto; padding:8px 16px; margin:0;" onclick="app.toggleTheme()">Activer</button>
         </div>
      </div>
   </div>
 
-  <!-- SHEET: PROFILE -->
-  <div id="sheetProfile" class="sheet">
-     <div class="sheet-handle" onclick="ui.closeSheets()"></div>
-     <div style="text-align:center; padding-bottom:20px; border-bottom:1px solid #eee;">
-        <div style="width:80px; height:80px; background:#eee; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:30px; color:#aaa;">👤</div>
-        <h2 id="profEmail" style="margin:5px 0; font-size:18px;">user@mail.com</h2>
-        <div id="profRole" style="color:var(--text-sub); font-size:14px;">Membre Standard</div>
-     </div>
-     
-     <div style="padding-top:20px;">
-        <button class="btn-mat" style="background:#f1f3f4; color:var(--danger); box-shadow:none;" onclick="auth.logout()">Se déconnecter</button>
-     </div>
-     
-     <!-- ADMIN SECTION -->
-     <div id="adminSec" style="display:none; margin-top:30px; border-top:1px dashed #ccc; padding-top:20px;">
-        <h4 style="margin:0 0 10px 0;">GOD MODE (Admin)</h4>
-        <input id="admTarget" class="input-mat" placeholder="Email Cible">
-        <input id="admPts" class="input-mat" type="number" placeholder="Points">
-        <button class="btn-mat" style="background:#0F9D58;" onclick="app.adminGive()">Donner Points</button>
-     </div>
+  <!-- NAV BAR -->
+  <div class="nav-bar">
+    <button class="nav-item active" onclick="ui.nav('viewMap', this)">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+      <span style="font-size:10px">Carte</span>
+    </button>
+    <button class="nav-item" onclick="ui.nav('viewChat', this)">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+      <span style="font-size:10px">Chat</span>
+    </button>
+    <button class="nav-item" onclick="ui.toggleSheet('sheetMenu')">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      <span style="font-size:10px">Profil</span>
+    </button>
   </div>
 
 <script>
 // ============================================
-// 1. INIT
+// 1. CONFIG & SYSTEM
 // ============================================
 const SB_URL = 'https://scbihxaceelyygrlacvm.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjYmloeGFjZWVseXlncmxhY3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1NjU3MTcsImV4cCI6MjA4NTE0MTcxN30.rgUH-kltyNX99-HTDmGEyzGyu8qFXR9LF1QxsjY0W44';
@@ -230,96 +254,63 @@ let currentUser = null;
 let mapObj = null;
 
 // ============================================
-// 2. AUTH SYSTEM (EMAIL)
+// 2. AUTH SYSTEM
 // ============================================
 const auth = {
     async login() {
-        const email = document.getElementById('lEmail').value;
-        const pass = document.getElementById('lPass').value;
-        if(!email || !pass) return alert("Remplissez tout !");
-
-        const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-        if(error) alert("Erreur: " + error.message);
+        const e = document.getElementById('lEmail').value;
+        const p = document.getElementById('lPass').value;
+        if(!e || !p) return alert('Erreur: Champs vides');
+        const { error } = await sb.auth.signInWithPassword({email:e, password:p});
+        if(error) alert(error.message);
     },
-
     async register() {
-        const email = document.getElementById('rEmail').value;
-        const pass = document.getElementById('rPass').value;
-        if(!email || !pass) return alert("Remplissez tout !");
-
-        const { error } = await sb.auth.signUp({
-            email, password: pass,
-            options: { shouldCreateUser: true }
-        });
-
-        if(error) alert("Erreur: " + error.message);
-        else alert("Compte créé !");
+        const e = document.getElementById('rEmail').value;
+        const p = document.getElementById('rPass').value;
+        if(!e || !p) return alert('Erreur: Champs vides');
+        const { error } = await sb.auth.signUp({email:e, password:p, options:{shouldCreateUser:true}});
+        if(error) alert(error.message); else alert('Compte créé !');
     },
-
     async reset() {
-        const email = document.getElementById('resEmail').value;
-        if(!email) return alert("Email requis");
-        const { error } = await sb.auth.resetPasswordForEmail(email);
-        alert(error ? "Erreur: " + error.message : "Email envoyé !");
+        const e = document.getElementById('resEmail').value;
+        const { error } = await sb.auth.resetPasswordForEmail(e);
+        alert(error ? error.message : "Lien envoyé !");
     },
-
-    async init(user) {
-        currentUser = user;
-        const { data } = await sb.from('users').select('*').eq('id', user.id).single();
-        if(data) {
-            currentUser.role = data.role;
-            currentUser.points = data.points;
-        } else {
-            currentUser.role = 'user'; currentUser.points = 0;
-        }
-        ui.startApp();
-    },
-
     logout() {
-        sb.auth.signOut();
-        location.reload();
+        sb.auth.signOut(); location.reload();
     }
 };
 
 // ============================================
-// 3. UI LOGIC (v26 Style)
+// 3. UI LOGIC
 // ============================================
 const ui = {
     toAuth(id) {
-        ['authLogin','authReg','authReset'].forEach(x => document.getElementById(x).style.display='none');
+        ['secLogin','secReg','secReset'].forEach(x => document.getElementById(x).style.display='none');
         document.getElementById(id).style.display='block';
     },
-
-    startApp() {
-        document.getElementById('viewAuth').style.display = 'none';
-        document.getElementById('viewMap').classList.add('active');
-        
-        // Populate Profile
-        document.getElementById('profEmail').innerText = currentUser.email;
-        document.getElementById('profRole').innerText = currentUser.role.toUpperCase();
-        document.getElementById('ptsBadge').innerText = currentUser.points;
-        
-        if(currentUser.role === 'admin') document.getElementById('adminSec').style.display='block';
-        
-        setTimeout(app.initMap, 100);
+    nav(viewId, btn) {
+        document.querySelectorAll('.view').forEach(v => {
+            if(!v.classList.contains('full-screen')) v.classList.remove('active');
+        });
+        document.getElementById(viewId).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        if(btn) btn.classList.add('active');
+        if(viewId==='viewMap' && mapObj) mapObj.invalidateSize();
     },
-
     toggleSheet(id) {
         const el = document.getElementById(id);
         const isOpen = el.classList.contains('open');
         this.closeSheets();
         if(!isOpen) el.classList.add('open');
     },
-
     closeSheets() {
         document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
     },
-
     openCompass() {
         document.getElementById('viewCompass').classList.add('active');
         if(window.DeviceOrientationEvent) window.addEventListener('deviceorientation', app.handleCompass);
     },
-    
     closeCompass() {
         document.getElementById('viewCompass').classList.remove('active');
         window.removeEventListener('deviceorientation', app.handleCompass);
@@ -327,53 +318,113 @@ const ui = {
 };
 
 // ============================================
-// 4. APP FEATURES
+// 4. APP FEATURES (Search, Map, etc.)
 // ============================================
 const app = {
     initMap() {
         if(mapObj) return;
-        mapObj = L.map('map', {zoomControl: false}).setView([48.85, 2.35], 13);
-        // Google Maps Style Layer (Voyager)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19, attribution: '&copy; OSM'
-        }).addTo(mapObj);
+        mapObj = L.map('map', {zoomControl: false}).setView([43.6047, 1.4442], 13); // Start Toulouse
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(mapObj);
         
-        // Custom GPS Dot
-        const dotIcon = L.divIcon({
-            className: 'gps-dot',
-            html: '<div style="width:16px; height:16px; background:#4285F4; border:3px solid white; border-radius:50%; box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>'
-        });
-        const me = L.marker([0,0], {icon: dotIcon}).addTo(mapObj);
-        
+        // Locate User
         mapObj.locate({setView: true, watch: true, enableHighAccuracy:true});
+        const dot = L.divIcon({className:'gps-dot', html:'<div style="width:16px;height:16px;background:#4285F4;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 5px rgba(0,0,0,0.3)"></div>'});
+        const me = L.marker([0,0], {icon:dot}).addTo(mapObj);
         mapObj.on('locationfound', e => me.setLatLng(e.latlng));
     },
 
-    gpsCenter() {
-        if(mapObj) mapObj.locate({setView: true, maxZoom:16});
+    centerGps() {
+        if(mapObj) mapObj.locate({setView:true, maxZoom:16});
+    },
+
+    // SEARCH PREDICTIVE (Nominatim)
+    initSearch() {
+        const inp = document.getElementById('searchInp');
+        const res = document.getElementById('searchResults');
+        
+        inp.addEventListener('input', async (e) => {
+            const q = e.target.value;
+            if(q.length < 3) { res.style.display='none'; return; }
+            
+            // Toulouse BBOX + Limit 5
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${q}&viewbox=1.350,43.668,1.554,43.532&bounded=1&limit=5`;
+            
+            try {
+                const req = await fetch(url);
+                const data = await req.json();
+                
+                res.innerHTML = '';
+                if(data.length > 0) {
+                    res.style.display = 'block';
+                    data.forEach(place => {
+                        const div = document.createElement('div');
+                        div.className = 'search-item';
+                        div.innerHTML = `<i class="fa-solid fa-location-dot"></i> <div>${place.display_name.split(',')[0]}</div>`;
+                        div.onclick = () => {
+                            mapObj.setView([place.lat, place.lon], 16);
+                            L.marker([place.lat, place.lon]).addTo(mapObj).bindPopup(place.display_name).openPopup();
+                            res.style.display = 'none';
+                            inp.value = '';
+                        };
+                        res.appendChild(div);
+                    });
+                }
+            } catch(err) { console.error(err); }
+        });
     },
 
     handleCompass(e) {
         const deg = e.webkitCompassHeading || Math.abs(e.alpha - 360);
         document.getElementById('compassArrow').style.transform = `rotate(${-deg}deg)`;
     },
-    
-    toggleDark() {
-        const isDark = document.body.style.filter === 'invert(1) hue-rotate(180deg)';
-        document.body.style.filter = isDark ? '' : 'invert(1) hue-rotate(180deg)';
-        if(mapObj) mapObj.getContainer().style.filter = isDark ? '' : 'invert(1) hue-rotate(180deg)';
+
+    toggleTheme() {
+        document.body.style.filter = document.body.style.filter ? '' : 'invert(1) hue-rotate(180deg)';
     },
-    
-    async adminGive() {
-        const tgt = document.getElementById('admTarget').value; // Ici email
-        alert("Attention: Le système actuel requiert l'ID unique (UUID) de l'utilisateur, pas l'email, pour modifier les points. Demandez à l'utilisateur son UUID dans son profil.");
+
+    initChat() {
+        const box = document.getElementById('chatBox');
+        const add = (m) => {
+            const d = document.createElement('div');
+            d.innerHTML = `<b>${m.user_id.slice(0,4)}:</b> ${m.content}`;
+            d.style.marginBottom = "5px";
+            box.appendChild(d);
+            box.scrollTop = box.scrollHeight;
+        };
+        sb.from('messages').select('*').order('created_at',{ascending:false}).limit(20)
+        .then(({data}) => { box.innerHTML=''; if(data) data.reverse().forEach(add); });
+        sb.channel('chat').on('postgres_changes', {event:'INSERT',schema:'public',table:'messages'}, p=>add(p.new)).subscribe();
+    },
+
+    async sendMsg() {
+        const i = document.getElementById('chatInp');
+        if(i.value) { await sb.from('messages').insert([{user_id:currentUser.id, content:i.value}]); i.value=''; }
     }
 };
 
-// AUTO START
-sb.auth.onAuthStateChange((event, session) => {
-    if(event === 'SIGNED_IN' && session) {
-        auth.init(session.user);
+// 5. STARTUP
+sb.auth.onAuthStateChange(async (evt, session) => {
+    if(evt === 'SIGNED_IN' && session) {
+        currentUser = session.user;
+        document.getElementById('viewAuth').style.display='none';
+        document.getElementById('viewMap').classList.add('active');
+        
+        // Load User Data
+        const { data } = await sb.from('users').select('*').eq('id', currentUser.id).single();
+        if(data) {
+            currentUser.role = data.role;
+            currentUser.points = data.points;
+            document.getElementById('ptsBadge').innerText = data.points;
+            document.getElementById('profEmail').innerText = currentUser.email;
+            document.getElementById('profRole').innerText = (data.role || 'USER').toUpperCase();
+            if(data.role==='admin') document.getElementById('adminArea').style.display='block';
+        }
+        
+        setTimeout(() => {
+            app.initMap();
+            app.initSearch();
+            app.initChat();
+        }, 500);
     }
 });
 
