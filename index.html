@@ -1,9 +1,4 @@
-<script src="config.js"></script>
-<script>
-    // Initialisation avec les variables du fichier config.js
-    const supabase = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
-    
-    // <!doctype html>
+<!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
@@ -16,8 +11,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
   <!-- Supabase JS -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <!-- CONFIGURATION (Clés API) -->
-  <script src="config.js"></script>
 
   <style>
     :root { --primary: #00f2ff; --bg: #0a0a0a; --glass: rgba(255,255,255,0.05); --text: #fff; --danger: #ff4757; --success: #2ecc71; }
@@ -182,12 +175,11 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // --- INITIALISATION SUPABASE ---
-// On vérifie que la config existe
-if (typeof CONFIG === 'undefined') {
-    alert("ERREUR CRITIQUE: Le fichier config.js est manquant ! Le site ne peut pas démarrer.");
-    throw new Error("Config missing");
-}
-const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+// REMPLACEZ CES VALEURS PAR VOS VRAIES CLÉS !
+const SUPABASE_URL = "VOTRE_URL_SUPABASE_ICI";
+const SUPABASE_KEY = "VOTRE_CLE_ANON_ICI";
+
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // --- STATE MANAGEMENT ---
 let currentUser = null;
@@ -199,22 +191,23 @@ const $ = id => document.getElementById(id);
 
 // --- AUTHENTIFICATION SYSTEM (SECURISÉ) ---
 
-// Au chargement, on vérifie si une session existe MAIS on la valide coté serveur
+// Au chargement, on vérifie si une session existe
 async function checkSession() {
     const savedID = localStorage.getItem('cc_user_id');
-    // NOTE: On ne stocke plus le mot de passe en clair, c'est dangereux.
-    // L'utilisateur doit se reconnecter s'il n'y a pas de token session (pour une vraie app).
-    // Pour simplifier ici sans backend complexe : on force la reconnexion si pas de ID.
+    // On ne fait PAS de login automatique complet. 
+    // On pré-remplit juste l'ID, mais on demande le mot de passe si on veut être strict (ou on fait confiance au stockage local).
+    // Pour la V20 STRICTE demandée : on oblige la reconnexion si pas de session active vérifiée.
     
     if (savedID) {
-        // Pour plus de sécurité, on devrait demander le mot de passe à chaque "longue" absence.
-        // Ici, on demande à l'utilisateur de se reconnecter pour valider la v20.
         $('inputLoginCode').value = formatID(savedID);
+        // Si vous voulez une reconnexion auto sans mot de passe (moins sécurisé), décommentez ceci :
+        // autoLogin(savedID); 
     }
 }
 
 // FORMATAGE ID (Ajoute des espaces tous les 4 chiffres)
 function formatID(val) {
+    if(!val) return '';
     return val.replace(/\D/g,'').slice(0,16).replace(/(\d{4})(?=\d)/g,'$1 ').trim();
 }
 
@@ -279,6 +272,12 @@ async function login() {
         localStorage.setItem('cc_user_id', rawID);
         launchApp();
     }
+}
+
+// Pour re-connecter auto si besoin (non utilisé par défaut pour sécurité max)
+async function autoLogin(rawID) {
+    const { data } = await supabaseClient.from('users').select('*').eq('id', rawID).single();
+    if(data) { currentUser = data; launchApp(); }
 }
 
 $('btnLogin').onclick = login;
@@ -351,7 +350,6 @@ function initMap() {
         navigator.geolocation.watchPosition(pos => {
             const {latitude, longitude} = pos.coords;
             userMarker.setLatLng([latitude, longitude]);
-            // On ne centre pas automatiquement pour laisser l'user explorer
         }, err => console.log(err), {enableHighAccuracy: true});
     }
 }
@@ -449,5 +447,3 @@ checkSession();
 </script>
 </body>
 </html>
-
-</script>
