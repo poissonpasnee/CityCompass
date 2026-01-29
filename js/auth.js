@@ -1,6 +1,5 @@
 const Auth = {
     isSignup: false,
-    forcedTimer: null,
 
     toggleMode: () => {
         Auth.isSignup = !Auth.isSignup;
@@ -8,7 +7,8 @@ const Auth = {
         const btn = document.getElementById('authBtn');
         const switchText = document.getElementById('switchText');
         const msg = document.getElementById('msg');
-        if(msg) msg.innerText = "";
+        
+        msg.innerText = "";
         
         if(Auth.isSignup) {
             title.innerText = "Créer un compte";
@@ -23,7 +23,7 @@ const Auth = {
 
     submit: () => {
         const btn = document.getElementById('authBtn');
-        if(btn.innerText.includes("...")) return;
+        if(btn.innerText.includes("...")) return; // Empêche le double clic
         
         if(Auth.isSignup) Auth.signup();
         else Auth.login();
@@ -33,57 +33,79 @@ const Auth = {
         const e = document.getElementById('emailInput').value;
         const p = document.getElementById('pwdInput').value;
         const btn = document.getElementById('authBtn');
-        
-        if(!e || !p) return Auth.err("Veuillez remplir les champs");
+        const originalText = btn.innerText;
 
-        btn.innerText = "Ouverture...";
+        if(!e || !p) return Auth.err("Veuillez remplir tous les champs");
         
-        // --- SÉCURITÉ ABSOLUE : FORCE L'OUVERTURE DANS 2 SECONDES QUOI QU'IL ARRIVE ---
-        Auth.forcedTimer = setTimeout(() => {
-            console.log("Serveur lent : Ouverture forcée");
-            App.start({ id: 'local-user', email: e || 'utilisateur@local.com' });
-        }, 2000);
-        // -----------------------------------------------------------------------------
-
+        btn.innerText = "Connexion...";
+        
         try {
-            if(!AppState.supabase) throw new Error("No DB");
-            
-            // Tentative de vraie connexion
+            // Appel standard à Supabase
             const { data, error } = await AppState.supabase.auth.signInWithPassword({ email:e, password:p });
             
-            // Si on arrive ici, on annule le timer forcé car on a une vraie réponse
-            clearTimeout(Auth.forcedTimer);
-
             if(error) throw error;
+            
+            // Si succès, on lance l'app
             App.start(data.user);
 
         } catch (err) {
-            console.log("Erreur connexion, bascule vers mode local automatique", err);
-            // On laisse le timer forcé finir le travail pour ouvrir le site
+            console.error("Login Error:", err);
+            btn.innerText = originalText;
+            
+            if(err.message === "Invalid login credentials") {
+                Auth.err("Email ou mot de passe incorrect");
+            } else if (err.message.includes("fetch")) {
+                Auth.err("Erreur réseau. Vérifiez votre connexion.");
+            } else {
+                Auth.err(err.message);
+            }
         }
     },
 
     signup: async () => {
-        // Pour l'inscription, on fait pareil : on laisse entrer les gens
         const e = document.getElementById('emailInput').value;
+        const p = document.getElementById('pwdInput').value;
         const btn = document.getElementById('authBtn');
+        const originalText = btn.innerText;
         
-        btn.innerText = "Création...";
+        if(!e || !p) return Auth.err("Veuillez remplir tous les champs");
+        if(p.length < 6) return Auth.err("Le mot de passe doit faire 6 caractères min.");
         
-        setTimeout(() => {
-            alert("Compte créé (Mode Local) !");
-            App.start({ id: 'new-user', email: e || 'nouveau@local.com' });
-        }, 1500);
+        btn.innerText = "Inscription...";
+
+        try {
+            const { data, error } = await AppState.supabase.auth.signUp({ email:e, password:p });
+            
+            if(error) throw error;
+            
+            Auth.err("Compte créé ! Vous pouvez vous connecter.", "#34C759"); // Vert
+            
+            // Basculer automatiquement vers l'écran de connexion après 1.5s
+            setTimeout(() => {
+                Auth.toggleMode();
+                document.getElementById('emailInput').value = e;
+                btn.innerText = "CONNEXION";
+            }, 1500);
+
+        } catch (err) {
+            console.error("Signup Error:", err);
+            btn.innerText = originalText;
+            Auth.err(err.message);
+        }
     },
 
     logout: async () => {
-        if(AppState.supabase) await AppState.supabase.auth.signOut();
+        await AppState.supabase.auth.signOut();
         location.reload();
     },
 
-    err: (msg) => {
+    err: (msg, color='#ff6b6b') => {
         const m = document.getElementById('msg');
-        if(m) { m.style.color = 'red'; m.innerText = msg; }
-        else alert(msg);
+        if(m) {
+            m.style.color = color;
+            m.innerText = msg;
+        } else {
+            alert(msg);
+        }
     }
 };
