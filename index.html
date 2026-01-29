@@ -3,571 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CityCompass v57</title>
-    
-    <!-- Leaflet & FontAwesome -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <title>CityCompass Navigator</title>
+
+    <!-- Libs externes -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
-    <style>
-        :root {
-            --bg: #f2f2f7;
-            --surface: #ffffff;
-            --text: #1c1c1e;
-            --accent: #007aff;
-            --danger: #ff3b30;
-            --glass: rgba(255, 255, 255, 0.85);
-            --shadow: 0 4px 20px rgba(0,0,0,0.08);
-            --safe-bottom: env(safe-area-inset-bottom, 20px);
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            height: 100dvh;
-            width: 100vw;
-            overflow: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* --- CARTE FLUIDE --- */
-        #map {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            background: #e5e3df; /* Couleur de fond Google Maps */
-        }
-
-        /* --- NAVIGATION BAR (DOCK) --- */
-        .dock {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: calc(60px + var(--safe-bottom));
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-around;
-            align-items: flex-start;
-            padding-top: 10px;
-            z-index: 1000;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
-        }
-
-        .dock-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: #8e8e93;
-            font-size: 10px;
-            text-decoration: none;
-            width: 50px;
-            cursor: pointer;
-            transition: transform 0.1s, color 0.2s;
-        }
-        
-        .dock-item i {
-            font-size: 22px;
-            margin-bottom: 4px;
-        }
-
-        .dock-item.active {
-            color: var(--accent);
-            transform: scale(1.05);
-        }
-
-        /* Bouton Boussole Central */
-        .dock-item.compass-btn {
-            color: var(--accent);
-            margin-top: -25px; /* Effet de dépassement vers le haut */
-        }
-        .dock-item.compass-btn .icon-circle {
-            width: 54px;
-            height: 54px;
-            background: var(--accent);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4);
-            border: 4px solid var(--surface); /* Bordure blanche pour détacher du fond */
-            transition: transform 0.2s;
-        }
-        .dock-item.compass-btn:active .icon-circle {
-            transform: scale(0.95);
-        }
-
-        /* --- PAGES (PANNEAUX) --- */
-        .page {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: calc(100% - 70px);
-            z-index: 10;
-            background: var(--bg);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-            overflow-y: auto;
-            padding-top: 50px; /* Espace pour header éventuel */
-        }
-        
-        .page.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        /* La carte est un cas spécial, elle est toujours en fond (z-index 1) */
-        #page-map {
-            background: transparent;
-            pointer-events: none; /* Laisse passer les clics vers Leaflet quand inactif */
-            z-index: 5;
-        }
-        #page-map.active {
-            pointer-events: none; /* Toujours none pour interagir avec la carte en dessous */
-        }
-
-        /* --- BOUSSOLE OVERLAY --- */
-        #compass-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: calc(100% - 70px);
-            z-index: 900;
-            background: linear-gradient(to bottom, #f2f2f7, #ffffff);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transform: translateY(100%);
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        #compass-overlay.open {
-            transform: translateY(0);
-        }
-
-        /* Design Boussole */
-        .compass-container {
-            position: relative;
-            width: 280px;
-            height: 280px;
-            margin-bottom: 40px;
-        }
-
-        /* Cercle de fond statique */
-        .compass-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 2px solid #e5e5ea;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
-        }
-
-        /* Cercle de distance (SVG dynamique) */
-        .distance-ring {
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            width: 300px;
-            height: 300px;
-            transform: rotate(-90deg); /* Commence en haut */
-            pointer-events: none;
-        }
-        .distance-ring circle {
-            fill: none;
-            stroke: var(--accent);
-            stroke-width: 6;
-            stroke-linecap: round;
-            stroke-dasharray: 880; /* ~ 2 * PI * r (r=140) */
-            stroke-dashoffset: 880; /* Vide par défaut */
-            transition: stroke-dashoffset 0.5s linear;
-        }
-
-        /* La flèche */
-        .arrow {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 80px;
-            height: 80px;
-            background: url('https://cdn-icons-png.flaticon.com/512/149/149062.png') no-repeat center center;
-            background-size: contain;
-            transform: translate(-50%, -50%);
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
-            transition: transform 0.1s linear;
-        }
-
-        /* --- WIDGET VITESSE WAZE --- */
-        .speed-widget {
-            width: 90px;
-            height: 90px;
-            background: #ffffff;
-            border-radius: 50%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-            border: 3px solid #f2f2f7;
-            margin-top: 20px;
-        }
-        .speed-value {
-            font-size: 32px;
-            font-weight: 800;
-            color: var(--text);
-            line-height: 1;
-        }
-        .speed-unit {
-            font-size: 12px;
-            color: #8e8e93;
-            font-weight: 600;
-            margin-top: 2px;
-        }
-
-        .compass-info {
-            text-align: center;
-            margin-top: 20px;
-        }
-        .dist-text {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--text);
-        }
-        .target-name {
-            font-size: 14px;
-            color: #8e8e93;
-            margin-top: 5px;
-        }
-
-        /* --- SEARCH BAR FLOTTANTE --- */
-        .search-container {
-            position: absolute;
-            top: 50px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 400px;
-            z-index: 800;
-        }
-        .search-input {
-            width: 100%;
-            padding: 15px 20px;
-            border-radius: 30px;
-            border: none;
-            background: var(--surface);
-            box-shadow: var(--shadow);
-            font-size: 16px;
-            outline: none;
-        }
-
-    </style>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
 </head>
-<body>
+<body data-theme="light">
 
-    <!-- MAP CONTAINER (Fond) -->
+    <!-- LOGIN -->
+    <div id="loginScreen">
+        <div class="login-box">
+            <h1 style="margin:0 0 25px 0;">CityCompass</h1>
+            <input type="email" id="email" class="inp" placeholder="Email">
+            <input type="password" id="password" class="inp" placeholder="Mot de passe">
+            <button class="btn-main" onclick="Auth.login()">Connexion</button>
+            <button class="btn-main" style="background:transparent; color:var(--text); border:1px solid rgba(128,128,128,0.3);" onclick="Auth.signup()">Créer un compte</button>
+            <p id="msg" style="color:var(--danger); font-size:13px; margin-top:15px; min-height:15px;"></p>
+        </div>
+    </div>
+
+    <!-- CARTE -->
     <div id="map"></div>
 
-    <!-- BARRE DE RECHERCHE (Sur la carte) -->
-    <div class="search-container" id="searchBar">
-        <input type="text" class="search-input" placeholder="Où allons-nous ?" id="inputSearch">
+    <!-- HUD -->
+    <div class="hud-layer" id="hud" style="display:none;">
+        
+        <!-- Barre Recherche -->
+        <div class="search-container">
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass" style="opacity:0.5; font-size:18px;"></i>
+                <input type="text" class="search-inp" id="searchInp" placeholder="Où aller ?" onkeyup="MapManager.search(this.value)">
+                <div class="xp-badge" onclick="UI.open('panelProfile')"><span id="hudPoints">0</span> XP</div>
+            </div>
+            <div class="search-results" id="searchResults"></div>
+        </div>
+
+        <!-- Dock & FAB -->
+        <div class="dock-wrapper">
+            <div class="fab-compass" onclick="Compass.open()">
+                <i class="fa-regular fa-compass"></i>
+            </div>
+            <div class="dock">
+                <div class="dock-icon" onclick="UI.open('panelShop')"><i class="fa-solid fa-store"></i></div>
+                <div class="dock-icon" onclick="UI.open('panelTools')"><i class="fa-solid fa-layer-group"></i></div>
+                <div class="dock-icon active" onclick="MapManager.locate()"><i class="fa-solid fa-location-arrow"></i></div>
+                <div class="dock-icon" onclick="UI.open('panelProfile')"><i class="fa-solid fa-user"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANNEAU BOUTIQUE -->
+    <div id="panelShop" class="panel">
+        <div class="panel-head"><h2>Boutique</h2><button class="close-btn" onclick="UI.close()">&times;</button></div>
+        <div style="background:var(--accent); color:white; padding:25px; border-radius:25px; margin-bottom:25px; text-align:center; box-shadow: 0 10px 30px -10px var(--accent);">
+            <div style="font-size:36px; font-weight:800;" id="shopPoints">0</div>
+            <div style="opacity:0.9; font-weight:600;">Points Disponibles</div>
+        </div>
+        <div id="shopList"></div>
+    </div>
+
+    <!-- PANNEAU OUTILS -->
+    <div id="panelTools" class="panel">
+        <div class="panel-head"><h2>Outils</h2><button class="close-btn" onclick="UI.close()">&times;</button></div>
+        
+        <h3 style="opacity:0.6; font-size:14px; text-transform:uppercase; margin-bottom:10px;">Mes Favoris</h3>
+        <div id="favList" style="margin-bottom:30px; color:gray;">Aucun favori</div>
+
+        <h3 style="opacity:0.6; font-size:14px; text-transform:uppercase; margin-bottom:10px;">Carte</h3>
+        <div class="shop-item" onclick="MapManager.setLayer('standard')">
+            <div class="shop-info"><div class="shop-icon">🗺️</div><b>Standard</b></div>
+        </div>
+        <div class="shop-item" onclick="MapManager.setLayer('sat')">
+            <div class="shop-info"><div class="shop-icon">🛰️</div><b>Satellite</b></div>
+        </div>
+        <div class="shop-item" onclick="MapManager.setLayer('dark')">
+            <div class="shop-info"><div class="shop-icon">🌑</div><b>Mode Nuit</b></div>
+        </div>
+    </div>
+
+    <!-- PANNEAU PROFIL -->
+    <div id="panelProfile" class="panel">
+        <div class="panel-head"><h2>Mon Compte</h2><button class="close-btn" onclick="UI.close()">&times;</button></div>
+        
+        <div style="text-align:center; margin-bottom:40px;">
+            <div style="width:90px; height:90px; background:var(--accent); color:white; border-radius:50%; margin:0 auto 15px auto; display:flex; align-items:center; justify-content:center; font-size:36px; box-shadow: 0 10px 30px -5px var(--accent);">👤</div>
+            <h3 id="profileEmail" style="margin:0;">...</h3>
+        </div>
+
+        <div class="setting-row" onclick="Settings.updateEmail()">
+            <span>Changer Email</span> <i class="fa-solid fa-chevron-right" style="opacity:0.3;"></i>
+        </div>
+        <div class="setting-row" onclick="Settings.updatePwd()">
+            <span>Changer Mot de passe</span> <i class="fa-solid fa-chevron-right" style="opacity:0.3;"></i>
+        </div>
+        <div class="setting-row" onclick="Settings.toggleTheme()">
+            <span>Mode Sombre / Clair</span> <div class="shop-icon" style="width:30px; height:30px; font-size:14px;"><i class="fa-solid fa-adjust"></i></div>
+        </div>
+        <div class="setting-row" style="color:var(--danger); font-weight:bold;" onclick="Auth.logout()">
+            <span>Se déconnecter</span> <i class="fa-solid fa-power-off"></i>
+        </div>
+
+        <!-- ADMIN -->
+        <div id="adminPanel" style="display:none; margin-top:40px; border-top:2px solid rgba(128,128,128,0.2); padding-top:20px;">
+            <h3 style="color:var(--danger);">⚡ Admin Control</h3>
+            <div class="shop-item">
+                <b>Points (Test)</b>
+                <button class="buy-btn" onclick="Admin.modPoints(500)">+500 XP</button>
+            </div>
+            <button class="btn-main" onclick="Admin.addPublicPlace()">Ajouter Lieu Public ici</button>
+        </div>
     </div>
 
     <!-- BOUSSOLE OVERLAY -->
-    <div id="compass-overlay">
-        <div class="compass-info">
-            <div class="dist-text" id="distDisplay">-- m</div>
-            <div class="target-name" id="targetDisplay">Aucune destination</div>
-        </div>
-
-        <div class="compass-container">
-            <div class="compass-bg"></div>
-            
-            <!-- Cercle dynamique distance -->
-            <svg class="distance-ring">
-                <!-- r=140, cx=150, cy=150 (pour SVG 300x300) -->
-                <circle cx="150" cy="150" r="140" id="ringProgress"></circle>
-            </svg>
-
-            <div class="arrow" id="compassArrow"></div>
-        </div>
-
-        <!-- Widget Waze -->
-        <div class="speed-widget">
-            <div class="speed-value" id="speedVal">0</div>
-            <div class="speed-unit">km/h</div>
-        </div>
-    </div>
-
-    <!-- PAGES CONTENU -->
-    <div id="page-boutique" class="page"><h1>Boutique</h1></div>
-    <div id="page-outils" class="page"><h1>Outils</h1></div>
-    <div id="page-profil" class="page"><h1>Profil</h1></div>
-
-    <!-- DOCK NAVIGATION -->
-    <div class="dock">
-        <div class="dock-item" onclick="switchTab('boutique')">
-            <i class="fa-solid fa-shop"></i>
-            <span>Boutique</span>
-        </div>
+    <div id="compassOverlay">
+        <button class="close-btn" style="position:absolute; top:40px; right:20px;" onclick="Compass.close()">&times;</button>
         
-        <div class="dock-item" onclick="switchTab('outils')">
-            <i class="fa-solid fa-toolbox"></i>
-            <span>Outils</span>
+        <div id="compassRing">
+            <div style="position:absolute; top:-40px; font-weight:bold; font-size:18px; letter-spacing:2px;">NORD</div>
+            <i class="fa-solid fa-location-arrow" style="font-size:100px; color:var(--danger);"></i>
         </div>
+        <h1 id="compassDeg" style="font-variant-numeric: tabular-nums;">0°</h1>
+        <button class="btn-main" style="width:auto; padding:10px 30px; background:rgba(128,128,128,0.2); color:var(--text);" onclick="Compass.requestPerm()">Calibrer / Autoriser</button>
 
-        <!-- BOUSSOLE (Au milieu) -->
-        <div class="dock-item compass-btn" onclick="toggleCompass()">
-            <div class="icon-circle">
-                <i class="fa-regular fa-compass"></i>
+        <!-- NAVIGATION INFO -->
+        <div id="navInfoBox" style="display:none; width:90%; max-width:360px; margin-top:30px;">
+            <div class="shop-item" style="background:var(--accent); color:white;">
+                <div class="shop-info">
+                    <div class="shop-icon" style="background:rgba(255,255,255,0.2); color:white;">🏁</div>
+                    <div>
+                        <b id="navTargetName">Destination</b><br>
+                        <span style="font-size:13px; opacity:0.8;">Distance: <span id="navDist">--</span> • Cap: <span id="navBearing">--</span></span>
+                    </div>
+                </div>
+                <button class="buy-btn" style="background:rgba(0,0,0,0.3);" onclick="Compass.stopNav()">Stop</button>
             </div>
-            <!-- Pas de texte pour garder le look épuré ou mettre <span>Nav</span> -->
-        </div>
-
-        <div class="dock-item active" onclick="switchTab('map')">
-            <i class="fa-regular fa-map"></i>
-            <span>Carte</span>
-        </div>
-        
-        <div class="dock-item" onclick="switchTab('profil')">
-            <i class="fa-regular fa-user"></i>
-            <span>Profil</span>
+            
+            <div class="shop-item">
+                <div class="shop-info">
+                    <div class="shop-icon" style="background:#FF9500; color:white;">🏎️</div>
+                    <div><b>Vitesse</b><br><span id="navSpeed" style="opacity:0.6;">0 km/h</span></div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <script>
-        // --- CONFIGURATION ---
-        const mapConfig = {
-            startLat: 43.6045, // Toulouse
-            startLng: 1.444,
-            zoom: 15
-        };
-
-        // --- ETAT GLOBAL ---
-        let state = {
-            currentTab: 'map',
-            targetLoc: null, // {lat, lng, name}
-            userLoc: null,   // {lat, lng, heading, speed}
-            watchId: null,
-            compassActive: false
-        };
-
-        // --- INITIALISATION CARTE FLUIDE ---
-        // zoomSnap: 0 permet des niveaux de zoom fractionnaires (très fluide)
-        // zoomDelta: 0.5 permet un zoom plus doux aux boutons
-        // wheelPxPerZoomLevel: 60 ralentit le zoom molette pour plus de contrôle
-        const map = L.map('map', {
-            zoomControl: false, 
-            attributionControl: false,
-            zoomSnap: 0, 
-            zoomDelta: 0.5,
-            wheelPxPerZoomLevel: 120,
-            tap: false // Important pour mobile parfois
-        }).setView([mapConfig.startLat, mapConfig.startLng], mapConfig.zoom);
-
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png', {
-            maxZoom: 20,
-            subdomains: 'abcd',
-        }).addTo(map);
-
-        const userMarker = L.marker([mapConfig.startLat, mapConfig.startLng]).addTo(map);
-        let targetMarker = null;
-
-        // --- GESTION DES ONGLETS ---
-        function switchTab(tabId) {
-            // Fermer la boussole si on change d'onglet
-            if(state.compassActive && tabId !== 'compass') {
-                closeCompass();
-            }
-
-            // Gestion active class dock
-            document.querySelectorAll('.dock-item').forEach(el => el.classList.remove('active'));
-            // On trouve l'index approximatif (simplifié ici)
-            if(tabId === 'map') document.querySelectorAll('.dock-item')[3].classList.add('active');
-            if(tabId === 'boutique') document.querySelectorAll('.dock-item')[0].classList.add('active');
-            if(tabId === 'outils') document.querySelectorAll('.dock-item')[1].classList.add('active');
-            if(tabId === 'profil') document.querySelectorAll('.dock-item')[4].classList.add('active');
-
-            // Affichage pages
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            
-            if(tabId === 'map') {
-                document.getElementById('searchBar').style.display = 'block';
-            } else {
-                document.getElementById('searchBar').style.display = 'none';
-                let p = document.getElementById('page-'+tabId);
-                if(p) p.classList.add('active');
-            }
-            state.currentTab = tabId;
-            
-            // Hack Leaflet resize
-            if(tabId === 'map') setTimeout(() => map.invalidateSize(), 100);
-        }
-
-        // --- LOGIQUE BOUSSOLE ---
-        function toggleCompass() {
-            if(state.compassActive) {
-                closeCompass();
-            } else {
-                openCompass();
-            }
-        }
-
-        function openCompass() {
-            state.compassActive = true;
-            document.getElementById('compass-overlay').classList.add('open');
-            document.getElementById('searchBar').style.display = 'none';
-            // Start sensors
-            startSensors();
-        }
-
-        function closeCompass() {
-            state.compassActive = false;
-            document.getElementById('compass-overlay').classList.remove('open');
-            if(state.currentTab === 'map') document.getElementById('searchBar').style.display = 'block';
-        }
-
-        // --- GEOLOC & CAPTEURS ---
-        function startSensors() {
-            if (navigator.geolocation) {
-                state.watchId = navigator.geolocation.watchPosition(updatePosition, err => console.warn(err), {
-                    enableHighAccuracy: true,
-                    maximumAge: 0,
-                    timeout: 5000
-                });
-            }
-            // Device Orientation pour la boussole
-            if (window.DeviceOrientationEvent) {
-                window.addEventListener('deviceorientation', updateHeading);
-            }
-        }
-
-        function updatePosition(pos) {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            const speed = pos.coords.speed || 0; // m/s
-            
-            state.userLoc = { lat, lng, speed };
-
-            // Update Map
-            const newLatLng = new L.LatLng(lat, lng);
-            userMarker.setLatLng(newLatLng);
-            // Si on est en mode map, on peut centrer (optionnel)
-            // map.panTo(newLatLng);
-
-            // Update Boussole UI
-            if(state.compassActive) {
-                updateCompassUI(pos.coords.heading); // Heading GPS si dispo
-            }
-        }
-
-        function updateHeading(e) {
-            if(!state.compassActive) return;
-            
-            let heading = e.webkitCompassHeading || Math.abs(e.alpha - 360);
-            if(!heading) return;
-
-            // Rotation de la flèche vers le NORD (par défaut)
-            // Si on a une target, on calcule le bearing
-            updateCompassUI(heading);
-        }
-
-        function updateCompassUI(deviceHeading) {
-            if(!state.userLoc) return;
-
-            // VITESSE (Waze style)
-            const speedKmh = Math.round((state.userLoc.speed || 0) * 3.6);
-            document.getElementById('speedVal').textContent = speedKmh;
-
-            if(state.targetLoc) {
-                // Calcul Distance
-                const dist = map.distance([state.userLoc.lat, state.userLoc.lng], [state.targetLoc.lat, state.targetLoc.lng]);
-                document.getElementById('distDisplay').textContent = dist > 1000 ? (dist/1000).toFixed(1) + ' km' : Math.round(dist) + ' m';
-                document.getElementById('targetDisplay').textContent = "Vers : " + state.targetLoc.name;
-
-                // Calcul Cap vers la cible
-                const bearing = getBearing(state.userLoc.lat, state.userLoc.lng, state.targetLoc.lat, state.targetLoc.lng);
-                
-                // La flèche doit pointer vers la cible
-                // Rotation flèche = Bearing - Heading
-                // Ex: Cible à 90° (Est), je regarde 0° (Nord) -> Flèche tourne de 90° à droite.
-                const arrowRot = bearing - (deviceHeading || 0);
-                document.getElementById('compassArrow').style.transform = `translate(-50%, -50%) rotate(${arrowRot}deg)`;
-
-                // CERCLE DYNAMIQUE
-                // Plus on est près, plus le cercle se ferme.
-                // Disons Max = 2km (2000m) -> Cercle vide. 0m -> Cercle plein.
-                const maxDist = 2000; 
-                const circumference = 880; // 2 * PI * 140
-                let progress = Math.min(dist, maxDist) / maxDist; // 1 = loin, 0 = arrivé
-                // Si on veut "fermer de plus en plus des que je me rapproche" :
-                // Loin (progress=1) -> offset=880 (vide) ou offset=0 (plein)?
-                // "S'ouvre dès que je m'éloigne" -> Loin = Ouvert (Vide). Près = Fermé (Plein).
-                // Donc Loin = offset max. Près = offset 0.
-                const offset = circumference * progress; 
-                document.getElementById('ringProgress').style.strokeDashoffset = offset;
-
-            } else {
-                // Mode Boussole Simple (Nord)
-                document.getElementById('distDisplay').textContent = "--";
-                document.getElementById('targetDisplay').textContent = "Nord Magnétique";
-                // Flèche pointe le Nord : Rotation = -Heading
-                const arrowRot = -(deviceHeading || 0);
-                document.getElementById('compassArrow').style.transform = `translate(-50%, -50%) rotate(${arrowRot}deg)`;
-                document.getElementById('ringProgress').style.strokeDashoffset = 880; // Ouvert
-            }
-        }
-
-        // --- UTILITAIRES ---
-        function getBearing(startLat, startLng, destLat, destLng) {
-            startLat = toRad(startLat);
-            startLng = toRad(startLng);
-            destLat = toRad(destLat);
-            destLng = toRad(destLng);
-
-            const y = Math.sin(destLng - startLng) * Math.cos(destLat);
-            const x = Math.cos(startLat) * Math.sin(destLat) -
-                    Math.sin(startLat) * Math.cos(destLat) * Math.cos(destLng - startLng);
-            let brng = Math.atan2(y, x);
-            brng = toDeg(brng);
-            return (brng + 360) % 360;
-        }
-        function toRad(deg) { return deg * Math.PI / 180; }
-        function toDeg(rad) { return rad * 180 / Math.PI; }
-
-        // Simulation selection destination (Click Map)
-        map.on('click', function(e) {
-            if(confirm("Naviguer vers ce point ?")) {
-                if(targetMarker) map.removeLayer(targetMarker);
-                targetMarker = L.marker(e.latlng).addTo(map);
-                state.targetLoc = {
-                    lat: e.latlng.lat,
-                    lng: e.latlng.lng,
-                    name: "Point Repère"
-                };
-                openCompass(); // Ouvre direct la boussole
-            }
-        });
-
-        // Demarrage
-        switchTab('map');
-
-    </script>
+    <!-- Scripts - ORDRE IMPORTANT -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/mapManager.js"></script>
+    <script src="js/compass.js"></script>
+    <script src="js/shop.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
