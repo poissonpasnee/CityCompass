@@ -1,110 +1,91 @@
 // js/compass.js
 const Compass = {
-    target: null, // {lat, lng} de la destination
-    currentPos: null,
-    watchId: null,
-
+    target: null, // {lat, lng}
+    
     init: () => {
-        // Demande permission iOS pour l'orientation
-        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-            const btn = document.createElement('button');
-            btn.innerText = "Activer la boussole";
-            btn.className = "btn-primary";
-            btn.style.position = "absolute";
-            btn.style.zIndex = "9999";
-            btn.style.top = "50%";
-            btn.style.left = "50%";
-            btn.style.transform = "translate(-50%, -50%)";
-            btn.onclick = () => {
-                DeviceOrientationEvent.requestPermission()
-                    .then(response => {
-                        if (response === 'granted') {
-                            window.addEventListener('deviceorientation', Compass.handleOrientation);
-                            btn.remove();
-                        }
-                    })
-                    .catch(console.error);
-            };
-            document.body.appendChild(btn);
-        } else {
+        // Écoute l'orientation
+        if (window.DeviceOrientationEvent) {
             window.addEventListener('deviceorientation', Compass.handleOrientation);
         }
-        
-        // GPS Suivi
-        if('geolocation' in navigator) {
-            Compass.watchId = navigator.geolocation.watchPosition(Compass.handleGPS, console.error, {
-                enableHighAccuracy: true,
-                maximumAge: 0,
-                timeout: 5000
+        // Écoute le GPS pour la vitesse/distance
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(Compass.handleGPS, console.error, {
+                enableHighAccuracy: true
             });
         }
+        
+        // Charger cible sauvegardée
+        const saved = localStorage.getItem('compass_target');
+        if(saved) Compass.target = JSON.parse(saved);
     },
 
     setTarget: (lat, lng) => {
         Compass.target = {lat, lng};
-        // Sauvegarde locale pour rechargement
         localStorage.setItem('compass_target', JSON.stringify({lat, lng}));
-        alert("Boussole calibrée sur la destination !");
+        alert("🎯 Boussole calibrée sur la destination !");
     },
 
-    handleGPS: (position) => {
-        Compass.currentPos = position.coords;
-        const { latitude, longitude, speed, altitude, accuracy } = position.coords;
+    handleOrientation: (e) => {
+        // Calcul du Nord
+        let heading = e.alpha; 
+        if(e.webkitCompassHeading) heading = e.webkitCompassHeading; // iPhone
+        if(!heading) return;
 
-        // Mise à jour Widgets GPS
-        Widgets.updateValue('speed', (speed * 3.6).toFixed(0) + ' km/h'); // m/s -> km/h
-        Widgets.updateValue('altitude', Math.round(altitude || 0) + ' m');
-        Widgets.updateValue('accuracy', Math.round(accuracy) + ' m');
-        Widgets.updateValue('coords', `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-
-        // Calcul Distance vers Cible
-        if(Compass.target) {
-            const dist = Compass.getDistance(latitude, longitude, Compass.target.lat, Compass.target.lng);
-            Widgets.updateValue('distance', dist < 1000 ? Math.round(dist) + ' m' : (dist/1000).toFixed(1) + ' km');
-        }
-
-        // Météo (Mise à jour toutes les 5 min si déplacement significatif)
-        if(!Compass.lastWeather || Date.now() - Compass.lastWeather > 300000) {
-            Widgets.fetchWeather(latitude, longitude);
-            Compass.lastWeather = Date.now();
-        }
-    },
-
-    handleOrientation: (event) => {
-        let heading = event.alpha; // Z-axis rotation
-        if(event.webkitCompassHeading) heading = event.webkitCompassHeading; // iOS
-
-        // Mise à jour Widget Cap
-        Widgets.updateValue('heading', Math.round(heading) + '°');
-
-        // Rotation de la boussole
-        const needle = document.getElementById('compass-needle');
+        // Mise à jour visuelle (Nord tourne)
         const card = document.getElementById('compass-card');
+        const needle = document.getElementById('compass-needle');
+        const val = document.getElementById('val-heading');
         
-        if (needle && Compass.target && Compass.currentPos) {
-            // Mode Navigation : L'aiguille pointe la cible
+        if(card) card.style.transform = `rotate(${-heading}deg)`;
+        if(val) val.innerText = Math.round(heading);
+
+        // Aiguille vers cible
+        if(Compass.target && window.currentPos) {
             const bearing = Compass.getBearing(
-                Compass.currentPos.latitude, 
-                Compass.currentPos.longitude, 
-                Compass.target.lat, 
-                Compass.target.lng
+                window.currentPos.latitude, window.currentPos.longitude,
+                Compass.target.lat, Compass.target.lng
             );
-            // La rotation de l'aiguille = Direction Cible - Direction Téléphone
-            const rotation = bearing - heading;
-            needle.style.transform = `rotate(${rotation}deg)`;
-            
-            // Le cadran tourne pour indiquer le Nord
-            if(card) card.style.transform = `rotate(${-heading}deg)`;
-            
-        } else if (card) {
-            // Mode Boussole Simple (Pas de cible)
-            card.style.transform = `rotate(${-heading}deg)`;
+            // L'aiguille doit pointer le cap (bearing) par rapport au nord (heading)
+            // Donc rotation = bearing - heading
+            if(needle) needle.style.transform = `translate(-50%, -50%) rotate(${bearing - heading}deg)`;
+        } else {
+            // Pas de cible, l'aiguille suit le Nord (reste fixe relative au cadran)
+            if(needle) needle.style.transform = `translate(-50%, -50%)`;
+        }
+        
+        // Widget Cap
+        Widgets.update('heading', Math.round(heading) + '°');
+    },
+
+    handleGPS: (pos) => {
+        window.currentPos = pos.coords;
+        const { speed, altitude, latitude, longitude } = pos.coords;
+
+        Widgets.update('speed', Math.round((speed || 0) * 3.6) + ' km/h');
+        Widgets.update('altitude', Math.round(altitude || 0) + ' m');
+
+        // Météo auto
+        Widgets.fetchWeather(latitude, longitude);
+
+        if(Compass.target) {
+            const dist = Compass.getDist(latitude, longitude, Compass.target.lat, Compass.target.lng);
+            Widgets.update('distance', dist > 1000 ? (dist/1000).toFixed(1)+' km' : Math.round(dist)+' m');
         }
     },
 
-    // Formule de Haversine pour la distance
-    getDistance: (lat1, lon1, lat2, lon2) => {
-        const R = 6371e3; // Rayon Terre en mètres
+    getBearing: (lat1, lon1, lat2, lon2) => {
+        const toRad = x => x * Math.PI / 180;
+        const toDeg = x => x * 180 / Math.PI;
+        const dLon = toRad(lon2 - lon1);
+        const y = Math.sin(dLon) * Math.cos(toRad(lat2));
+        const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+                  Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLon);
+        const brng = (toDeg(Math.atan2(y, x)) + 360) % 360;
+        return brng;
+    },
+
+    getDist: (lat1, lon1, lat2, lon2) => {
+        const R = 6371e3; // metres
         const φ1 = lat1 * Math.PI/180;
         const φ2 = lat2 * Math.PI/180;
         const Δφ = (lat2-lat1) * Math.PI/180;
@@ -112,20 +93,6 @@ const Compass = {
         const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
                   Math.cos(φ1) * Math.cos(φ2) *
                   Math.sin(Δλ/2) * Math.sin(Δλ/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
-    },
-
-    // Calcul du Cap (Bearing) entre deux points
-    getBearing: (startLat, startLng, destLat, destLng) => {
-        startLat = startLat * Math.PI / 180; 
-        startLng = startLng * Math.PI / 180;
-        destLat = destLat * Math.PI / 180;
-        destLng = destLng * Math.PI / 180;
-        const y = Math.sin(destLng - startLng) * Math.cos(destLat);
-        const x = Math.cos(startLat) * Math.sin(destLat) -
-                  Math.sin(startLat) * Math.cos(destLat) * Math.cos(destLng - startLng);
-        const brng = Math.atan2(y, x);
-        return (brng * 180 / Math.PI + 360) % 360;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 };
