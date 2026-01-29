@@ -1,327 +1,181 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#000000">
-    <title>CityCompass v56</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#000000" />
+    <title>CityCompass V56</title>
 
-    <!-- LIBS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- LEAFLET -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+    <!-- STYLE GLOBAL INTÉGRÉ (V56) -->
     <style>
-        /* --- DESIGN SYSTEM LIQUID GLASS (V56) --- */
-        :root { --glass: rgba(255, 255, 255, 0.88); --blur: blur(25px); --shadow: 0 12px 40px rgba(0,0,0,0.18); --accent: #007AFF; --danger: #FF3B30; --success: #34C759; --text: #000; }
-        body[data-theme="dark"] { --glass: rgba(32, 32, 35, 0.88); --text: #FFF; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, sans-serif; touch-action: manipulation; }
-        body { margin: 0; height: 100vh; overflow: hidden; background: #000; color: var(--text); user-select: none; }
-        
-        /* DEBUG CONSOLE (Temporaire pour login) */
-        #debug-console { position: fixed; top:0; left:0; width:100%; height:100px; background:rgba(0,0,0,0.8); color:#0f0; font-size:10px; z-index:99999; overflow-y:scroll; pointer-events:none; display:none; }
+        :root {
+            --bg-body: #F2F2F7; --bg-card: #FFFFFF; --bg-glass: rgba(255, 255, 255, 0.90);
+            --bg-input: rgba(118, 118, 128, 0.12);
+            --text-primary: #000000; --text-secondary: #8E8E93;
+            --separator: rgba(60, 60, 67, 0.12);
+            --accent: #007AFF; --accent-rgb: 0, 122, 255;
+            --gold: #FFD700; --danger: #FF3B30; --success: #34C759;
+            --radius-l: 24px; --nav-height: 85px;
+            --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom);
+            --shadow-float: 0 12px 24px rgba(0,0,0,0.12);
+        }
+        [data-theme="dark"] {
+            --bg-body: #000000; --bg-card: #1C1C1E; --bg-glass: rgba(30, 30, 30, 0.90);
+            --bg-input: rgba(118, 118, 128, 0.24);
+            --text-primary: #FFFFFF; --text-secondary: #98989D;
+            --separator: rgba(84, 84, 88, 0.4);
+            --accent: #0A84FF; --accent-rgb: 10, 132, 255;
+        }
 
-        /* CARTE & HUD */
-        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: #ddd; }
-        .hud-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; display: flex; flex-direction: column; justify-content: space-between; padding: env(safe-area-inset-top) 15px calc(env(safe-area-inset-bottom) + 20px) 15px; }
-        
-        /* RECHERCHE */
-        .search-container { margin-top: 15px; pointer-events: auto; position: relative; width: 100%; max-width: 450px; align-self: center; }
-        .search-bar { background: var(--glass); backdrop-filter: var(--blur); border-radius: 24px; padding: 14px 20px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; }
-        .search-inp { border: none; background: transparent; font-size: 16px; width: 100%; outline: none; color: var(--text); font-weight: 500; }
-        .xp-badge { background: var(--accent); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; }
-        .search-results { position: absolute; top: 65px; left: 0; width: 100%; background: var(--glass); backdrop-filter: var(--blur); border-radius: 20px; max-height: 300px; overflow-y: auto; display: none; padding: 10px; box-shadow: var(--shadow); }
-        .result-item { padding: 14px; border-bottom: 1px solid rgba(128,128,128,0.1); cursor: pointer; }
-        
-        /* DOCK */
-        .dock-wrapper { position: relative; width: 100%; max-width: 400px; align-self: center; pointer-events: auto; }
-        .dock { background: var(--glass); backdrop-filter: var(--blur); border-radius: 35px; padding: 12px 30px; display: flex; justify-content: space-between; box-shadow: var(--shadow); }
-        .dock-icon { font-size: 24px; color: #999; padding: 10px; transition: 0.2s; cursor: pointer; }
-        .dock-icon.active { color: var(--accent); transform: translateY(-3px); }
-        .fab-compass { position: absolute; left: 50%; top: -35px; transform: translateX(-50%); width: 70px; height: 70px; border-radius: 50%; background: var(--glass); backdrop-filter: var(--blur); box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; font-size: 32px; color: var(--accent); cursor: pointer; border: 4px solid rgba(255,255,255,0.1); }
-        
-        /* PANNEAUX */
-        .panel { position: absolute; top: 0; right: -100%; width: 100%; height: 100%; background: var(--glass); backdrop-filter: blur(40px); z-index: 2000; transition: right 0.35s cubic-bezier(0.19, 1, 0.22, 1); padding: 80px 20px 120px 20px; overflow-y: auto; pointer-events: auto; }
-        .panel.open { right: 0; }
-        .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .close-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(128,128,128,0.15); color: var(--text); font-size: 18px; cursor: pointer; }
-        
-        /* ITEMS */
-        .shop-item { background: rgba(128,128,128,0.08); padding: 16px; border-radius: 22px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .shop-info { display: flex; align-items: center; gap: 15px; }
-        .shop-icon { width: 48px; height: 48px; border-radius: 14px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-        .buy-btn { background: var(--text); color: var(--glass); border: none; padding: 10px 18px; border-radius: 14px; font-weight: 700; cursor: pointer; }
-        .toggle-switch { position: relative; width: 50px; height: 30px; display: inline-block; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 34px; }
-        input:checked + .slider { background-color: var(--success); }
-        input:checked + .slider:before { transform: translateX(20px); }
-        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
+        body { margin: 0; padding: 0; height: 100dvh; overflow: hidden; font-family: -apple-system, sans-serif; background-color: var(--bg-body); color: var(--text-primary); transition: background 0.3s; font-size: 17px; }
+        .app { display: flex; flex-direction: column; height: 100%; position: relative; }
 
-        /* LOGIN */
-        #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .login-box { background: var(--glass); padding: 35px; border-radius: 35px; width: 85%; max-width: 360px; text-align: center; }
-        .inp { width: 100%; padding: 16px; margin-bottom: 12px; border-radius: 16px; border: 1px solid rgba(0,0,0,0.1); font-size: 16px; background: rgba(128,128,128,0.05); color: var(--text); }
-        .btn-main { width: 100%; padding: 16px; border-radius: 16px; border: none; background: var(--accent); color: white; font-weight: 700; font-size: 16px; margin-top: 10px; cursor: pointer; }
+        /* VUES */
+        .view { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: var(--nav-height); overflow: hidden; opacity: 0; transition: opacity 0.3s; z-index: 0; pointer-events: none; }
+        .view.active { display: block; opacity: 1; z-index: 10; pointer-events: auto; }
+        #viewLogin { bottom: 0; z-index: 3000; background: var(--bg-body); }
+        #viewLogin.active { display: flex; flex-direction: column; justify-content: center; padding: 30px; }
+        #viewDiscover { padding: 0 !important; }
+        #viewCam { background: black; z-index: 2500; }
+        .scroll-container { height: 100%; overflow-y: auto; padding: max(20px, var(--safe-top)) 20px 40px 20px; }
+
+        /* UI ELEMENTS */
+        .btn { width: 100%; padding: 18px; border-radius: 18px; border: none; font-weight: 700; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: var(--shadow-float); }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--separator); }
         
-        /* BOUSSOLE OVERLAY */
-        #compassOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--glass); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; }
-        #compassOverlay.active { opacity: 1; pointer-events: auto; }
-        #compassRing { width: 280px; height: 280px; border: 8px solid var(--text); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform 0.05s linear; margin-bottom: 30px; position: relative; }
+        .login-input { background: var(--bg-card); border: 1px solid var(--separator); border-radius: 16px; padding: 20px; font-size: 18px; text-align: center; width: 100%; color: var(--text-primary); margin-bottom: 16px; }
+
+        /* MAP UI */
+        #map { width: 100%; height: 100%; z-index: 1; background: var(--bg-input); }
+        .map-controls-right { position: absolute; right: 16px; bottom: 40%; transform: translateY(50%); display: flex; flex-direction: column; gap: 16px; z-index: 900; pointer-events: auto; }
+        .map-fab { width: 50px; height: 50px; background: var(--bg-glass); backdrop-filter: blur(15px); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: var(--shadow-float); border: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
+        .floating-search { position: absolute; top: max(20px, var(--safe-top)); left: 16px; right: 16px; background: var(--bg-glass); backdrop-filter: blur(20px); border-radius: var(--radius-l); padding: 10px; z-index: 1000; box-shadow: var(--shadow-float); }
+        .search-input-box { display: flex; align-items: center; background: var(--bg-input); border-radius: 14px; padding: 0 12px; height: 44px; }
+        .search-input-box input { border: none; background: transparent; height: 100%; width: 100%; font-size: 17px; color: var(--text-primary); }
         
-        .setting-row { padding: 18px 0; border-bottom: 1px solid rgba(128,128,128,0.1); display: flex; justify-content: space-between; align-items: center; font-size: 16px; cursor: pointer; }
+        .map-sheet { position: absolute; bottom: 20px; left: 16px; right: 16px; background: var(--bg-glass); backdrop-filter: blur(30px); border-radius: var(--radius-l); padding: 24px; z-index: 1000; box-shadow: var(--shadow-float); transform: translateY(120%); transition: transform 0.4s; display: flex; flex-direction: column; gap: 12px; }
+        .map-sheet.active { transform: translateY(0); }
+
+        /* SHOP & WIDGETS */
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .shop-card { background: var(--bg-card); padding: 16px; border-radius: 18px; text-align: center; border: 1px solid var(--separator); cursor: pointer; }
+        .shop-card.active-item { border: 2px solid var(--accent); }
+        
+        .profile-widgets-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .p-widget { background: var(--bg-card); padding: 12px; border-radius: 16px; text-align: center; border: 1px solid var(--separator); }
+        .p-widget-val { font-size: 18px; font-weight: 800; color: var(--accent); }
+
+        /* NAV BAR */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: var(--bg-glass); backdrop-filter: blur(20px); border-top: 1px solid var(--separator); display: flex; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); z-index: 2000; }
+        .nav-tab { background: none; border: none; color: var(--text-secondary); font-size: 10px; font-weight: 600; display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; }
+        .nav-tab.active { color: var(--accent); }
+        .nav-icon { font-size: 24px; margin-bottom: 4px; }
+
+        /* CAMERA */
+        #videoFeed { width: 100%; height: 100%; object-fit: cover; }
+        .cam-overlay { position: absolute; inset: 0; z-index: 2; padding: 40px 20px; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+        .cam-overlay button { pointer-events: auto; }
     </style>
 </head>
+
 <body data-theme="light">
-
-    <!-- DEBUG (Visible seulement si erreur ou avant connexion) -->
-    <div id="debug-console">Init...<br></div>
-
-    <!-- LOGIN -->
-    <div id="loginScreen">
-        <div class="login-box">
-            <h1 style="margin:0 0 25px 0;">CityCompass</h1>
-            <input type="email" id="email" class="inp" placeholder="Email">
-            <input type="password" id="password" class="inp" placeholder="Mot de passe">
-            <button class="btn-main" onclick="window.Auth.login()">Connexion</button>
-            <button class="btn-main" style="background:transparent; color:var(--text); border:1px solid rgba(128,128,128,0.3);" onclick="window.Auth.signup()">Créer un compte</button>
-        </div>
-    </div>
-
-    <!-- CARTE -->
-    <div id="map"></div>
-
-    <!-- HUD -->
-    <div class="hud-layer" id="hud" style="display:none;">
-        <div class="search-container">
-            <div class="search-bar">
-                <i class="fa-solid fa-magnifying-glass" style="opacity:0.5; font-size:18px;"></i>
-                <input type="text" class="search-inp" id="searchInp" placeholder="Où aller ?" onkeyup="window.MapManager.search(this.value)">
-                <div class="xp-badge" onclick="window.UI.open('panelProfile')"><span id="hudPoints">0</span> XP</div>
-            </div>
-            <div class="search-results" id="searchResults"></div>
-        </div>
-        <div class="dock-wrapper">
-            <div class="fab-compass" onclick="window.Compass.open()"><i class="fa-regular fa-compass"></i></div>
-            <div class="dock">
-                <div class="dock-icon" onclick="window.UI.open('panelShop')"><i class="fa-solid fa-store"></i></div>
-                <div class="dock-icon" onclick="window.UI.open('panelTools')"><i class="fa-solid fa-layer-group"></i></div>
-                <div class="dock-icon active" onclick="window.MapManager.locate()"><i class="fa-solid fa-location-arrow"></i></div>
-                <div class="dock-icon" onclick="window.UI.open('panelProfile')"><i class="fa-solid fa-user"></i></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- PANNEAUX -->
-    <div id="panelShop" class="panel">
-        <div class="panel-head"><h2>Boutique</h2><button class="close-btn" onclick="window.UI.close()">&times;</button></div>
-        <div style="background:var(--accent); color:white; padding:25px; border-radius:25px; margin-bottom:25px; text-align:center;">
-            <div style="font-size:36px; font-weight:800;" id="shopPoints">0</div>
-            <div style="opacity:0.9;">Points Disponibles</div>
-        </div>
-        <div id="shopList"></div>
-    </div>
-
-    <div id="panelTools" class="panel">
-        <div class="panel-head"><h2>Outils</h2><button class="close-btn" onclick="window.UI.close()">&times;</button></div>
-        <h3>Mes Favoris</h3>
-        <div id="favList" style="margin-bottom:30px; color:gray;">Aucun favori</div>
-        <h3>Carte</h3>
-        <div class="shop-item" onclick="window.MapManager.setLayer('standard')"><div class="shop-info"><div class="shop-icon">🗺️</div><b>Standard</b></div></div>
-        <div class="shop-item" onclick="window.MapManager.setLayer('sat')"><div class="shop-info"><div class="shop-icon">🛰️</div><b>Satellite</b></div></div>
-        <div class="shop-item" onclick="window.MapManager.setLayer('dark')"><div class="shop-info"><div class="shop-icon">🌑</div><b>Mode Nuit</b></div></div>
-    </div>
-
-    <div id="panelProfile" class="panel">
-        <div class="panel-head"><h2>Mon Compte</h2><button class="close-btn" onclick="window.UI.close()">&times;</button></div>
-        <div style="text-align:center; margin-bottom:40px;">
-            <div style="width:90px; height:90px; background:var(--accent); color:white; border-radius:50%; margin:0 auto 15px auto; display:flex; align-items:center; justify-content:center; font-size:36px;">👤</div>
-            <h3 id="profileEmail">...</h3>
-        </div>
-        <div class="setting-row" onclick="window.Settings.toggleTheme()"><span>Mode Sombre / Clair</span> <div class="shop-icon" style="width:30px; height:30px;"><i class="fa-solid fa-adjust"></i></div></div>
-        <div class="setting-row" style="color:var(--danger); font-weight:bold;" onclick="window.Auth.logout()"><span>Se déconnecter</span> <i class="fa-solid fa-power-off"></i></div>
-        <div id="adminPanel" style="display:none; margin-top:40px; border-top:1px solid #ccc; padding-top:20px;">
-            <h3 style="color:var(--danger);">⚡ Admin</h3>
-            <div class="shop-item"><b>+500 XP</b><button class="buy-btn" onclick="window.Admin.modPoints(500)">Ajouter</button></div>
-        </div>
-    </div>
-
-    <!-- BOUSSOLE -->
-    <div id="compassOverlay">
-        <button class="close-btn" style="position:absolute; top:40px; right:20px;" onclick="window.Compass.close()">&times;</button>
-        <div id="compassRing">
-            <div style="position:absolute; top:-40px; font-weight:bold;">NORD</div>
-            <i class="fa-solid fa-location-arrow" style="font-size:100px; color:var(--danger);"></i>
-        </div>
-        <h1 id="compassDeg">0°</h1>
-        <button class="btn-main" style="width:auto;" onclick="window.Compass.requestPerm()">Calibrer</button>
-        <div id="navInfoBox" style="display:none; width:90%; max-width:360px; margin-top:30px;">
-            <div class="shop-item" style="background:var(--accent); color:white;">
-                <div class="shop-info"><div><b id="navTargetName">Dest</b><br><span id="navDist">--</span></div></div>
-                <button class="buy-btn" style="background:rgba(0,0,0,0.3);" onclick="window.Compass.stopNav()">Stop</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // CONFIG
-        const SB_URL = 'https://scbihxaceelyygrlacvm.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjYmloeGFjZWVseXlncmxhY3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1NjU3MTcsImV4cCI6MjA4NTE0MTcxN30.rgUH-kltyNX99-HTDmGEyzGyu8qFXR9LF1QxsjY0W44';
+    <div class="app">
         
-        const ITEMS = [
-            { id: 'color_purple', name: 'Violet', price: 200, icon: '🎨', type: 'theme', val: '#AF52DE' },
-            { id: 'color_orange', name: 'Orange', price: 200, icon: '🎨', type: 'theme', val: '#FF9500' },
-            { id: 'w_traffic', name: 'Trafic', price: 100, icon: '🚦', type: 'widget' },
-            { id: 'w_ghost', name: 'Fantôme', price: 500, icon: '👻', type: 'widget' }
-        ];
+        <!-- 1. LOGIN -->
+        <div class="view active" id="viewLogin">
+            <div class="login-container">
+                <h1 style="font-size:32px; font-weight:800; text-align:center;">City Compass</h1>
+                <p style="text-align:center; opacity:0.6; margin-bottom:40px;">Exploration Urbaine V56</p>
+                
+                <input id="emailInput" placeholder="Email" class="login-input" />
+                <input id="pwdInput" type="password" placeholder="Mot de passe" class="login-input" />
+                
+                <button class="btn btn-primary" onclick="Auth.login()">Connexion</button>
+                <button class="btn btn-secondary" onclick="Auth.signup()" style="margin-top:10px;">Créer Compte</button>
+                <p id="msg" style="color:var(--danger); text-align:center; margin-top:15px;"></p>
+            </div>
+        </div>
 
-        // LOGGING
-        function log(m) { console.log(m); document.getElementById('debug-console').innerHTML += m + '<br>'; }
-        window.onerror = (m,u,l) => { log("ERR: "+m+" ("+l+")"); document.getElementById('debug-console').style.display='block'; };
-
-        window.addEventListener('load', async () => {
-            log("Load...");
-            const sb = window.supabase.createClient(SB_URL, SB_KEY);
-            let map, userMarker, userProfile, currentUser;
-
-            // --- MODULES ---
-            window.UI = {
-                open: (id) => { document.querySelectorAll('.panel').forEach(p => p.classList.remove('open')); document.getElementById(id).classList.add('open'); },
-                close: () => document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'))
-            };
-
-            window.Auth = {
-                login: async () => {
-                    const e = document.getElementById('email').value, p = document.getElementById('password').value;
-                    if(!e||!p) return alert("Remplissez tout");
-                    const { data, error } = await sb.auth.signInWithPassword({ email:e, password:p });
-                    if(error) alert(error.message); else App.start(data.user);
-                },
-                signup: async () => {
-                    const e = document.getElementById('email').value, p = document.getElementById('password').value;
-                    const { error } = await sb.auth.signUp({ email:e, password:p });
-                    if(error) alert(error.message); else alert("Compte créé !");
-                },
-                logout: async () => { await sb.auth.signOut(); location.reload(); }
-            };
-
-            window.MapManager = {
-                init: () => {
-                    map = L.map('map', {zoomControl:false}).setView([43.6, 1.4], 13);
-                    window.MapManager.setLayer('standard');
-                    map.locate({setView:true, watch:true, enableHighAccuracy:true});
-                    map.on('locationfound', e => {
-                        if(!userMarker) userMarker = L.circleMarker(e.latlng, {radius:8, color:'white', fillColor:'#007AFF', fillOpacity:1}).addTo(map);
-                        else userMarker.setLatLng(e.latlng);
-                    });
-                    map.on('click', e => {
-                        L.popup().setLatLng(e.latlng).setContent(`<button onclick="window.MapManager.go(${e.latlng.lat},${e.latlng.lng})">Y Aller 🧭</button>`).openOn(map);
-                    });
-                },
-                setLayer: (t) => {
-                    let u = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-                    if(t==='dark') u = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-                    if(t==='sat') u = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-                    map.eachLayer(l => l._url && map.removeLayer(l));
-                    L.tileLayer(u).addTo(map);
-                },
-                search: (q) => {
-                    // (Simplifié pour la démo, à compléter si besoin)
-                },
-                go: (lat, lng) => {
-                    document.getElementById('navInfoBox').style.display='block';
-                    window.Compass.open();
-                },
-                locate: () => map.locate({setView:true})
-            };
-
-            window.Shop = {
-                render: () => {
-                    const c = document.getElementById('shopList'); c.innerHTML='';
-                    ITEMS.forEach(i => {
-                        const owned = (userProfile.items||[]).includes(i.id);
-                        let btn = `<button class="buy-btn" onclick="window.Shop.buy('${i.id}')">${i.price} XP</button>`;
-                        if(owned) btn = `<span style="color:green; font-weight:bold;">Acquis</span>`;
-                        c.innerHTML += `<div class="shop-item"><div class="shop-info"><b>${i.name}</b></div>${btn}</div>`;
-                    });
-                },
-                buy: async (id) => {
-                    const it = ITEMS.find(x=>x.id===id);
-                    if(userProfile.points >= it.price) {
-                        userProfile.points -= it.price;
-                        userProfile.items = [...(userProfile.items||[]), id];
-                        await sb.from('profiles').update({points:userProfile.points, items:userProfile.items}).eq('id',currentUser.id);
-                        window.Shop.render();
-                        window.App.updateUI();
-                        if(it.type==='theme') { document.documentElement.style.setProperty('--accent', it.val); }
-                    } else alert("Pas assez de points !");
-                }
-            };
-
-            window.Compass = {
-                open: () => document.getElementById('compassOverlay').classList.add('active'),
-                close: () => document.getElementById('compassOverlay').classList.remove('active'),
-                stopNav: () => { document.getElementById('navInfoBox').style.display='none'; },
-                requestPerm: async () => {
-                    if(typeof DeviceOrientationEvent.requestPermission==='function') await DeviceOrientationEvent.requestPermission();
-                    window.addEventListener('deviceorientation', e => {
-                        const a = e.webkitCompassHeading || Math.abs(e.alpha-360);
-                        document.getElementById('compassRing').style.transform = `rotate(${-a}deg)`;
-                        document.getElementById('compassDeg').innerText = Math.round(a)+"°";
-                    });
-                }
-            };
+        <!-- 2. MAP (DISCOVER) -->
+        <div class="view" id="viewDiscover">
+            <div class="floating-search">
+                <div class="search-input-box">
+                    <span>🔍</span>
+                    <input id="addrInput" placeholder="Rechercher..." onkeyup="MapManager.search(this.value)" />
+                </div>
+                <div id="searchResults" style="display:none; background:var(--bg-card); border-radius:12px; margin-top:4px;"></div>
+            </div>
+            <div id="map"></div>
             
-            window.Settings = {
-                toggleTheme: () => {
-                    const b = document.body;
-                    b.setAttribute('data-theme', b.getAttribute('data-theme')==='light'?'dark':'light');
-                    window.MapManager.setLayer(b.getAttribute('data-theme')==='dark'?'dark':'standard');
-                }
-            };
+            <div class="map-controls-right">
+                <div class="map-fab" onclick="MapManager.center()">📍</div>
+                <div class="map-fab" onclick="MapManager.toggleCam()">📷</div>
+            </div>
 
-            window.Admin = {
-                modPoints: async (n) => {
-                    userProfile.points += n;
-                    await sb.from('profiles').update({points:userProfile.points}).eq('id',currentUser.id);
-                    window.App.updateUI(); window.Shop.render();
-                }
-            };
+            <div class="map-sheet" id="mapSheet">
+                <div style="font-weight:700; font-size:22px;" id="sheetTitle">Lieu</div>
+                <div style="font-size:14px; opacity:0.6;" id="sheetDesc">Description</div>
+                <div style="display:flex; gap:12px; margin-top:12px;">
+                    <button class="btn btn-primary" onclick="Nav.start()">🚀 Go</button>
+                    <button class="btn btn-secondary" onclick="MapManager.closeSheet()">Fermer</button>
+                </div>
+            </div>
+        </div>
 
-            window.App = {
-                start: async (user) => {
-                    currentUser = user;
-                    document.getElementById('loginScreen').style.display='none';
-                    document.getElementById('hud').style.display='flex';
-                    document.getElementById('profileEmail').innerText = user.email;
-                    
-                    window.MapManager.init();
-                    
-                    // Load Profile
-                    let { data, error } = await sb.from('profiles').select('*').eq('id', user.id).single();
-                    if(error || !data) {
-                        await sb.from('profiles').insert({id: user.id});
-                        data = { points:0, items:[] };
-                    }
-                    userProfile = data || { points:0, items:[] };
-                    
-                    if(userProfile.is_admin) document.getElementById('adminPanel').style.display='block';
-                    window.Shop.render();
-                    window.App.updateUI();
-                },
-                updateUI: () => {
-                    document.getElementById('hudPoints').innerText = userProfile.points;
-                    document.getElementById('shopPoints').innerText = userProfile.points;
-                }
-            };
+        <!-- 3. CAMERA -->
+        <div class="view" id="viewCam">
+            <video id="videoFeed" autoplay playsinline muted></video>
+            <div class="cam-overlay">
+                <div style="color:white; font-family:monospace;">SYSTEM ONLINE</div>
+                <button class="btn btn-secondary" style="background:rgba(0,0,0,0.5); color:white;" onclick="MapManager.toggleCam()">Fermer</button>
+            </div>
+        </div>
 
-            // CHECK SESSION
-            const { data } = await sb.auth.getSession();
-            if(data?.session) window.App.start(data.session.user);
-        });
-    </script>
+        <!-- 4. ACCOUNT & SHOP -->
+        <div class="view" id="viewAccount">
+            <div class="scroll-container">
+                <div style="background:var(--accent); padding:24px; border-radius:24px; color:white; text-align:center; box-shadow:0 10px 30px -10px var(--accent); margin-bottom:20px;">
+                    <div style="font-size:12px; font-weight:700; opacity:0.8;">XP DISPONIBLE</div>
+                    <div style="font-size:42px; font-weight:800;" id="displayPoints">0</div>
+                    <div id="profileEmail" style="opacity:0.8; margin-top:5px;">...</div>
+                </div>
+
+                <div class="profile-widgets-row">
+                    <div class="p-widget"><div class="p-widget-val">1</div><div>Niveau</div></div>
+                    <div class="p-widget"><div class="p-widget-val">💎</div><div>Premium</div></div>
+                </div>
+
+                <div style="font-weight:700; opacity:0.6; font-size:12px; margin-bottom:10px;">BOUTIQUE</div>
+                <div class="shop-grid" id="shopGrid"></div>
+
+                <button class="btn" style="background:var(--bg-input); color:var(--danger); margin-top:30px;" onclick="Auth.logout()">Déconnexion</button>
+            </div>
+        </div>
+
+        <!-- NAV BAR -->
+        <div class="bottom-nav" id="navBar" style="display:none;">
+            <button class="nav-tab active" onclick="UI.show('viewDiscover')"><span class="nav-icon">🗺️</span>Carte</button>
+            <button class="nav-tab" onclick="UI.show('viewAccount')"><span class="nav-icon">👤</span>Profil</button>
+        </div>
+
+    </div>
+
+    <!-- SCRIPT LOADER -->
+    <script src="js/config.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/mapManager.js"></script>
+    <script src="js/shop.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
