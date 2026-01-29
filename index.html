@@ -1,375 +1,152 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <title>CityCompass V72</title>
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <style>
-        :root { --bg-body: #F2F2F7; --bg-card: #FFFFFF; --accent: #007AFF; --text: #000; --nav-height: 85px; --danger: #FF3B30; --success: #34C759; }
-        [data-theme="dark"] { --bg-body: #000; --bg-card: #1C1C1E; --text: #FFF; }
-        
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
-        body { margin: 0; padding: 0; height: 100dvh; overflow: hidden; font-family: -apple-system, sans-serif; background-color: var(--bg-body); color: var(--text); transition: background 0.3s; }
-        
-        /* VIEWS */
-        .view { display: none; position: absolute; top:0; left:0; right:0; bottom:var(--nav-height); overflow-y:auto; padding:20px; z-index: 10; background: var(--bg-body); }
-        .view.active { display: block; }
-        #viewDiscover { padding:0; overflow:hidden; }
-        
-        /* --- LOGIN PAGE DESIGN --- */
-        #viewLogin {
-            background: radial-gradient(circle at top left, #007AFF, #005ec4, #000);
-            color: white;
-            padding: 0;
-            bottom: 0 !important;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .login-content {
-            width: 100%;
-            max-width: 320px; /* Plus étroit pour l'élégance */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 2;
-        }
-
-        /* Boussole Animée Minimaliste */
-        .compass-decor {
-            position: relative;
-            width: 140px;
-            height: 140px;
-            margin-bottom: 40px;
-            border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 0 40px rgba(0,122,255,0.3);
-            animation: float 6s ease-in-out infinite;
-        }
-
-        .needle {
-            width: 60px; height: 60px;
-            background: url("image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpolygon points='12 2 19 22 12 18 5 22 12 2' /%3E%3C/svg%3E") no-repeat center center;
-            background-size: contain;
-            animation: spin 15s linear infinite;
-            filter: drop-shadow(0 0 5px #007AFF);
-        }
-
-        .pulse {
-            position: absolute; width: 100%; height: 100%;
-            border-radius: 50%; border: 1px solid rgba(255,255,255,0.1);
-            animation: pulse 3s infinite ease-out;
-        }
-        
-        /* Formulaire Compact & Clean */
-        .input-group {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            padding: 2px 15px; /* Plus petit */
-            border: 1px solid rgba(255,255,255,0.1);
-            transition: 0.3s;
-        }
-        .input-group:focus-within { background: rgba(255, 255, 255, 0.25); border-color: white; }
-        
-        .input-icon { color: rgba(255,255,255,0.7); font-size: 14px; width: 20px; text-align: center; }
-        
-        .clean-input {
-            width: 100%;
-            padding: 12px 10px; /* Padding réduit pour éviter l'effet "gros boutons" */
-            background: transparent;
-            border: none;
-            color: white;
-            font-size: 15px;
-            outline: none;
-        }
-        .clean-input::placeholder { color: rgba(255,255,255,0.5); }
-
-        .auth-btn {
-            width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            border: none;
-            background: white;
-            color: #007AFF;
-            font-weight: 700;
-            font-size: 16px;
-            margin-top: 20px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            transition: transform 0.2s;
-        }
-        .auth-btn:active { transform: scale(0.96); opacity: 0.9; }
-
-        .switch-link {
-            margin-top: 25px;
-            font-size: 13px;
-            color: rgba(255,255,255,0.8);
-            cursor: pointer;
-            text-decoration: none;
-            border-bottom: 1px solid transparent;
-        }
-        .switch-link:active { opacity: 0.6; }
-
-        @keyframes pulse { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.4); opacity: 0; } }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-
-
-        /* --- STANDARD APP STYLES --- */
-        .btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-weight: 700; font-size: 16px; background: var(--accent); color: white; margin-top: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        
-        /* SEARCH BAR & MENU */
-        .top-bar-container { position: absolute; top: 20px; left: 20px; right: 20px; z-index: 1000; display: flex; gap: 10px; pointer-events: none; }
-        .input-box { flex: 1; background: var(--bg-card); padding: 0 15px; height: 50px; border-radius: 25px; display: flex; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: auto; }
-        input { border: none; background: transparent; width: 100%; font-size: 16px; color: var(--text); pointer-events: auto; height: 100%; }
-        
-        .menu-btn { width: 50px; height: 50px; background: var(--bg-card); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: auto; cursor: pointer; color: var(--text); }
-        
-        /* SEARCH RESULTS */
-        .search-results { position: absolute; top: 80px; left: 20px; right: 20px; background: var(--bg-card); border-radius: 14px; max-height: 40vh; overflow-y: auto; z-index: 5000; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.3); pointer-events: auto; }
-        .search-item { padding: 15px; border-bottom: 1px solid rgba(128,128,128,0.2); cursor: pointer; color: var(--text); display:flex; gap:15px; align-items:center; }
-        .search-item:active { background: rgba(128,128,128,0.1); }
-        
-        /* MAP MENU DROPDOWN */
-        .map-menu { position: absolute; top: 80px; right: 20px; width: 220px; background: var(--bg-card); border-radius: 14px; padding: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 5000; display: none; pointer-events: auto; }
-        .menu-option { padding: 12px; display: flex; align-items: center; gap: 10px; border-radius: 8px; cursor: pointer; color: var(--text); }
-        
-        /* RECENTER & POI BUTTONS */
-        .fab-container { position: absolute; bottom: 30px; right: 20px; z-index: 900; pointer-events: auto; display: flex; flex-direction: column; gap: 10px; }
-        .fab { width: 50px; height: 50px; background: var(--bg-card); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; color: var(--accent); font-size: 20px; }
-
-        /* POPUP MODERNE */
-        .custom-popup .leaflet-popup-content-wrapper { border-radius: 16px; padding: 0; overflow: hidden; }
-        .custom-popup .leaflet-popup-content { margin: 0; width: 260px !important; }
-        .popup-header { background: var(--accent); color: white; padding: 15px; font-weight: bold; font-size: 16px; }
-        .popup-body { padding: 15px; background: var(--bg-card); }
-        .popup-btn { width: 100%; padding: 12px; border-radius: 10px; border: none; font-weight: bold; margin-top: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-
-        /* BOUSSOLE */
-        .compass-container { position: relative; width: 280px; height: 280px; margin: 40px auto; display: flex; align-items: center; justify-content: center; }
-        .progress-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
-        .compass-arrow { font-size: 80px; color: var(--accent); transition: transform 0.1s linear; z-index: 2; }
-
-        /* FAVORIS & PARAMETRES */
-        .fav-item { background: var(--bg-card); padding: 15px; border-radius: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .setting-block { background: var(--bg-card); border-radius: 14px; overflow: hidden; margin-bottom: 20px; }
-        .setting-row { padding: 15px; border-bottom: 1px solid rgba(128,128,128,0.1); display: flex; justify-content: space-between; align-items: center; }
-        .setting-row:last-child { border-bottom: none; }
-
-        /* WIDGETS GRID */
-        .widget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .widget { background: var(--bg-card); padding: 20px; border-radius: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 120px; }
-        .widget-val { font-size: 24px; font-weight: 800; color: var(--accent); margin: 5px 0; }
-        .widget-lbl { font-size: 12px; opacity: 0.6; font-weight: 600; text-transform: uppercase; }
-
-        /* SWITCH */
-        .switch { position: relative; width: 50px; height: 30px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--success); }
-        input:checked + .slider:before { transform: translateX(20px); }
-
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: var(--bg-card); display: flex; justify-content: space-around; padding-bottom: 20px; z-index: 3000; border-top: 1px solid rgba(128,128,128,0.2); }
-        .nav-tab { background: none; border: none; color: gray; font-size: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; }
-        .nav-tab.active { color: var(--accent); }
-        .nav-icon { font-size: 24px; margin-bottom: 4px; }
-        
-        #map { width: 100%; height: 100%; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CityCompass Explorer</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Leaflet CSS (Carte) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- FontAwesome (Icônes) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body data-theme="light">
-    <div class="app">
+<body>
 
-        <!-- LOGIN / SIGNUP VIEW (REFAIT) -->
-        <div class="view active" id="viewLogin">
-            <h1 style="font-weight:200; letter-spacing:3px; font-size:20px; margin-bottom:40px; opacity:0.8;">CITY COMPASS</h1>
-            
-            <div class="compass-decor">
-                <div class="pulse"></div>
-                <div class="needle"></div>
-            </div>
+    <!-- VUE : CARTE -->
+    <div id="view-map" class="view active">
+        <div id="map" style="width:100%; height:100%; border-radius:12px;"></div>
+        <!-- Bouton recentrer -->
+        <button onclick="MapManager.locate()" style="position:absolute; bottom:100px; right:20px; z-index:999; padding:10px; border-radius:50%; background:white; border:none; box-shadow:0 4px 10px rgba(0,0,0,0.3);">
+            <i class="fas fa-crosshairs text-primary"></i>
+        </button>
+    </div>
 
-            <div class="login-content">
-                <h2 id="authTitle" style="margin-bottom:20px; font-weight:600;">Bienvenue</h2>
-                
-                <div class="input-group">
-                    <div class="input-icon"><i class="fa-solid fa-envelope"></i></div>
-                    <input id="emailInput" class="clean-input" placeholder="Email" type="email">
-                </div>
-                
-                <div class="input-group">
-                    <div class="input-icon"><i class="fa-solid fa-lock"></i></div>
-                    <input id="pwdInput" class="clean-input" placeholder="Mot de passe" type="password">
-                </div>
-                
-                <button class="auth-btn" onclick="Auth.submit()" id="authBtn">CONNEXION</button>
-                
-                <div class="switch-link" onclick="Auth.toggleMode()">
-                    <span id="switchText">Créer un compte</span>
-                </div>
-                
-                <p id="msg" style="text-align:center; color:#ff6b6b; height:20px; margin-top:10px; font-size:13px;"></p>
-            </div>
+    <!-- VUE : BOUSSOLE (Avec Widgets) -->
+    <div id="view-compass" class="view">
+        <h2 style="text-align:center;">Navigation</h2>
+        
+        <!-- La Boussole -->
+        <div class="compass-container">
+            <div id="compass-card"></div>
+            <div id="compass-needle"></div>
+        </div>
+        
+        <!-- Stats Rapides -->
+        <div class="compass-stats">
+            <span id="val-heading">0°</span> | <span id="val-speed">0 km/h</span>
         </div>
 
-        <!-- CARTE -->
-        <div class="view" id="viewDiscover">
-            <div class="top-bar-container">
-                <div class="input-box">
-                    <i class="fa-solid fa-magnifying-glass" style="opacity:0.5; margin-right:10px;"></i>
-                    <input id="addrInput" placeholder="Rechercher..." onkeyup="MapManager.search(this.value)" autocomplete="off">
-                </div>
-                <div class="menu-btn" onclick="UI.toggleMapMenu()">
-                    <i class="fa-solid fa-layer-group"></i>
-                </div>
-            </div>
+        <hr style="border-color:#333; margin:20px 0;">
 
-            <div class="search-results" id="searchResults"></div>
-
-            <div class="map-menu" id="mapMenu">
-                <div class="menu-option" onclick="UI.show('viewFavorites'); UI.toggleMapMenu()"><i class="fa-solid fa-heart" style="color:red;"></i> Mes Lieux</div>
-                <hr style="border:0; border-top:1px solid rgba(128,128,128,0.2);">
-                <div class="menu-option" onclick="MapManager.setLayer('standard')"><i class="fa-solid fa-map"></i> Standard</div>
-                <div class="menu-option" onclick="MapManager.setLayer('sat')"><i class="fa-solid fa-satellite"></i> Satellite</div>
-                <div class="menu-option" onclick="MapManager.setLayer('dark')"><i class="fa-solid fa-moon"></i> Mode Nuit</div>
-                <div class="menu-option" onclick="MapManager.togglePOI()"><i class="fa-solid fa-utensils"></i> Afficher Lieux</div>
-            </div>
-
-            <div id="map"></div>
-            
-            <div class="fab-container">
-                <div class="fab" onclick="MapManager.recenter()">
-                    <i class="fa-solid fa-location-crosshairs"></i>
-                </div>
-            </div>
-        </div>
-
-        <!-- BOUSSOLE -->
-        <div class="view" id="viewNav">
-            <h2 style="text-align:center;" id="navTitle">Aucune cible</h2>
-            <p style="text-align:center; opacity:0.6; font-size:24px; font-weight:bold;" id="navDist">-- m</p>
-            <div class="compass-container">
-                <svg class="progress-ring" width="280" height="280">
-                   <circle stroke="rgba(128,128,128,0.2)" stroke-width="10" fill="transparent" r="120" cx="140" cy="140"/>
-                   <circle id="distRing" stroke="#007AFF" stroke-width="10" fill="transparent" r="120" cx="140" cy="140" stroke-dasharray="754" stroke-dashoffset="754" stroke-linecap="round"/>
-                </svg>
-                <div class="compass-arrow" id="compassArrow">➤</div>
-                <div style="position:absolute; top:20px; font-weight:bold; color:gray;">NORD</div>
-            </div>
-            <button class="btn" style="background:red; width:auto; margin:20px auto; display:block;" onclick="Compass.calibrate()" id="btnCalib">📡 Calibrer</button>
-            <button class="btn" style="background:gray; margin-top:20px;" onclick="Compass.stop()">Arrêter</button>
-        </div>
-
-        <!-- FAVORIS -->
-        <div class="view" id="viewFavorites">
-            <h2 style="margin-top:0;">Mes Lieux Favoris</h2>
-            <div id="favListContainer">Chargement...</div>
-        </div>
-
-        <!-- PROFIL -->
-        <div class="view" id="viewAccount">
-            <div style="text-align:center; padding:20px 0;">
-                <div style="font-size:40px;">👤</div>
-                <h2 id="profileEmail">...</h2>
-                <div style="font-size:32px; font-weight:800; color:var(--accent);" id="displayPoints">0 XP</div>
-            </div>
-
-            <h3>Widgets</h3>
-            <div class="widget-grid">
-                <div class="widget">
-                    <i class="fa-solid fa-gauge-high" style="font-size:24px; color:orange;"></i>
-                    <div class="widget-val" id="widSpeed">0</div>
-                    <div class="widget-lbl">km/h</div>
-                </div>
-                <div class="widget">
-                    <i class="fa-solid fa-mountain" style="font-size:24px; color:gray;"></i>
-                    <div class="widget-val" id="widAlt">0</div>
-                    <div class="widget-lbl">Altitude (m)</div>
-                </div>
-                <div class="widget">
-                    <i class="fa-solid fa-cloud" style="font-size:24px; color:#007AFF;"></i>
-                    <div class="widget-val" id="widTemp">--</div>
-                    <div class="widget-lbl">Météo</div>
-                </div>
-                <div class="widget">
-                    <i class="fa-solid fa-compass" style="font-size:24px; color:purple;"></i>
-                    <div class="widget-val" id="widHead">0°</div>
-                    <div class="widget-lbl">Cap</div>
-                </div>
-            </div>
-
-            <h3>Paramètres</h3>
-            <div class="setting-block">
-                <div class="setting-row">
-                    <span>Mode Nuit 🌙</span>
-                    <label class="switch"><input type="checkbox" id="themeSwitch" onchange="Settings.toggleTheme()"><span class="slider"></span></label>
-                </div>
-                <div class="setting-row">
-                    <span>GPS Haute Précision</span>
-                    <label class="switch"><input type="checkbox" id="gpsSwitch" checked><span class="slider"></span></label>
-                </div>
-            </div>
-
-            <div class="setting-block">
-                <div class="setting-row" onclick="Settings.updateEmail()">
-                    <span>Changer Email</span> <i class="fa-solid fa-chevron-right" style="opacity:0.3;"></i>
-                </div>
-                <div class="setting-row" onclick="Settings.updatePwd()">
-                    <span>Changer Mot de passe</span> <i class="fa-solid fa-chevron-right" style="opacity:0.3;"></i>
-                </div>
-            </div>
-
-            <button class="btn" id="btnAdmin" onclick="UI.show('viewAdmin')" style="display:none; background:#333; margin-top:20px;">🛠️ Admin</button>
-            <button class="btn" style="background:var(--danger); margin-top:20px;" onclick="Auth.logout()">Déconnexion</button>
-        </div>
-
-        <!-- ADMIN (Caché) -->
-        <div class="view" id="viewAdmin" style="background:#111; color:white; z-index:5000;">
-            <h2>Admin</h2>
-            <div style="background:#222; padding:15px; border-radius:10px;">
-                <h3 style="margin-top:0;">Gestion</h3>
-                <button class="btn" onclick="Admin.modUserPoints(500)">+500 XP (Moi)</button>
-            </div>
-            <button class="btn" onclick="UI.show('viewAccount')" style="background:transparent; border:1px solid white;">Fermer</button>
-        </div>
-
-        <!-- NAV BAR -->
-        <div class="bottom-nav" id="navBar" style="display:none;">
-            <button class="nav-tab active" onclick="UI.show('viewDiscover')"><span class="nav-icon"><i class="fa-solid fa-map"></i></span>Carte</button>
-            <button class="nav-tab" onclick="UI.show('viewNav')"><span class="nav-icon"><i class="fa-regular fa-compass"></i></span>Boussole</button>
-            <button class="nav-tab" onclick="UI.show('viewFavorites')"><span class="nav-icon"><i class="fa-solid fa-heart"></i></span>Favoris</button>
-            <button class="nav-tab" onclick="UI.show('viewAccount')"><span class="nav-icon"><i class="fa-solid fa-user"></i></span>Profil</button>
+        <!-- Grille de Widgets (Météo, Altitude, etc.) -->
+        <h3 style="margin-left:10px;">Tableau de bord</h3>
+        <div id="widgets-grid">
+            <!-- Rempli automatiquement par widgets.js -->
         </div>
     </div>
 
+    <!-- VUE : PROFIL & ADMIN -->
+    <div id="view-profile" class="view">
+        <h2>Mon Profil</h2>
+        <div class="widget-card" style="margin-bottom:20px;">
+            <div class="widget-icon">👤</div>
+            <div class="widget-val" id="profile-email">Chargement...</div>
+            <div class="widget-name" id="profile-points">0 Points</div>
+        </div>
+
+        <!-- Section Admin (Visible uniquement si admin) -->
+        <div id="admin-panel">
+            <div class="admin-header">Panneau Administrateur 👑</div>
+            <button class="admin-btn mod" onclick="Admin.broadcastMessage()" style="width:100%; margin-bottom:10px;">📢 Envoyer Message Global</button>
+            <button class="admin-btn mod" onclick="Admin.addRecommendation()" style="width:100%; margin-bottom:10px;">⭐ Ajouter Recommandation</button>
+            
+            <div id="admin-user-list">
+                <!-- Liste utilisateurs chargée par admin.js -->
+            </div>
+        </div>
+        
+        <button onclick="App.logout()" style="width:100%; padding:15px; background:#333; color:white; border:none; border-radius:12px; margin-top:20px;">Déconnexion</button>
+    </div>
+
+    <!-- BARRE DE NAVIGATION -->
+    <div class="navbar">
+        <button class="nav-item active" onclick="App.showView('view-map', this)">
+            <i class="fas fa-map-marked-alt"></i> Carte
+        </button>
+        <button class="nav-item" onclick="App.showView('view-compass', this)">
+            <i class="fas fa-compass"></i> Boussole
+        </button>
+        <button class="nav-item" onclick="App.showView('view-profile', this)">
+            <i class="fas fa-user-astronaut"></i> Profil
+        </button>
+    </div>
+
     <!-- SCRIPTS -->
-    <script src="js/config.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/mapManager.js"></script>
-    <script src="js/compass.js"></script>
-    <script src="js/shop.js"></script>
-    <script src="js/settings.js"></script>
-    <script src="js/admin.js"></script>
-    <script src="js/favorites.js"></script>
-    <script src="js/app.js"></script>
+    <!-- Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Leaflet -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- TES FICHIERS (Assure-toi de les avoir créés) -->
+    <script src="js/config.js"></script>     <!-- Ta config Supabase -->
+    <script src="js/auth.js"></script>       <!-- Gestion Auth -->
+    <script src="js/widgets.js"></script>    <!-- Gestion Widgets (Nouveau) -->
+    <script src="js/compass.js"></script>    <!-- Gestion Boussole (Nouveau) -->
+    <script src="js/admin.js"></script>      <!-- Gestion Admin (Nouveau) -->
+    <script src="js/mapManager.js"></script> <!-- Ta carte -->
+    
+    <!-- Script Principal (App.js) -->
+    <script>
+        // js/app.js intégré pour simplicité ou à mettre dans un fichier à part
+        const App = {
+            init: async () => {
+                // Initialise Supabase via config.js (vérifie que window.supabaseClient existe)
+                // Initialise les modules
+                Widgets.init();
+                Compass.init();
+                
+                // Vérifie connexion
+                const {  { session } } = await AppState.supabase.auth.getSession();
+                if(session) {
+                    AppState.user = session.user;
+                    // Vérifier si Admin
+                    const {  profile } = await AppState.supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', session.user.id)
+                        .single();
+                        
+                    if(profile) {
+                        AppState.user.is_admin = profile.is_admin;
+                        document.getElementById('profile-email').innerText = session.user.email;
+                        document.getElementById('profile-points').innerText = (profile.points || 0) + " Points";
+                        
+                        // Si Admin, charger le panel
+                        if(profile.is_admin) Admin.init();
+                        else document.getElementById('admin-panel').style.display = 'none';
+                    }
+                }
+            },
+
+            showView: (viewId, btn) => {
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                document.getElementById(viewId).classList.add('active');
+                
+                document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+                if(btn) btn.classList.add('active');
+
+                // Si on va sur la carte, on force le redimensionnement pour éviter les bugs gris
+                if(viewId === 'view-map' && window.map) window.map.invalidateSize();
+            },
+
+            logout: async () => {
+                await AppState.supabase.auth.signOut();
+                window.location.reload();
+            }
+        };
+
+        window.onload = App.init;
+    </script>
 </body>
 </html>
