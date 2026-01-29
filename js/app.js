@@ -1,48 +1,61 @@
 const App = {
-    user: null,
-
     init: async () => {
-        // Vérif Session
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if(!session) {
-            document.getElementById('view-login').style.display = 'flex';
-        } else {
-            // Connecté
-            App.user = session.user;
-            document.getElementById('view-login').style.display = 'none';
-            document.getElementById('navbar').style.display = 'flex';
-            
-            // Afficher carte par défaut
-            App.show('view-map', document.querySelector('.nav-item'));
-            
-            // Charger profil
-            const { data: profile } = await supabase.from('profiles').select('*').eq('id', App.user.id).single();
-            if(profile) {
-                document.getElementById('profile-email').innerText = profile.email || App.user.email;
-                document.getElementById('profile-points').innerText = (profile.points || 0) + ' XP';
-                App.user.is_admin = profile.is_admin;
-                
-                // Init Modules
-                MapManager.init();
-                Compass.init();
-                Widgets.init();
-                Admin.init(App.user);
+        try {
+            // Vérification que la librairie Supabase est chargée
+            if(typeof window.supabase === 'undefined') {
+                throw new Error("Librairie Supabase non chargée (Erreur CDN). Vérifiez votre connexion internet.");
             }
+
+            // Création du client
+            AppState.supabase = window.supabase.createClient(Config.supabase.url, Config.supabase.key);
+            
+            // Vérification session existante
+            const { data } = await AppState.supabase.auth.getSession();
+            if(data?.session) {
+                App.start(data.session.user);
+            } else {
+                UI.show('viewLogin');
+            }
+        } catch (e) {
+            console.error("Erreur Critique Init:", e);
+            // En cas de crash total, on force l'affichage du login pour laisser une chance au mode hors ligne
+            UI.show('viewLogin');
+            document.getElementById('msg').innerText = "Mode Hors Ligne dispo (tapez admin/admin)";
         }
     },
-
-    show: (viewId, btn) => {
-        // Masquer tout
-        document.querySelectorAll('.view').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-
-        // Afficher cible
-        document.getElementById(viewId).style.display = 'block';
-        if(btn) btn.classList.add('active');
-
-        // Refresh carte si besoin
-        if(viewId === 'view-map' && window.map) window.map.invalidateSize();
+    
+    start: async (user) => {
+        AppState.user = user;
+        if(document.getElementById('profileEmail')) document.getElementById('profileEmail').innerText = user.email;
+        
+        UI.show('viewDiscover');
+        
+        // Chargement Profil (silencieux si erreur)
+        try {
+            if(AppState.supabase) {
+                let { data } = await AppState.supabase.from('profiles').select('*').eq('id', user.id).single();
+                if(!data && user.id !== 'offline' && user.id !== 'admin-local') {
+                    // Création auto si nouveau
+                    await AppState.supabase.from('profiles').insert({ id: user.id, points: 500 });
+                    data = { points: 500, favorites: [], is_admin: false };
+                }
+                AppState.profile = data || { points: 0, favorites: [], is_admin: false };
+            } else {
+                AppState.profile = { points: 0, favorites: [], is_admin: false };
+            }
+        } catch(e) { 
+            console.log("Profil load error", e);
+            AppState.profile = { points: 0, favorites: [], is_admin: false };
+        }
+        
+        // Mise à jour UI
+        if(document.getElementById('displayPoints')) document.getElementById('displayPoints').innerText = (AppState.profile.points || 0) + " XP";
+        if(AppState.profile.is_admin && document.getElementById('btnAdmin')) document.getElementById('btnAdmin').style.display = 'block';
+        
+        // Lancement Carte
+        if(window.MapManager) MapManager.init();
+        if(window.Shop) Shop.renderWidgets();
+        if(window.Favorites) Favorites.render();
     }
 };
 
