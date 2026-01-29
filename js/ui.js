@@ -9,15 +9,22 @@ const UI = {
         if(viewId === 'viewLogin' || viewId === 'viewAdmin') nav.style.display = 'none';
         else nav.style.display = 'flex';
         
-        // Gérer les icônes actives
+        // Mise à jour onglets
         document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-        // (Logique simple pour activer le bon bouton selon la vue - optionnelle)
+        if(viewId === 'viewDiscover') document.querySelectorAll('.nav-tab')[0].classList.add('active');
+        if(viewId === 'viewNav') document.querySelectorAll('.nav-tab')[1].classList.add('active');
+        if(viewId === 'viewFavorites') document.querySelectorAll('.nav-tab')[2].classList.add('active');
+        if(viewId === 'viewAccount') document.querySelectorAll('.nav-tab')[3].classList.add('active');
 
         if(viewId === 'viewDiscover' && AppState.map) setTimeout(() => AppState.map.invalidateSize(), 300);
     },
 
-    toggleMapMenu: () => {
+    toggleMapMenu: (forceState) => {
         const m = document.getElementById('mapMenu');
-        m.style.display = m.style.display === 'block' ? 'none' : 'block';
+        if(forceState !== undefined) {
+            m.style.display = forceState ? 'block' : 'none';
+        } else {
+            m.style.display = m.style.display === 'block' ? 'none' : 'block';
+        }
     }
 };
