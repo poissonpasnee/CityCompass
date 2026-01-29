@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <title>CityCompass Navigator</title>
+
+    <!-- Libs externes -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-theme="light">
+
+    <!-- LOGIN -->
+    <div id="loginScreen">
+        <div class="login-box">
+            <h1 style="margin:0 0 25px 0;">CityCompass</h1>
+            <input type="email" id="email" class="inp" placeholder="Email">
+            <input type="password" id="password" class="inp" placeholder="Mot de passe">
+            <button class="btn-main" onclick="Auth.login()">Connexion</button>
+            <button class="btn-main" style="background:transparent; color:var(--text); border:1px solid rgba(128,128,128,0.3);" onclick="Auth.signup()">Créer un compte</button>
+            <p id="msg" style="color:var(--danger); font-size:13px; margin-top:15px; min-height:15px;"></p>
+        </div>
+    </div>
+
+    <!-- CARTE -->
+    <div id="map"></div>
+
+    <!-- HUD -->
+    <div class="hud-layer" id="hud" style="display:none;">
+        
+        <!-- Barre Recherche -->
+        <div class="search-container">
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass" style="opacity:0.5; font-size:18px;"></i>
+                <input type="text" class="search-inp" id="searchInp" placeholder="Où aller ?" onkeyup="MapManager.search(this.value)">
+                <div class="xp-badge" onclick="UI.open('panelProfile')"><span id="hudPoints">0</span> XP</div>
+            </div>
+            <div class="search-results" id="searchResults"></div>
+        </div>
+
+        <!-- Dock & FAB -->
+        <div class="dock-wrapper">
+            <div class="fab-compass" onclick="Compass.open()">
+                <i class="fa-regular fa-compass"></i>
+            </div>
+            <div class="dock">
+                <div class="dock-icon" onclick="UI.open('panelShop')"><i class="fa-solid fa-store"></i></div>
+                <div class="dock-icon" onclick="UI.open('panelTools')"><i class="fa-solid fa-layer-group"></i></div>
+                <div class="dock-icon active" onclick="MapManager.locate()"><i class="fa-solid fa-location-arrow"></i></div>
+                <div class="dock-icon" onclick="UI.open('panelProfile')"><i class="fa-solid fa-user"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANNEAU BOUTIQUE -->
+    <div id="panelShop" class="panel">
+        <div class="panel-head"><h2>Boutique</h2><button class="close-btn" onclick="UI.close()">&times;</button></div>
+        <div style="background:var(--accent); color:white; padding:25px; border-radius:25px; margin-bottom:25px; text-align:center; box-shadow: 0 10px 30px -10px var(--accent);">
+            <div style="font-size:36px; font-weight:800;" id="shopPoints">0</div>
+            <div style="opacity:0.9; font-weight:600;">Points Disponibles</div>
+        </div>
+        <div id="shopList"></div>
+    </div>
+
+    <!-- PANNEAU OUTILS -->
+    <div id="panelTools" class="panel">
+        <div class="panel-head"><h2>Outils</h2><button class="close-btn" onclick="UI.close()">&times;</button></div>
+        
+        <h3 style="opacity:0.6; font-size:14px; text-transform:uppercase; margin-bottom:10px;">Mes Favoris</h3>
+        <div id="favList" style="margin-bottom:30px; color:gray;">Aucun favori</div>
+
+        <h3 style="opacity:0.6; font-size:14px; text-transform:uppercase; margin-bottom:10px;">Carte</h3>
+        <div class="shop-item" onclick="MapManager.setLayer('standard')">
+            <div class="shop-info"><div class="shop-icon">🗺️</div><b>Standard</b></div>
+        </div>
+        <div class="shop-item" onclick="MapManager.setLayer('sat')">
+            <div class="shop-info"><div class="shop-icon">🛰️</div><b>Satellite</b></div>
+        </div>
+        <div class="shop-item" onclick="MapManager.setLayer('dark')">
+            <div class="shop-info"><div class="shop-icon">🌑</div><b>Mode Nuit</b></div>
+        </div>
+    </div>
+
+    <!-- PANNEAU PROFIL -->
+    <div id="panelProfile" class="panel">
+        <div class="panel-head"><h2>Mon Compte</h2><button class="close-btn" onclick="UI.close()">&times;</button></div>
+        
+        <div style="text-align:center; margin-bottom:40px;">
+            <div style="width:90px; height:90px; background:var(--accent); color:white; border-radius:50%; margin:0 auto 15px auto; display:flex; align-items:center; justify-content:center; font-size:36px; box-shadow: 0 10px 30px -5px var(--accent);">👤</div>
+            <h3 id="profileEmail" style="margin:0;">...</h3>
+        </div>
+
+        <div class="setting-row" onclick="Settings.updateEmail()">
+            <span>Changer Email</span> <i class="fa-solid fa-chevron-right" style="opacity:0.3;"></i>
+        </div>
+        <div class="setting-row" onclick="Settings.updatePwd()">
+            <span>Changer Mot de passe</span> <i class="fa-solid fa-chevron-right" style="opacity:0.3;"></i>
+        </div>
+        <div class="setting-row" onclick="Settings.toggleTheme()">
+            <span>Mode Sombre / Clair</span> <div class="shop-icon" style="width:30px; height:30px; font-size:14px;"><i class="fa-solid fa-adjust"></i></div>
+        </div>
+        <div class="setting-row" style="color:var(--danger); font-weight:bold;" onclick="Auth.logout()">
+            <span>Se déconnecter</span> <i class="fa-solid fa-power-off"></i>
+        </div>
+
+        <!-- ADMIN -->
+        <div id="adminPanel" style="display:none; margin-top:40px; border-top:2px solid rgba(128,128,128,0.2); padding-top:20px;">
+            <h3 style="color:var(--danger);">⚡ Admin Control</h3>
+            <div class="shop-item">
+                <b>Points (Test)</b>
+                <button class="buy-btn" onclick="Admin.modPoints(500)">+500 XP</button>
+            </div>
+            <button class="btn-main" onclick="Admin.addPublicPlace()">Ajouter Lieu Public ici</button>
+        </div>
+    </div>
+
+    <!-- BOUSSOLE OVERLAY -->
+    <div id="compassOverlay">
+        <button class="close-btn" style="position:absolute; top:40px; right:20px;" onclick="Compass.close()">&times;</button>
+        
+        <div id="compassRing">
+            <div style="position:absolute; top:-40px; font-weight:bold; font-size:18px; letter-spacing:2px;">NORD</div>
+            <i class="fa-solid fa-location-arrow" style="font-size:100px; color:var(--danger);"></i>
+        </div>
+        <h1 id="compassDeg" style="font-variant-numeric: tabular-nums;">0°</h1>
+        <button class="btn-main" style="width:auto; padding:10px 30px; background:rgba(128,128,128,0.2); color:var(--text);" onclick="Compass.requestPerm()">Calibrer / Autoriser</button>
+
+        <!-- NAVIGATION INFO -->
+        <div id="navInfoBox" style="display:none; width:90%; max-width:360px; margin-top:30px;">
+            <div class="shop-item" style="background:var(--accent); color:white;">
+                <div class="shop-info">
+                    <div class="shop-icon" style="background:rgba(255,255,255,0.2); color:white;">🏁</div>
+                    <div>
+                        <b id="navTargetName">Destination</b><br>
+                        <span style="font-size:13px; opacity:0.8;">Distance: <span id="navDist">--</span> • Cap: <span id="navBearing">--</span></span>
+                    </div>
+                </div>
+                <button class="buy-btn" style="background:rgba(0,0,0,0.3);" onclick="Compass.stopNav()">Stop</button>
+            </div>
+            
+            <div class="shop-item">
+                <div class="shop-info">
+                    <div class="shop-icon" style="background:#FF9500; color:white;">🏎️</div>
+                    <div><b>Vitesse</b><br><span id="navSpeed" style="opacity:0.6;">0 km/h</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts - ORDRE IMPORTANT -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/mapManager.js"></script>
+    <script src="js/compass.js"></script>
+    <script src="js/shop.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
