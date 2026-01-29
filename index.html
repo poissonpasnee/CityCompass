@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <title>CityCompass V71</title>
+    <title>CityCompass V72</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -22,73 +22,115 @@
         .view.active { display: block; }
         #viewDiscover { padding:0; overflow:hidden; }
         
-        /* LOGIN PAGE SPECIFIC STYLES */
+        /* --- LOGIN PAGE DESIGN --- */
         #viewLogin {
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            background: radial-gradient(circle at top left, #007AFF, #005ec4, #000);
             color: white;
             padding: 0;
-            bottom: 0 !important; /* Plein écran */
-            display: flex; /* Flexbox pour le centrage si actif */
+            bottom: 0 !important;
+            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
         }
-        
-        /* Animated Compass Decor */
-        .login-hero { position: relative; width: 200px; height: 200px; margin-bottom: 40px; display: flex; align-items: center; justify-content: center; }
-        
-        .pulse-circle {
-            position: absolute; width: 100%; height: 100%; border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.1);
-            animation: pulse 3s infinite ease-out;
+
+        .login-content {
+            width: 100%;
+            max-width: 320px; /* Plus étroit pour l'élégance */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 2;
         }
-        .pulse-circle:nth-child(2) { animation-delay: 1s; width: 80%; height: 80%; }
-        
-        .compass-logo {
-            width: 120px; height: 120px; position: relative;
-            background: rgba(255,255,255,0.05);
+
+        /* Boussole Animée Minimaliste */
+        .compass-decor {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            margin-bottom: 40px;
             border-radius: 50%;
             border: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.05);
             backdrop-filter: blur(10px);
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 0 30px rgba(0,122,255,0.3);
+            box-shadow: 0 0 40px rgba(0,122,255,0.3);
             animation: float 6s ease-in-out infinite;
         }
-        
+
         .needle {
-            width: 80px; height: 80px;
-            background: url("image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='12 2 19 22 12 18 5 22 12 2' fill='%23007AFF' stroke='none' /%3E%3C/svg%3E") no-repeat center center;
+            width: 60px; height: 60px;
+            background: url("image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpolygon points='12 2 19 22 12 18 5 22 12 2' /%3E%3C/svg%3E") no-repeat center center;
             background-size: contain;
-            animation: spin 20s linear infinite;
+            animation: spin 15s linear infinite;
+            filter: drop-shadow(0 0 5px #007AFF);
         }
 
-        @keyframes pulse { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(1.5); opacity: 0; } }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-
-        .login-form-container { width: 85%; max-width: 350px; z-index: 2; }
+        .pulse {
+            position: absolute; width: 100%; height: 100%;
+            border-radius: 50%; border: 1px solid rgba(255,255,255,0.1);
+            animation: pulse 3s infinite ease-out;
+        }
         
-        .glass-input {
-            width: 100%; padding: 18px; margin-bottom: 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 16px; color: white; font-size: 16px;
-            backdrop-filter: blur(5px); transition: 0.3s;
+        /* Formulaire Compact & Clean */
+        .input-group {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            padding: 2px 15px; /* Plus petit */
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: 0.3s;
+        }
+        .input-group:focus-within { background: rgba(255, 255, 255, 0.25); border-color: white; }
+        
+        .input-icon { color: rgba(255,255,255,0.7); font-size: 14px; width: 20px; text-align: center; }
+        
+        .clean-input {
+            width: 100%;
+            padding: 12px 10px; /* Padding réduit pour éviter l'effet "gros boutons" */
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 15px;
             outline: none;
         }
-        .glass-input::placeholder { color: rgba(255,255,255,0.5); }
-        .glass-input:focus { background: rgba(255, 255, 255, 0.2); border-color: var(--accent); }
+        .clean-input::placeholder { color: rgba(255,255,255,0.5); }
 
         .auth-btn {
-            width: 100%; padding: 18px; border-radius: 16px; border: none;
-            background: var(--accent); color: white; font-weight: bold; font-size: 16px;
-            cursor: pointer; box-shadow: 0 4px 15px rgba(0,122,255,0.4);
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            background: white;
+            color: #007AFF;
+            font-weight: 700;
+            font-size: 16px;
+            margin-top: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             transition: transform 0.2s;
         }
-        .auth-btn:active { transform: scale(0.98); }
+        .auth-btn:active { transform: scale(0.96); opacity: 0.9; }
 
-        .switch-mode { margin-top: 20px; color: rgba(255,255,255,0.6); font-size: 14px; text-align: center; cursor: pointer; }
-        .switch-mode span { color: var(--accent); font-weight: bold; }
+        .switch-link {
+            margin-top: 25px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.8);
+            cursor: pointer;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+        }
+        .switch-link:active { opacity: 0.6; }
+
+        @keyframes pulse { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.4); opacity: 0; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
 
         /* --- STANDARD APP STYLES --- */
         .btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-weight: 700; font-size: 16px; background: var(--accent); color: white; margin-top: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -156,31 +198,35 @@
 <body data-theme="light">
     <div class="app">
 
-        <!-- LOGIN / SIGNUP VIEW -->
+        <!-- LOGIN / SIGNUP VIEW (REFAIT) -->
         <div class="view active" id="viewLogin">
-            <h1 style="font-weight:200; letter-spacing:2px; margin-bottom:40px;">CITY COMPASS</h1>
+            <h1 style="font-weight:200; letter-spacing:3px; font-size:20px; margin-bottom:40px; opacity:0.8;">CITY COMPASS</h1>
             
-            <div class="login-hero">
-                <div class="pulse-circle"></div>
-                <div class="pulse-circle"></div>
-                <div class="compass-logo">
-                    <div class="needle"></div>
-                </div>
+            <div class="compass-decor">
+                <div class="pulse"></div>
+                <div class="needle"></div>
             </div>
 
-            <div class="login-form-container">
-                <h2 id="authTitle" style="text-align:center; margin-bottom:20px;">Connexion</h2>
+            <div class="login-content">
+                <h2 id="authTitle" style="margin-bottom:20px; font-weight:600;">Bienvenue</h2>
                 
-                <input id="emailInput" class="glass-input" placeholder="Email" type="email">
-                <input id="pwdInput" class="glass-input" placeholder="Mot de passe" type="password">
+                <div class="input-group">
+                    <div class="input-icon"><i class="fa-solid fa-envelope"></i></div>
+                    <input id="emailInput" class="clean-input" placeholder="Email" type="email">
+                </div>
                 
-                <button class="auth-btn" onclick="Auth.submit()" id="authBtn">SE CONNECTER</button>
+                <div class="input-group">
+                    <div class="input-icon"><i class="fa-solid fa-lock"></i></div>
+                    <input id="pwdInput" class="clean-input" placeholder="Mot de passe" type="password">
+                </div>
                 
-                <p class="switch-mode" onclick="Auth.toggleMode()">
-                    <span id="switchText">Pas de compte ? Créer un compte</span>
-                </p>
+                <button class="auth-btn" onclick="Auth.submit()" id="authBtn">CONNEXION</button>
                 
-                <p id="msg" style="text-align:center; color:#ff6b6b; height:20px; margin-top:10px; font-size:14px;"></p>
+                <div class="switch-link" onclick="Auth.toggleMode()">
+                    <span id="switchText">Créer un compte</span>
+                </div>
+                
+                <p id="msg" style="text-align:center; color:#ff6b6b; height:20px; margin-top:10px; font-size:13px;"></p>
             </div>
         </div>
 
