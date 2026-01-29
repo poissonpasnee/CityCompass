@@ -3,12 +3,11 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <title>CityCompass V61</title>
+    <title>CityCompass V70</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- FontAwesome pour les icônes -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -22,7 +21,7 @@
         .view.active { display: block; }
         #viewDiscover { padding:0; overflow:hidden; }
         
-        .btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-weight: 700; font-size: 16px; background: var(--accent); color: white; margin-top: 10px; cursor: pointer; }
+        .btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-weight: 700; font-size: 16px; background: var(--accent); color: white; margin-top: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
         /* SEARCH BAR & MENU */
         .top-bar-container { position: absolute; top: 20px; left: 20px; right: 20px; z-index: 1000; display: flex; gap: 10px; pointer-events: none; }
@@ -32,16 +31,17 @@
         .menu-btn { width: 50px; height: 50px; background: var(--bg-card); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: auto; cursor: pointer; color: var(--text); }
         
         /* SEARCH RESULTS */
-        .search-results { position: absolute; top: 80px; left: 20px; right: 20px; background: var(--bg-card); border-radius: 14px; max-height: 300px; overflow-y: auto; z-index: 5000; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.3); pointer-events: auto; }
-        .search-item { padding: 15px; border-bottom: 1px solid rgba(128,128,128,0.2); cursor: pointer; color: var(--text); display:flex; gap:10px; align-items:center; }
+        .search-results { position: absolute; top: 80px; left: 20px; right: 20px; background: var(--bg-card); border-radius: 14px; max-height: 40vh; overflow-y: auto; z-index: 5000; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.3); pointer-events: auto; }
+        .search-item { padding: 15px; border-bottom: 1px solid rgba(128,128,128,0.2); cursor: pointer; color: var(--text); display:flex; gap:15px; align-items:center; }
+        .search-item:active { background: rgba(128,128,128,0.1); }
         
         /* MAP MENU DROPDOWN */
-        .map-menu { position: absolute; top: 80px; right: 20px; width: 200px; background: var(--bg-card); border-radius: 14px; padding: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 5000; display: none; pointer-events: auto; }
+        .map-menu { position: absolute; top: 80px; right: 20px; width: 220px; background: var(--bg-card); border-radius: 14px; padding: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 5000; display: none; pointer-events: auto; }
         .menu-option { padding: 12px; display: flex; align-items: center; gap: 10px; border-radius: 8px; cursor: pointer; color: var(--text); }
-        .menu-option:active { background: rgba(128,128,128,0.1); }
-
-        /* RECENTER BUTTON */
-        .fab-recenter { position: absolute; bottom: 30px; right: 20px; width: 50px; height: 50px; background: var(--bg-card); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 900; pointer-events: auto; cursor: pointer; color: var(--accent); font-size: 20px; }
+        
+        /* RECENTER & POI BUTTONS */
+        .fab-container { position: absolute; bottom: 30px; right: 20px; z-index: 900; pointer-events: auto; display: flex; flex-direction: column; gap: 10px; }
+        .fab { width: 50px; height: 50px; background: var(--bg-card); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; color: var(--accent); font-size: 20px; }
 
         /* POPUP MODERNE */
         .custom-popup .leaflet-popup-content-wrapper { border-radius: 16px; padding: 0; overflow: hidden; }
@@ -53,13 +53,28 @@
         /* BOUSSOLE */
         .compass-container { position: relative; width: 280px; height: 280px; margin: 40px auto; display: flex; align-items: center; justify-content: center; }
         .progress-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
-        .progress-ring circle { transition: stroke-dashoffset 0.5s; }
         .compass-arrow { font-size: 80px; color: var(--accent); transition: transform 0.1s linear; z-index: 2; }
 
-        /* FAVORIS LIST */
+        /* FAVORIS & PARAMETRES */
         .fav-item { background: var(--bg-card); padding: 15px; border-radius: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .setting-block { background: var(--bg-card); border-radius: 14px; overflow: hidden; margin-bottom: 20px; }
+        .setting-row { padding: 15px; border-bottom: 1px solid rgba(128,128,128,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .setting-row:last-child { border-bottom: none; }
 
-        /* NAV BAR */
+        /* WIDGETS GRID */
+        .widget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .widget { background: var(--bg-card); padding: 20px; border-radius: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 120px; }
+        .widget-val { font-size: 24px; font-weight: 800; color: var(--accent); margin: 5px 0; }
+        .widget-lbl { font-size: 12px; opacity: 0.6; font-weight: 600; text-transform: uppercase; }
+
+        /* SWITCH */
+        .switch { position: relative; width: 50px; height: 30px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: var(--bg-card); display: flex; justify-content: space-around; padding-bottom: 20px; z-index: 3000; border-top: 1px solid rgba(128,128,128,0.2); }
         .nav-tab { background: none; border: none; color: gray; font-size: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; }
         .nav-tab.active { color: var(--accent); }
@@ -100,17 +115,20 @@
 
             <!-- Menu Carte -->
             <div class="map-menu" id="mapMenu">
+                <div class="menu-option" onclick="UI.show('viewFavorites'); UI.toggleMapMenu()"><i class="fa-solid fa-heart" style="color:red;"></i> Mes Lieux</div>
+                <hr style="border:0; border-top:1px solid rgba(128,128,128,0.2);">
                 <div class="menu-option" onclick="MapManager.setLayer('standard')"><i class="fa-solid fa-map"></i> Standard</div>
                 <div class="menu-option" onclick="MapManager.setLayer('sat')"><i class="fa-solid fa-satellite"></i> Satellite</div>
                 <div class="menu-option" onclick="MapManager.setLayer('dark')"><i class="fa-solid fa-moon"></i> Mode Nuit</div>
-                <hr style="border:0; border-top:1px solid rgba(128,128,128,0.2);">
-                <div class="menu-option" onclick="MapManager.togglePOI()"><i class="fa-solid fa-mug-hot"></i> Afficher Lieux</div>
+                <div class="menu-option" onclick="MapManager.togglePOI()"><i class="fa-solid fa-utensils"></i> Afficher Lieux</div>
             </div>
 
             <div id="map"></div>
             
-            <div class="fab-recenter" onclick="MapManager.recenter()">
-                <i class="fa-solid fa-location-crosshairs"></i>
+            <div class="fab-container">
+                <div class="fab" onclick="MapManager.recenter()">
+                    <i class="fa-solid fa-location-crosshairs"></i>
+                </div>
             </div>
         </div>
 
@@ -143,22 +161,64 @@
                 <h2 id="profileEmail">...</h2>
                 <div style="font-size:32px; font-weight:800; color:var(--accent);" id="displayPoints">0 XP</div>
             </div>
-            <h3>Paramètres</h3>
-            <div class="setting-row" style="background:var(--bg-card); padding:15px; border-radius:12px; display:flex; justify-content:space-between;">
-                <span>Mode Nuit 🌙</span>
-                <label class="switch"><input type="checkbox" id="themeSwitch" onchange="Settings.toggleTheme()"><span class="slider"></span></label>
+
+            <h3>Widgets</h3>
+            <div class="widget-grid">
+                <div class="widget">
+                    <i class="fa-solid fa-gauge-high" style="font-size:24px; color:orange;"></i>
+                    <div class="widget-val" id="widSpeed">0</div>
+                    <div class="widget-lbl">km/h</div>
+                </div>
+                <div class="widget">
+                    <i class="fa-solid fa-mountain" style="font-size:24px; color:gray;"></i>
+                    <div class="widget-val" id="widAlt">0</div>
+                    <div class="widget-lbl">Altitude (m)</div>
+                </div>
+                <div class="widget">
+                    <i class="fa-solid fa-cloud" style="font-size:24px; color:#007AFF;"></i>
+                    <div class="widget-val" id="widTemp">--</div>
+                    <div class="widget-lbl">Météo</div>
+                </div>
+                <div class="widget">
+                    <i class="fa-solid fa-compass" style="font-size:24px; color:purple;"></i>
+                    <div class="widget-val" id="widHead">0°</div>
+                    <div class="widget-lbl">Cap</div>
+                </div>
             </div>
-            <h3>Mes Widgets</h3>
-            <div class="widget-grid" id="widgetGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
+
+            <h3>Paramètres</h3>
+            <div class="setting-block">
+                <div class="setting-row">
+                    <span>Mode Nuit 🌙</span>
+                    <label class="switch"><input type="checkbox" id="themeSwitch" onchange="Settings.toggleTheme()"><span class="slider"></span></label>
+                </div>
+                <div class="setting-row">
+                    <span>GPS Haute Précision</span>
+                    <label class="switch"><input type="checkbox" id="gpsSwitch" checked><span class="slider"></span></label>
+                </div>
+            </div>
+
+            <div class="setting-block">
+                <div class="setting-row" onclick="Settings.updateEmail()">
+                    <span>Changer Email</span> <i class="fa-solid fa-chevron-right" style="opacity:0.3;"></i>
+                </div>
+                <div class="setting-row" onclick="Settings.updatePwd()">
+                    <span>Changer Mot de passe</span> <i class="fa-solid fa-chevron-right" style="opacity:0.3;"></i>
+                </div>
+            </div>
+
             <button class="btn" id="btnAdmin" onclick="UI.show('viewAdmin')" style="display:none; background:#333; margin-top:20px;">🛠️ Admin</button>
             <button class="btn" style="background:var(--danger); margin-top:20px;" onclick="Auth.logout()">Déconnexion</button>
         </div>
 
         <!-- ADMIN (Caché) -->
         <div class="view" id="viewAdmin" style="background:#111; color:white; z-index:5000;">
-            <!-- Contenu Admin simplifié pour l'exemple, identique version précédente -->
             <h2>Admin</h2>
-            <button onclick="UI.show('viewAccount')">Fermer</button>
+            <div style="background:#222; padding:15px; border-radius:10px;">
+                <h3 style="margin-top:0;">Gestion</h3>
+                <button class="btn" onclick="Admin.modUserPoints(500)">+500 XP (Moi)</button>
+            </div>
+            <button class="btn" onclick="UI.show('viewAccount')" style="background:transparent; border:1px solid white;">Fermer</button>
         </div>
 
         <!-- NAV BAR -->
@@ -179,7 +239,7 @@
     <script src="js/shop.js"></script>
     <script src="js/settings.js"></script>
     <script src="js/admin.js"></script>
-    <script src="js/favorites.js"></script> <!-- Nouveau Fichier -->
+    <script src="js/favorites.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
