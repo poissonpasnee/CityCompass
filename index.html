@@ -3,136 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CityCompass Debug</title>
-    
-    <!-- Styles simplifiés pour être sûr que rien ne cache les boutons -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <style>
-        body { font-family: sans-serif; background: #222; color: white; margin: 0; }
-        #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .login-box { background: #333; padding: 30px; border-radius: 20px; width: 90%; max-width: 350px; text-align: center; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: none; }
-        button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
-        .btn-primary { background: #007AFF; color: white; }
-        .btn-sec { background: transparent; border: 1px solid #777; color: #ccc; }
-        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-    </style>
+    <title>CityCompass Fixed</title>
 
-    <!-- Libs -->
+    <!-- 1. CHARGEMENT DES LIBS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body { margin: 0; font-family: sans-serif; background: #111; color: white; display: flex; flex-direction: column; height: 100vh; }
+        
+        /* CONSOLE DE DÉBOGAGE (Pour voir les erreurs sur iPhone) */
+        #debug-console {
+            background: #000; color: #0f0; font-family: monospace; padding: 10px;
+            height: 150px; overflow-y: scroll; border-bottom: 1px solid #333; font-size: 12px;
+        }
+
+        /* LOGIN SCREEN */
+        #login-screen {
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+        }
+        input {
+            width: 100%; max-width: 300px; padding: 15px; margin: 10px 0;
+            border-radius: 8px; border: none; background: #333; color: white;
+        }
+        button {
+            width: 100%; max-width: 300px; padding: 15px; margin: 10px 0;
+            border-radius: 8px; border: none; font-weight: bold; cursor: pointer;
+            background: #007AFF; color: white;
+        }
+        button:active { opacity: 0.8; transform: scale(0.98); }
+
+        /* MAP */
+        #map { flex: 1; width: 100%; display: none; }
+    </style>
 </head>
 <body>
 
-    <!-- ÉCRAN DE CONNEXION -->
-    <div id="loginScreen">
-        <div class="login-box">
-            <h1>CityCompass</h1>
-            <p id="statusMsg" style="color: #FF3B30;"></p>
-            
-            <input type="email" id="emailInput" placeholder="Email" value="test@test.com"> <!-- Valeur par défaut pour tester vite -->
-            <input type="password" id="pwdInput" placeholder="Mot de passe">
-            
-            <button id="btnLogin" class="btn-primary">CONNEXION</button>
-            <button id="btnSignup" class="btn-sec">CRÉER COMPTE</button>
-        </div>
+    <!-- CONSOLE VISUELLE -->
+    <div id="debug-console">Initialisation du système...<br></div>
+
+    <!-- ECRAN LOGIN -->
+    <div id="login-screen">
+        <h1>CityCompass</h1>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Mot de passe">
+        <!-- Note: On garde onclick ici car on va forcer Auth à être global -->
+        <button onclick="window.Auth.login()">SE CONNECTER</button>
+        <button onclick="window.Auth.signup()" style="background: transparent; border: 1px solid #555;">CRÉER COMPTE</button>
     </div>
 
-    <!-- CARTE (cachée au début) -->
+    <!-- CARTE -->
     <div id="map"></div>
 
     <script>
-        // --- 1. CONFIGURATION ---
-        const SB_URL = 'https://scbihxaceelyygrlacvm.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjYmloeGFjZWVseXlncmxhY3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1NjU3MTcsImV4cCI6MjA4NTE0MTcxN30.rgUH-kltyNX99-HTDmGEyzGyu8qFXR9LF1QxsjY0W44';
-        
-        let supabase;
-
-        // --- 2. FONCTIONS ---
+        // --- UTILITAIRE DE LOG (Affiche dans la boîte noire) ---
         function log(msg) {
-            document.getElementById('statusMsg').innerText = msg;
+            const box = document.getElementById('debug-console');
+            const date = new Date().toLocaleTimeString();
+            box.innerHTML += `[${date}] ${msg}<br>`;
+            box.scrollTop = box.scrollHeight;
             console.log(msg);
         }
 
-        async function initApp() {
-            try {
-                log("Initialisation...");
-                supabase = window.supabase.createClient(SB_URL, SB_KEY);
-                
-                // Vérifier session
-                const { data } = await supabase.auth.getSession();
-                if (data.session) {
-                    launchMap();
-                } else {
-                    log("Veuillez vous connecter.");
-                }
-            } catch (e) {
-                log("Erreur Init: " + e.message);
-                alert("Erreur Init: " + e.message);
-            }
-        }
-
-        async function handleLogin() {
-            const email = document.getElementById('emailInput').value;
-            const password = document.getElementById('pwdInput').value;
-            
-            if(!email || !password) return log("Remplissez les champs !");
-            
-            log("Connexion en cours...");
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-                if (error) {
-                    log("Erreur: " + error.message);
-                    alert("Erreur: " + error.message);
-                } else {
-                    log("Succès !");
-                    launchMap();
-                }
-            } catch (e) {
-                log("Crash Login: " + e);
-                alert("Crash Login: " + e);
-            }
-        }
-
-        async function handleSignup() {
-            const email = document.getElementById('emailInput').value;
-            const password = document.getElementById('pwdInput').value;
-            
-            log("Création compte...");
-            try {
-                const { data, error } = await supabase.auth.signUp({ email, password });
-                if (error) {
-                    log("Erreur: " + error.message);
-                } else {
-                    log("Compte créé ! Vérifiez vos emails ou connectez-vous.");
-                }
-            } catch (e) {
-                log("Crash Signup: " + e);
-            }
-        }
-
-        function launchMap() {
-            document.getElementById('loginScreen').style.display = 'none';
-            // Initialiser carte
-            var map = L.map('map').setView([43.6, 1.4], 13);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
-            
-            // Géoloc
-            map.locate({setView: true, maxZoom: 16});
-            map.on('locationfound', function(e) {
-                L.circleMarker(e.latlng, {color: 'blue'}).addTo(map);
-            });
-            
-            alert("Bienvenue dans CityCompass !");
-        }
-
-        // --- 3. ÉCOUTEURS D'ÉVÉNEMENTS (Plus fiable que onclick HTML) ---
-        window.onload = function() {
-            initApp();
-            
-            document.getElementById('btnLogin').addEventListener('click', handleLogin);
-            document.getElementById('btnSignup').addEventListener('click', handleSignup);
+        // Capture les erreurs globales
+        window.onerror = function(msg, url, line) {
+            log("❌ ERREUR FATALE: " + msg + " (Ligne " + line + ")");
+            return false;
         };
+
+        // --- SCRIPT PRINCIPAL ---
+        // On attend que tout soit chargé
+        window.addEventListener('load', async function() {
+            log("Page chargée.");
+
+            // 1. VÉRIFICATION DES LIBS
+            if (typeof window.supabase === 'undefined') {
+                return log("❌ ERREUR: Supabase n'est pas chargé !");
+            }
+            if (typeof L === 'undefined') {
+                return log("❌ ERREUR: Leaflet n'est pas chargé !");
+            }
+            log("✅ Bibliothèques chargées.");
+
+            // 2. CONFIGURATION SUPABASE
+            const SB_URL = 'https://scbihxaceelyygrlacvm.supabase.co';
+            const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjYmloeGFjZWVseXlncmxhY3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1NjU3MTcsImV4cCI6MjA4NTE0MTcxN30.rgUH-kltyNX99-HTDmGEyzGyu8qFXR9LF1QxsjY0W44';
+            
+            // Création du client via l'objet global window.supabase
+            const sb = window.supabase.createClient(SB_URL, SB_KEY);
+            log("Supabase initialisé.");
+
+            // 3. DÉFINITION DE L'OBJET AUTH ET ATTACHEMENT À WINDOW
+            // C'est ICI qu'on règle ton problème
+            window.Auth = {
+                login: async () => {
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    
+                    if(!email || !password) return log("⚠️ Champs vides !");
+                    
+                    log("Tentative de connexion...");
+                    try {
+                        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+                        if (error) throw error;
+                        log("✅ Connexion réussie !");
+                        App.launch(data.user);
+                    } catch (e) {
+                        log("❌ Erreur Login: " + e.message);
+                        alert("Erreur: " + e.message);
+                    }
+                },
+
+                signup: async () => {
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    
+                    if(!email || !password) return log("⚠️ Champs vides !");
+                    
+                    log("Création de compte...");
+                    try {
+                        const { data, error } = await sb.auth.signUp({ email, password });
+                        if (error) throw error;
+                        log("✅ Compte créé ! Vérifiez vos emails.");
+                        alert("Compte créé !");
+                    } catch (e) {
+                        log("❌ Erreur Inscription: " + e.message);
+                    }
+                }
+            };
+            log("Fonctions d'authentification prêtes.");
+
+            // 4. LOGIQUE APP
+            const App = {
+                launch: (user) => {
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('map').style.display = 'block';
+                    
+                    // Init Map
+                    const map = L.map('map').setView([43.6, 1.4], 13);
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+                    
+                    // Géoloc
+                    map.locate({setView: true, watch: true});
+                    map.on('locationfound', (e) => {
+                        L.circleMarker(e.latlng, {color: '#007AFF', radius: 10}).addTo(map);
+                        log("Position trouvée.");
+                    });
+                }
+            };
+
+            // 5. VÉRIFIER SI DÉJÀ CONNECTÉ
+            const { data } = await sb.auth.getSession();
+            if (data?.session) {
+                log("Utilisateur déjà connecté.");
+                App.launch(data.session.user);
+            } else {
+                log("En attente de connexion...");
+            }
+        });
     </script>
 </body>
 </html>
