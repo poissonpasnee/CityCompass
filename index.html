@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <title>CityCompass V70</title>
+    <title>CityCompass V71</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -17,10 +17,80 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
         body { margin: 0; padding: 0; height: 100dvh; overflow: hidden; font-family: -apple-system, sans-serif; background-color: var(--bg-body); color: var(--text); transition: background 0.3s; }
         
+        /* VIEWS */
         .view { display: none; position: absolute; top:0; left:0; right:0; bottom:var(--nav-height); overflow-y:auto; padding:20px; z-index: 10; background: var(--bg-body); }
         .view.active { display: block; }
         #viewDiscover { padding:0; overflow:hidden; }
         
+        /* LOGIN PAGE SPECIFIC STYLES */
+        #viewLogin {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: white;
+            padding: 0;
+            bottom: 0 !important; /* Plein écran */
+            display: flex; /* Flexbox pour le centrage si actif */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Animated Compass Decor */
+        .login-hero { position: relative; width: 200px; height: 200px; margin-bottom: 40px; display: flex; align-items: center; justify-content: center; }
+        
+        .pulse-circle {
+            position: absolute; width: 100%; height: 100%; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.1);
+            animation: pulse 3s infinite ease-out;
+        }
+        .pulse-circle:nth-child(2) { animation-delay: 1s; width: 80%; height: 80%; }
+        
+        .compass-logo {
+            width: 120px; height: 120px; position: relative;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 30px rgba(0,122,255,0.3);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .needle {
+            width: 80px; height: 80px;
+            background: url("image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='12 2 19 22 12 18 5 22 12 2' fill='%23007AFF' stroke='none' /%3E%3C/svg%3E") no-repeat center center;
+            background-size: contain;
+            animation: spin 20s linear infinite;
+        }
+
+        @keyframes pulse { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(1.5); opacity: 0; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        .login-form-container { width: 85%; max-width: 350px; z-index: 2; }
+        
+        .glass-input {
+            width: 100%; padding: 18px; margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px; color: white; font-size: 16px;
+            backdrop-filter: blur(5px); transition: 0.3s;
+            outline: none;
+        }
+        .glass-input::placeholder { color: rgba(255,255,255,0.5); }
+        .glass-input:focus { background: rgba(255, 255, 255, 0.2); border-color: var(--accent); }
+
+        .auth-btn {
+            width: 100%; padding: 18px; border-radius: 16px; border: none;
+            background: var(--accent); color: white; font-weight: bold; font-size: 16px;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(0,122,255,0.4);
+            transition: transform 0.2s;
+        }
+        .auth-btn:active { transform: scale(0.98); }
+
+        .switch-mode { margin-top: 20px; color: rgba(255,255,255,0.6); font-size: 14px; text-align: center; cursor: pointer; }
+        .switch-mode span { color: var(--accent); font-weight: bold; }
+
+        /* --- STANDARD APP STYLES --- */
         .btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-weight: 700; font-size: 16px; background: var(--accent); color: white; margin-top: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
         /* SEARCH BAR & MENU */
@@ -86,15 +156,31 @@
 <body data-theme="light">
     <div class="app">
 
-        <!-- LOGIN -->
-        <div class="view active" id="viewLogin" style="z-index:4000; background:var(--bg-body);">
-            <div style="display:flex; flex-direction:column; justify-content:center; height:100%;">
-                <h1 style="text-align:center;">City Compass</h1>
-                <div class="input-box" style="margin-bottom:10px;"><input id="emailInput" placeholder="Email"></div>
-                <div class="input-box" style="margin-bottom:10px;"><input id="pwdInput" type="password" placeholder="Mot de passe"></div>
-                <button class="btn" onclick="Auth.login()">Connexion</button>
-                <button class="btn" onclick="Auth.signup()" style="background:gray;">Créer Compte</button>
-                <p id="msg" style="text-align:center; color:red;"></p>
+        <!-- LOGIN / SIGNUP VIEW -->
+        <div class="view active" id="viewLogin">
+            <h1 style="font-weight:200; letter-spacing:2px; margin-bottom:40px;">CITY COMPASS</h1>
+            
+            <div class="login-hero">
+                <div class="pulse-circle"></div>
+                <div class="pulse-circle"></div>
+                <div class="compass-logo">
+                    <div class="needle"></div>
+                </div>
+            </div>
+
+            <div class="login-form-container">
+                <h2 id="authTitle" style="text-align:center; margin-bottom:20px;">Connexion</h2>
+                
+                <input id="emailInput" class="glass-input" placeholder="Email" type="email">
+                <input id="pwdInput" class="glass-input" placeholder="Mot de passe" type="password">
+                
+                <button class="auth-btn" onclick="Auth.submit()" id="authBtn">SE CONNECTER</button>
+                
+                <p class="switch-mode" onclick="Auth.toggleMode()">
+                    <span id="switchText">Pas de compte ? Créer un compte</span>
+                </p>
+                
+                <p id="msg" style="text-align:center; color:#ff6b6b; height:20px; margin-top:10px; font-size:14px;"></p>
             </div>
         </div>
 
@@ -110,10 +196,8 @@
                 </div>
             </div>
 
-            <!-- Résultats Recherche -->
             <div class="search-results" id="searchResults"></div>
 
-            <!-- Menu Carte -->
             <div class="map-menu" id="mapMenu">
                 <div class="menu-option" onclick="UI.show('viewFavorites'); UI.toggleMapMenu()"><i class="fa-solid fa-heart" style="color:red;"></i> Mes Lieux</div>
                 <hr style="border:0; border-top:1px solid rgba(128,128,128,0.2);">
