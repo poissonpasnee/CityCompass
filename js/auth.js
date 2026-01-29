@@ -7,7 +7,9 @@ const Auth = {
         const btn = document.getElementById('authBtn');
         const switchText = document.getElementById('switchText');
         
+        // Reset message et état bouton
         if(document.getElementById('msg')) document.getElementById('msg').innerText = "";
+        btn.disabled = false;
         
         if(Auth.isSignup) {
             title.innerText = "Créer un compte";
@@ -21,10 +23,9 @@ const Auth = {
     },
 
     submit: () => {
-        // Anti-spam clic
         const btn = document.getElementById('authBtn');
-        if(btn.innerText.includes("...")) return;
-
+        if(btn.disabled || btn.innerText.includes("...")) return;
+        
         if(Auth.isSignup) Auth.signup();
         else Auth.login();
     },
@@ -32,8 +33,10 @@ const Auth = {
     login: async () => {
         const e = document.getElementById('emailInput').value;
         const p = document.getElementById('pwdInput').value;
-        
-        // Mode Secours Admin
+        const btn = document.getElementById('authBtn');
+        const oldText = btn.innerText;
+
+        // 1. Backdoor Admin immédiate (pas de réseau nécessaire)
         if(e === 'admin' && p === 'admin') {
             App.start({ id: 'admin-local', email: 'admin@local.com' });
             return;
@@ -41,29 +44,45 @@ const Auth = {
 
         if(!e || !p) return Auth.err("Remplissez tout");
         
-        const btn = document.getElementById('authBtn');
-        const oldText = btn.innerText;
+        // 2. Blocage UI
         btn.innerText = "Chargement...";
+        btn.disabled = true;
         
         try {
-            if(!AppState.supabase) throw new Error("Erreur init. Supabase");
+            if(!AppState.supabase) throw new Error("Erreur interne (Supabase manquant)");
 
-            const { data, error } = await AppState.supabase.auth.signInWithPassword({ email:e, password:p });
+            // 3. TENTATIVE DE CONNEXION AVEC TIMEOUT DE 4 SECONDES
+            // Si Supabase ne répond pas en 4s, on déclenche une erreur
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error("Timeout")), 4000)
+            );
+            
+            const supabasePromise = AppState.supabase.auth.signInWithPassword({ email:e, password:p });
+
+            // Course entre la connexion et le chrono
+            const { data, error } = await Promise.race([supabasePromise, timeoutPromise]);
+            
             if(error) throw error;
             
+            // Succès
             App.start(data.user);
 
         } catch (err) {
             console.error(err);
             btn.innerText = oldText;
+            btn.disabled = false;
             
-            // Si erreur réseau ou "Load Failed", on propose le mode hors ligne
-            if(err.message.includes("Load failed") || err.message.includes("fetch")) {
-                if(confirm("Connexion serveur impossible (Load Failed).\n\nPasser en mode HORS LIGNE ?")) {
-                    App.start({ id: 'offline', email: 'offline@mode.com' });
+            // 4. Gestion des erreurs (Timeout ou Réseau)
+            if(err.message === "Timeout" || err.message.includes("Load failed") || err.message.includes("fetch")) {
+                if(confirm("Le serveur ne répond pas.\n\nVoulez-vous entrer en mode HORS LIGNE ?")) {
+                    App.start({ id: 'offline', email: 'mode@hors-ligne.com' });
+                } else {
+                    Auth.err("Connexion échouée. Vérifiez votre réseau.");
                 }
+            } else if (err.message === "Invalid login credentials") {
+                Auth.err("Email ou mot de passe incorrect");
             } else {
-                Auth.err("Erreur: " + err.message);
+                Auth.err(err.message);
             }
         }
     },
@@ -76,10 +95,9 @@ const Auth = {
         const btn = document.getElementById('authBtn');
         const oldText = btn.innerText;
         btn.innerText = "Création...";
+        btn.disabled = true;
 
         try {
-            if(!AppState.supabase) throw new Error("Erreur init. Supabase");
-
             const { error } = await AppState.supabase.auth.signUp({ email:e, password:p });
             if(error) throw error;
             
@@ -87,11 +105,11 @@ const Auth = {
             setTimeout(() => {
                 Auth.toggleMode();
                 document.getElementById('emailInput').value = e;
-                btn.innerText = "CONNEXION";
             }, 1500);
 
         } catch (err) {
             btn.innerText = oldText;
+            btn.disabled = false;
             Auth.err(err.message);
         }
     },
@@ -103,11 +121,7 @@ const Auth = {
 
     err: (msg, color='#ff6b6b') => {
         const m = document.getElementById('msg');
-        if(m) {
-            m.style.color = color;
-            m.innerText = msg;
-        } else {
-            alert(msg);
-        }
+        if(m) { m.style.color = color; m.innerText = msg; }
+        else alert(msg);
     }
 };
