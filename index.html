@@ -2,150 +2,182 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CityCompass Explorer</title>
-    <!-- CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CityCompass Ultimate</title>
+    <!-- CSS Externe -->
     <link rel="stylesheet" href="css/style.css">
-    <!-- Leaflet CSS (Carte) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <!-- FontAwesome (Icônes) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Leaflet & Icons -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body data-theme="light">
 
-    <!-- VUE : CARTE -->
-    <div id="view-map" class="view active">
-        <div id="map" style="width:100%; height:100%; border-radius:12px;"></div>
-        <!-- Bouton recentrer -->
-        <button onclick="MapManager.locate()" style="position:absolute; bottom:100px; right:20px; z-index:999; padding:10px; border-radius:50%; background:white; border:none; box-shadow:0 4px 10px rgba(0,0,0,0.3);">
-            <i class="fas fa-crosshairs text-primary"></i>
-        </button>
+    <!-- 1. VUE LOGIN (Ton Design V72 préservé) -->
+    <div class="view active" id="viewLogin">
+        <h1 style="font-weight:200; letter-spacing:3px; font-size:20px; margin-bottom:40px; opacity:0.8;">CITY COMPASS</h1>
+        <div class="compass-decor">
+            <div class="pulse"></div>
+            <div class="needle-deco"></div>
+        </div>
+        <div class="login-content" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+            <div class="input-group">
+                <i class="fa-solid fa-envelope" style="color:rgba(255,255,255,0.7); margin-right:10px;"></i>
+                <input id="emailInput" class="clean-input" placeholder="Email" type="email">
+            </div>
+            <div class="input-group">
+                <i class="fa-solid fa-lock" style="color:rgba(255,255,255,0.7); margin-right:10px;"></i>
+                <input id="pwdInput" class="clean-input" placeholder="Mot de passe" type="password">
+            </div>
+            <button class="auth-btn" onclick="Auth.submit()">CONNEXION</button>
+            <div style="margin-top:20px; font-size:13px; opacity:0.8; cursor:pointer;" onclick="Auth.toggleMode()" id="switchText">Créer un compte</div>
+            <p id="msg" style="color:#ff6b6b; height:20px; font-size:13px; margin-top:10px;"></p>
+        </div>
     </div>
 
-    <!-- VUE : BOUSSOLE (Avec Widgets) -->
-    <div id="view-compass" class="view">
+    <!-- 2. VUE CARTE (Ton Design V72 préservé) -->
+    <div class="view" id="viewDiscover">
+        <!-- Barre Recherche Style V72 -->
+        <div class="top-bar-container">
+            <div class="input-box">
+                <i class="fa-solid fa-magnifying-glass" style="opacity:0.5; margin-right:10px;"></i>
+                <input id="addrInput" placeholder="Où allons-nous ?" onkeyup="MapManager.search(this.value)">
+            </div>
+            <div class="menu-btn" onclick="UI.toggleMapMenu()"><i class="fa-solid fa-layer-group"></i></div>
+        </div>
+        
+        <!-- Résultats Recherche -->
+        <div id="searchResults" style="position:absolute; top:110px; left:20px; right:20px; background:var(--bg-card); border-radius:14px; z-index:5000; display:none; box-shadow:0 10px 40px rgba(0,0,0,0.3);"></div>
+
+        <!-- Carte -->
+        <div id="map" style="width:100%; height:100%;"></div>
+
+        <!-- Boutons Flottants (FAB) -->
+        <div class="fab-container">
+            <div class="fab" onclick="MapManager.locate()"><i class="fa-solid fa-location-arrow"></i></div>
+        </div>
+    </div>
+
+    <!-- 3. VUE BOUSSOLE (Structure V2.0 pour la logique intelligente) -->
+    <div class="view" id="viewNav">
         <h2 style="text-align:center;">Navigation</h2>
         
-        <!-- La Boussole -->
+        <!-- Boussole Pro -->
         <div class="compass-container">
             <div id="compass-card"></div>
             <div id="compass-needle"></div>
         </div>
         
-        <!-- Stats Rapides -->
-        <div class="compass-stats">
-            <span id="val-heading">0°</span> | <span id="val-speed">0 km/h</span>
-        </div>
-
-        <hr style="border-color:#333; margin:20px 0;">
-
-        <!-- Grille de Widgets (Météo, Altitude, etc.) -->
-        <h3 style="margin-left:10px;">Tableau de bord</h3>
-        <div id="widgets-grid">
-            <!-- Rempli automatiquement par widgets.js -->
-        </div>
-    </div>
-
-    <!-- VUE : PROFIL & ADMIN -->
-    <div id="view-profile" class="view">
-        <h2>Mon Profil</h2>
-        <div class="widget-card" style="margin-bottom:20px;">
-            <div class="widget-icon">👤</div>
-            <div class="widget-val" id="profile-email">Chargement...</div>
-            <div class="widget-name" id="profile-points">0 Points</div>
-        </div>
-
-        <!-- Section Admin (Visible uniquement si admin) -->
-        <div id="admin-panel">
-            <div class="admin-header">Panneau Administrateur 👑</div>
-            <button class="admin-btn mod" onclick="Admin.broadcastMessage()" style="width:100%; margin-bottom:10px;">📢 Envoyer Message Global</button>
-            <button class="admin-btn mod" onclick="Admin.addRecommendation()" style="width:100%; margin-bottom:10px;">⭐ Ajouter Recommandation</button>
-            
-            <div id="admin-user-list">
-                <!-- Liste utilisateurs chargée par admin.js -->
-            </div>
+        <div style="text-align:center; font-size:24px; font-weight:800; color:var(--primary); margin-top:20px;">
+            <span id="val-heading">0°</span>
         </div>
         
-        <button onclick="App.logout()" style="width:100%; padding:15px; background:#333; color:white; border:none; border-radius:12px; margin-top:20px;">Déconnexion</button>
+        <hr style="border:0; border-top:1px solid rgba(128,128,128,0.2); margin:20px 0;">
+        
+        <!-- GRILLE DE WIDGETS (Remplie par widgets.js) -->
+        <h3 style="margin-bottom:15px;">Tableau de bord</h3>
+        <div id="widgets-grid"></div>
+    </div>
+
+    <!-- 4. VUE PROFIL & ADMIN (Structure V2.0) -->
+    <div class="view" id="viewAccount">
+        <div style="text-align:center; padding:30px 0;">
+            <div style="font-size:50px; margin-bottom:10px;">👤</div>
+            <h2 id="profile-email" style="margin:0;">Chargement...</h2>
+            <div id="profile-points" style="color:var(--primary); font-weight:800; font-size:20px; margin-top:5px;">0 Points</div>
+        </div>
+
+        <div style="background:var(--bg-card); border-radius:12px; overflow:hidden; margin-bottom:20px;">
+            <div style="padding:15px; border-bottom:1px solid rgba(0,0,0,0.05); display:flex; justify-content:space-between;">
+                <span>Mode Nuit</span>
+                <i class="fas fa-moon"></i>
+            </div>
+            <div style="padding:15px; display:flex; justify-content:space-between;" onclick="App.logout()">
+                <span style="color:var(--danger);">Déconnexion</span>
+                <i class="fas fa-sign-out-alt" style="color:var(--danger);"></i>
+            </div>
+        </div>
+
+        <!-- ADMIN PANEL (Caché par défaut, géré par admin.js) -->
+        <div id="admin-panel" style="display:none;">
+            <div class="admin-header" style="font-weight:bold; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:5px;">ZONE ADMIN 👑</div>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <button onclick="Admin.broadcastMessage()" style="flex:1; padding:8px; background:#444; color:white; border:none; border-radius:6px;">📢 Message</button>
+                <button onclick="Admin.addRecommendation()" style="flex:1; padding:8px; background:#444; color:white; border:none; border-radius:6px;">⭐ Recomm.</button>
+            </div>
+            <div id="admin-user-list"></div>
+        </div>
     </div>
 
     <!-- BARRE DE NAVIGATION -->
     <div class="navbar">
-        <button class="nav-item active" onclick="App.showView('view-map', this)">
-            <i class="fas fa-map-marked-alt"></i> Carte
+        <button class="nav-item active" onclick="App.showView('viewDiscover', this)">
+            <i class="fa-solid fa-map-location-dot"></i>Carte
         </button>
-        <button class="nav-item" onclick="App.showView('view-compass', this)">
-            <i class="fas fa-compass"></i> Boussole
+        <button class="nav-item" onclick="App.showView('viewNav', this)">
+            <i class="fa-regular fa-compass"></i>Nav
         </button>
-        <button class="nav-item" onclick="App.showView('view-profile', this)">
-            <i class="fas fa-user-astronaut"></i> Profil
+        <button class="nav-item" onclick="App.showView('viewAccount', this)">
+            <i class="fa-regular fa-user"></i>Profil
         </button>
     </div>
 
     <!-- SCRIPTS -->
-    <!-- Supabase -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <!-- Leaflet -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-    <!-- TES FICHIERS (Assure-toi de les avoir créés) -->
-    <script src="js/config.js"></script>     <!-- Ta config Supabase -->
-    <script src="js/auth.js"></script>       <!-- Gestion Auth -->
-    <script src="js/widgets.js"></script>    <!-- Gestion Widgets (Nouveau) -->
-    <script src="js/compass.js"></script>    <!-- Gestion Boussole (Nouveau) -->
-    <script src="js/admin.js"></script>      <!-- Gestion Admin (Nouveau) -->
-    <script src="js/mapManager.js"></script> <!-- Ta carte -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- Script Principal (App.js) -->
+    <!-- Scripts Modularisés -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/widgets.js"></script>
+    <script src="js/compass.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/mapManager.js"></script>
+    
+    <!-- Script Principal Inline -->
     <script>
-        // js/app.js intégré pour simplicité ou à mettre dans un fichier à part
         const App = {
             init: async () => {
-                // Initialise Supabase via config.js (vérifie que window.supabaseClient existe)
-                // Initialise les modules
                 Widgets.init();
                 Compass.init();
                 
-                // Vérifie connexion
+                // Vérif Session
                 const {  { session } } = await AppState.supabase.auth.getSession();
                 if(session) {
                     AppState.user = session.user;
-                    // Vérifier si Admin
-                    const {  profile } = await AppState.supabase
-                        .from('profiles')
-                        .select('*')
-                        .eq('id', session.user.id)
-                        .single();
-                        
+                    App.showView('viewDiscover'); // Aller direct à la carte
+                    
+                    // Charger Profil & Admin
+                    const {  profile } = await AppState.supabase.from('profiles').select('*').eq('id', session.user.id).single();
                     if(profile) {
                         AppState.user.is_admin = profile.is_admin;
-                        document.getElementById('profile-email').innerText = session.user.email;
-                        document.getElementById('profile-points').innerText = (profile.points || 0) + " Points";
+                        document.getElementById('profile-email').innerText = session.user.email.split('@')[0];
+                        document.getElementById('profile-points').innerText = (profile.points || 0) + " XP";
                         
-                        // Si Admin, charger le panel
-                        if(profile.is_admin) Admin.init();
-                        else document.getElementById('admin-panel').style.display = 'none';
+                        if(profile.is_admin) {
+                            document.getElementById('admin-panel').style.display = 'block';
+                            Admin.init();
+                        }
                     }
+                } else {
+                    App.showView('viewLogin');
                 }
             },
-
-            showView: (viewId, btn) => {
+            
+            showView: (id, btn) => {
                 document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-                document.getElementById(viewId).classList.add('active');
-                
-                document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-                if(btn) btn.classList.add('active');
-
-                // Si on va sur la carte, on force le redimensionnement pour éviter les bugs gris
-                if(viewId === 'view-map' && window.map) window.map.invalidateSize();
+                document.getElementById(id).classList.add('active');
+                if(btn) {
+                    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                }
+                if(id === 'viewDiscover' && window.map) window.map.invalidateSize();
             },
-
+            
             logout: async () => {
                 await AppState.supabase.auth.signOut();
                 window.location.reload();
             }
         };
-
         window.onload = App.init;
     </script>
 </body>
