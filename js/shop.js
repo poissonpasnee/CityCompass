@@ -1,5 +1,4 @@
 const Shop = {
-    // Liste statique des 10 widgets disponibles par défaut
     widgetsList: [
         { id: 'w_speed', icon: 'gauge-high', name: 'Vitesse', color:'orange' },
         { id: 'w_alt', icon: 'mountain', name: 'Altitude', color:'gray' },
@@ -15,12 +14,15 @@ const Shop = {
 
     renderWidgets: () => {
         const grid = document.getElementById('profileWidgets');
+        if(!grid) return;
         grid.innerHTML = '';
         
+        // Affiche TOUS les widgets directement
         Shop.widgetsList.forEach((w, idx) => {
             const div = document.createElement('div');
             div.className = 'widget';
-            // ID unique pour mise à jour JS (ex: widSpeed, widAlt...)
+            
+            // ID unique pour mise à jour dynamique
             let valId = 'wid' + w.name; 
             if(w.id === 'w_speed') valId = 'widSpeed';
             if(w.id === 'w_alt') valId = 'widAlt';
@@ -34,7 +36,7 @@ const Shop = {
             grid.appendChild(div);
         });
 
-        // Gestion bouton "Voir plus"
+        // Bouton "Afficher Plus"
         const btn = document.getElementById('btnShowMore');
         if(Shop.widgetsList.length > 4) {
             btn.style.display = 'block';
