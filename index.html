@@ -3,37 +3,48 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="theme-color" content="#000000" />
-    <title>CityCompass V58</title>
+    <title>CityCompass V60</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        :root { --bg-body: #F2F2F7; --bg-card: #FFFFFF; --accent: #007AFF; --text: #000; --nav-height: 85px; --danger: #FF3B30; }
+        :root { --bg-body: #F2F2F7; --bg-card: #FFFFFF; --accent: #007AFF; --text: #000; --nav-height: 85px; --danger: #FF3B30; --success: #34C759; }
         [data-theme="dark"] { --bg-body: #000; --bg-card: #1C1C1E; --text: #FFF; }
+        
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
-        body { margin: 0; padding: 0; height: 100dvh; overflow: hidden; font-family: -apple-system, sans-serif; background-color: var(--bg-body); color: var(--text); }
-        .app { display: flex; flex-direction: column; height: 100%; }
+        body { margin: 0; padding: 0; height: 100dvh; overflow: hidden; font-family: -apple-system, sans-serif; background-color: var(--bg-body); color: var(--text); transition: background 0.3s; }
+        
         .view { display: none; position: absolute; top:0; left:0; right:0; bottom:var(--nav-height); overflow-y:auto; padding:20px; z-index: 10; background: var(--bg-body); }
         .view.active { display: block; }
         #viewDiscover { padding:0; overflow:hidden; }
         
         .btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-weight: 700; font-size: 16px; background: var(--accent); color: white; margin-top: 10px; cursor: pointer; }
-        .input-box { background: var(--bg-card); padding: 15px; border-radius: 14px; margin-bottom: 10px; display: flex; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        input { border: none; background: transparent; width: 100%; font-size: 16px; color: var(--text); }
+        .input-box { background: var(--bg-card); padding: 15px; border-radius: 14px; margin-bottom: 10px; display: flex; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; z-index: 2000; }
+        input { border: none; background: transparent; width: 100%; font-size: 16px; color: var(--text); pointer-events: auto; }
         
-        .search-results { position: absolute; top: 70px; left: 20px; right: 20px; background: var(--bg-card); border-radius: 14px; max-height: 300px; overflow-y: auto; z-index: 2000; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
-        .search-item { padding: 15px; border-bottom: 1px solid rgba(128,128,128,0.2); cursor: pointer; }
-
-        .compass-wrap { position: relative; width: 260px; height: 260px; margin: 40px auto; border-radius: 50%; border: 2px solid rgba(128,128,128,0.3); display: flex; align-items: center; justify-content: center; }
-        .compass-arrow { font-size: 64px; color: var(--accent); transition: transform 0.1s linear; }
-
+        /* RECHERCHE (Z-INDEX FIX) */
+        .search-results { position: absolute; top: 70px; left: 20px; right: 20px; background: var(--bg-card); border-radius: 14px; max-height: 300px; overflow-y: auto; z-index: 5000; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.3); pointer-events: auto; }
+        .search-item { padding: 15px; border-bottom: 1px solid rgba(128,128,128,0.2); cursor: pointer; color: var(--text); }
+        
+        /* BOUSSOLE & ANNEAU */
+        .compass-container { position: relative; width: 280px; height: 280px; margin: 40px auto; display: flex; align-items: center; justify-content: center; }
+        .progress-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+        .progress-ring circle { transition: stroke-dashoffset 0.5s; }
+        .compass-arrow { font-size: 80px; color: var(--accent); transition: transform 0.1s linear; z-index: 2; }
+        
+        /* WIDGETS & SETTINGS */
         .widget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
         .widget { background: var(--bg-card); padding: 15px; border-radius: 14px; text-align: center; }
+        
+        .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--bg-card); border-radius: 12px; margin-bottom: 10px; }
+        .switch { position: relative; width: 50px; height: 30px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(20px); }
 
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: var(--bg-card); display: flex; justify-content: space-around; padding-bottom: 20px; z-index: 3000; border-top: 1px solid rgba(128,128,128,0.2); }
         .nav-tab { background: none; border: none; color: gray; font-size: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; }
@@ -41,14 +52,8 @@
         .nav-icon { font-size: 24px; margin-bottom: 4px; }
         
         #map { width: 100%; height: 100%; }
-        .floating-ui { position: absolute; top: 20px; left: 20px; right: 20px; z-index: 1000; }
-        
-        /* FAVORIS LIST */
-        .fav-item { background: var(--bg-card); padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-
-        /* ADMIN PANEL */
-        #viewAdmin { background: #111; color: #FFF; z-index: 5000; }
-        .admin-card { background: #222; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #444; }
+        .floating-ui { position: absolute; top: 20px; left: 20px; right: 20px; z-index: 1000; pointer-events: none; }
+        .floating-ui * { pointer-events: auto; } /* Active les clics sur input */
     </style>
 </head>
 <body data-theme="light">
@@ -70,8 +75,8 @@
         <div class="view" id="viewDiscover">
             <div class="floating-ui">
                 <div class="input-box">
-                    <span>🔍</span>
-                    <input id="addrInput" placeholder="Où aller ?" onkeyup="MapManager.search(this.value)" autocomplete="off">
+                    <span style="margin-right:10px;">🔍</span>
+                    <input id="addrInput" placeholder="Rechercher adresse..." onkeyup="MapManager.search(this.value)" autocomplete="off">
                 </div>
                 <div class="search-results" id="searchResults"></div>
             </div>
@@ -80,14 +85,21 @@
 
         <!-- BOUSSOLE -->
         <div class="view" id="viewNav">
-            <h2 style="text-align:center;" id="navTitle">Aucune destination</h2>
-            <p style="text-align:center; opacity:0.6;" id="navDist">-- m</p>
-            <div class="compass-wrap">
+            <h2 style="text-align:center;" id="navTitle">Aucune cible</h2>
+            <p style="text-align:center; opacity:0.6; font-size:24px; font-weight:bold;" id="navDist">-- m</p>
+            
+            <div class="compass-container">
+                <!-- Anneau SVG -->
+                <svg class="progress-ring" width="280" height="280">
+                   <circle stroke="rgba(128,128,128,0.2)" stroke-width="10" fill="transparent" r="120" cx="140" cy="140"/>
+                   <circle id="distRing" stroke="#007AFF" stroke-width="10" fill="transparent" r="120" cx="140" cy="140" stroke-dasharray="754" stroke-dashoffset="754" stroke-linecap="round"/>
+                </svg>
                 <div class="compass-arrow" id="compassArrow">➤</div>
-                <div style="position:absolute; top:-30px; font-weight:bold;">NORD</div>
+                <div style="position:absolute; top:20px; font-weight:bold; color:gray;">NORD</div>
             </div>
+
             <button class="btn" style="background:red; width:auto; margin:20px auto; display:block;" onclick="Compass.calibrate()" id="btnCalib">📡 Calibrer</button>
-            <button class="btn" style="background:gray; margin-top:30px;" onclick="Compass.stop()">Arrêter</button>
+            <button class="btn" style="background:gray; margin-top:20px;" onclick="Compass.stop()">Arrêter</button>
         </div>
 
         <!-- PROFIL -->
@@ -98,37 +110,55 @@
                 <div style="font-size:32px; font-weight:800; color:var(--accent);" id="displayPoints">0 XP</div>
             </div>
 
-            <button class="btn" onclick="UI.show('viewFavorites')" style="background:var(--bg-card); color:var(--accent); margin-bottom:20px;">📁 Mes Favoris</button>
+            <h3>Paramètres</h3>
+            <div class="setting-row">
+                <span>Mode Nuit 🌙</span>
+                <label class="switch"><input type="checkbox" id="themeSwitch" onchange="Settings.toggleTheme()"><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+                <span>Email</span>
+                <button onclick="Settings.updateEmail()" style="background:none; border:1px solid gray; border-radius:8px; padding:5px;">Modifier</button>
+            </div>
+            <div class="setting-row">
+                <span>Mot de passe</span>
+                <button onclick="Settings.updatePwd()" style="background:none; border:1px solid gray; border-radius:8px; padding:5px;">Modifier</button>
+            </div>
 
-            <h3>Widgets</h3>
+            <h3>Mes Widgets</h3>
             <div class="widget-grid" id="widgetGrid"></div>
-
-            <button class="btn" id="btnAdmin" onclick="UI.show('viewAdmin')" style="display:none; background:#333; margin-top:20px;">🛠️ Admin Panel</button>
+            
+            <button class="btn" id="btnAdmin" onclick="UI.show('viewAdmin')" style="display:none; background:#333; margin-top:20px;">🛠️ Admin Panel (Complet)</button>
             <button class="btn" style="background:var(--danger); margin-top:20px;" onclick="Auth.logout()">Déconnexion</button>
         </div>
 
-        <!-- GESTION FAVORIS -->
-        <div class="view" id="viewFavorites">
-            <button onclick="UI.show('viewAccount')" style="background:none; border:none; font-size:16px; color:var(--accent); margin-bottom:20px;">← Retour</button>
-            <h2>Mes Dossiers</h2>
-            <div id="favListContainer">Chargement...</div>
-        </div>
-
-        <!-- ADMIN PANEL -->
-        <div class="view" id="viewAdmin">
+        <!-- ADMIN -->
+        <div class="view" id="viewAdmin" style="background:#111; color:white; z-index:5000;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2>Admin Console</h2>
-                <button onclick="UI.show('viewAccount')" style="background:none; border:none; color:white;">Fermer</button>
+                <h2>Admin Dashboard</h2>
+                <button onclick="UI.show('viewAccount')" style="background:none; border:none; color:white; font-size:16px;">Fermer ✕</button>
             </div>
-            <div class="admin-card">
-                <h3>Utilisateurs</h3>
-                <div style="font-size:24px; font-weight:bold;" id="adminUserCount">0</div>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
+                <div style="background:#222; padding:15px; border-radius:10px; text-align:center;">
+                    <div style="font-size:24px;" id="admUserCount">0</div>
+                    <div style="font-size:12px; opacity:0.6;">Utilisateurs</div>
+                </div>
+                <div style="background:#222; padding:15px; border-radius:10px; text-align:center;">
+                    <div style="font-size:24px;" id="admPlaceCount">0</div>
+                    <div style="font-size:12px; opacity:0.6;">Lieux</div>
+                </div>
             </div>
-            <div class="admin-card">
-                <h3>Actions</h3>
-                <button class="btn" onclick="Admin.givePoints()">💰 Donner 500 XP (Moi)</button>
-                <button class="btn" onclick="Admin.broadcast()" style="background:#007AFF;">📢 Message Global</button>
+
+            <h3>Gestion Utilisateurs</h3>
+            <input placeholder="ID Utilisateur..." id="admUserId" style="width:100%; padding:10px; background:#333; color:white; border:none; margin-bottom:5px;">
+            <div style="display:flex; gap:5px;">
+                <button class="btn" style="margin:0; font-size:12px;" onclick="Admin.modUserPoints(500)">+500 XP</button>
+                <button class="btn" style="margin:0; font-size:12px; background:red;" onclick="Admin.banUser()">BAN</button>
             </div>
+
+            <h3>Système</h3>
+            <button class="btn" onclick="Admin.broadcast()">📢 Message Global</button>
+            <button class="btn" onclick="Admin.resetShop()" style="background:#FF9500;">🛒 Reset Boutique</button>
         </div>
 
         <!-- NAV BAR -->
@@ -137,16 +167,17 @@
             <button class="nav-tab" onclick="UI.show('viewNav')"><span class="nav-icon">🧭</span>Boussole</button>
             <button class="nav-tab" onclick="UI.show('viewAccount')"><span class="nav-icon">👤</span>Profil</button>
         </div>
-
     </div>
 
+    <!-- SCRIPTS -->
     <script src="js/config.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/mapManager.js"></script>
     <script src="js/compass.js"></script>
     <script src="js/shop.js"></script>
-    <script src="js/admin.js"></script> <!-- Nouveau -->
+    <script src="js/settings.js"></script> <!-- Nouveau -->
+    <script src="js/admin.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
