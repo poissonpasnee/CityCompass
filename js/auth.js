@@ -6,9 +6,8 @@ const Auth = {
         const title = document.getElementById('authTitle');
         const btn = document.getElementById('authBtn');
         const switchText = document.getElementById('switchText');
-        const msg = document.getElementById('msg');
         
-        msg.innerText = "";
+        if(document.getElementById('msg')) document.getElementById('msg').innerText = "";
         
         if(Auth.isSignup) {
             title.innerText = "Créer un compte";
@@ -22,10 +21,10 @@ const Auth = {
     },
 
     submit: () => {
+        // Anti-spam clic
         const btn = document.getElementById('authBtn');
-        // Evite le double clic
-        if(btn.innerText === "Chargement..." || btn.innerText === "Création...") return;
-        
+        if(btn.innerText.includes("...")) return;
+
         if(Auth.isSignup) Auth.signup();
         else Auth.login();
     },
@@ -34,38 +33,37 @@ const Auth = {
         const e = document.getElementById('emailInput').value;
         const p = document.getElementById('pwdInput').value;
         
-        // Mode Démo rapide (si champs vides ou admin/admin)
+        // Mode Secours Admin
         if(e === 'admin' && p === 'admin') {
-            App.start({ id: 'demo-user', email: 'admin@demo.com' });
+            App.start({ id: 'admin-local', email: 'admin@local.com' });
             return;
         }
 
-        if(!e || !p) return Auth.err("Remplissez tous les champs");
+        if(!e || !p) return Auth.err("Remplissez tout");
         
         const btn = document.getElementById('authBtn');
-        const originalText = btn.innerText;
+        const oldText = btn.innerText;
         btn.innerText = "Chargement...";
         
         try {
-            if(!AppState.supabase) throw new Error("Supabase non initialisé");
+            if(!AppState.supabase) throw new Error("Erreur init. Supabase");
 
             const { data, error } = await AppState.supabase.auth.signInWithPassword({ email:e, password:p });
-            
             if(error) throw error;
             
             App.start(data.user);
 
-        } catch (error) {
-            console.error(error);
-            btn.innerText = originalText;
+        } catch (err) {
+            console.error(err);
+            btn.innerText = oldText;
             
-            // DÉTECTION ERREUR RÉSEAU / LOAD FAILED
-            if(error.message === "Failed to fetch" || error.message.includes("Load failed") || !window.navigator.onLine) {
-                if(confirm("Erreur de connexion serveur.\n\nVoulez-vous entrer en mode HORS LIGNE (Démo) ?")) {
-                    App.start({ id: 'offline-user', email: 'mode@hors-ligne.com' });
+            // Si erreur réseau ou "Load Failed", on propose le mode hors ligne
+            if(err.message.includes("Load failed") || err.message.includes("fetch")) {
+                if(confirm("Connexion serveur impossible (Load Failed).\n\nPasser en mode HORS LIGNE ?")) {
+                    App.start({ id: 'offline', email: 'offline@mode.com' });
                 }
             } else {
-                Auth.err(error.message === "Invalid login credentials" ? "Email ou mot de passe incorrect" : "Erreur: " + error.message);
+                Auth.err("Erreur: " + err.message);
             }
         }
     },
@@ -73,17 +71,16 @@ const Auth = {
     signup: async () => {
         const e = document.getElementById('emailInput').value;
         const p = document.getElementById('pwdInput').value;
-        if(!e || !p) return Auth.err("Remplissez tous les champs");
+        if(!e || !p) return Auth.err("Remplissez tout");
         
         const btn = document.getElementById('authBtn');
-        const originalText = btn.innerText;
+        const oldText = btn.innerText;
         btn.innerText = "Création...";
 
         try {
-            if(!AppState.supabase) throw new Error("Supabase non initialisé");
+            if(!AppState.supabase) throw new Error("Erreur init. Supabase");
 
             const { error } = await AppState.supabase.auth.signUp({ email:e, password:p });
-            
             if(error) throw error;
             
             Auth.err("Compte créé ! Connectez-vous.", "#34C759");
@@ -93,14 +90,9 @@ const Auth = {
                 btn.innerText = "CONNEXION";
             }, 1500);
 
-        } catch (error) {
-            console.error(error);
-            btn.innerText = originalText;
-            if(error.message.includes("Load failed")) {
-                alert("Impossible de joindre le serveur d'inscription. Vérifiez votre connexion.");
-            } else {
-                Auth.err(error.message);
-            }
+        } catch (err) {
+            btn.innerText = oldText;
+            Auth.err(err.message);
         }
     },
 
@@ -111,7 +103,11 @@ const Auth = {
 
     err: (msg, color='#ff6b6b') => {
         const m = document.getElementById('msg');
-        m.style.color = color;
-        m.innerText = msg;
+        if(m) {
+            m.style.color = color;
+            m.innerText = msg;
+        } else {
+            alert(msg);
+        }
     }
 };
