@@ -1,1 +1,413 @@
- 
+/* --- DESIGN SYSTEM LIQUID GLASS --- */
+:root {
+    --glass: rgba(255, 255, 255, 0.88);
+    --blur: blur(25px);
+    --shadow: 0 12px 40px rgba(0,0,0,0.18);
+    --accent: #007AFF;
+    --danger: #FF3B30;
+    --success: #34C759;
+    --text: #000;
+}
+
+body[data-theme="dark"] {
+    --glass: rgba(32, 32, 35, 0.88);
+    --text: #FFF;
+}
+
+* { 
+    box-sizing: border-box; 
+    -webkit-tap-highlight-color: transparent; 
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+    touch-action: manipulation; 
+}
+
+body { 
+    margin: 0; 
+    height: 100vh; 
+    overflow: hidden; 
+    background: #000; 
+    color: var(--text); 
+    user-select: none; 
+}
+
+/* CARTE */
+#map { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    z-index: 1; 
+    background: #ddd; 
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated { 
+    transition: transform 0.2s cubic-bezier(0,0,0.2,1) !important; 
+}
+
+/* HUD */
+.hud-layer {
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    pointer-events: none; 
+    z-index: 1000;
+    display: flex; 
+    flex-direction: column; 
+    justify-content: space-between;
+    padding: env(safe-area-inset-top) 15px calc(env(safe-area-inset-bottom) + 20px) 15px;
+}
+
+/* RECHERCHE */
+.search-container {
+    margin-top: 15px; 
+    pointer-events: auto; 
+    position: relative; 
+    width: 100%; 
+    max-width: 450px; 
+    align-self: center;
+}
+
+.search-bar {
+    background: var(--glass); 
+    backdrop-filter: var(--blur);
+    border-radius: 24px; 
+    padding: 14px 20px; 
+    box-shadow: var(--shadow);
+    display: flex; 
+    align-items: center; 
+    gap: 12px;
+}
+
+.search-inp { 
+    border: none; 
+    background: transparent; 
+    font-size: 16px; 
+    width: 100%; 
+    outline: none; 
+    color: var(--text); 
+    font-weight: 500; 
+}
+
+.search-results {
+    position: absolute; 
+    top: 65px; 
+    left: 0; 
+    width: 100%; 
+    background: var(--glass);
+    backdrop-filter: var(--blur); 
+    border-radius: 20px; 
+    max-height: 300px; 
+    overflow-y: auto;
+    display: none; 
+    padding: 10px; 
+    box-shadow: var(--shadow);
+    z-index: 100;
+}
+
+.result-item { 
+    padding: 14px; 
+    border-bottom: 1px solid rgba(128,128,128,0.1); 
+    cursor: pointer; 
+    font-size: 15px; 
+}
+
+.result-item:last-child { 
+    border: none; 
+}
+
+.xp-badge { 
+    background: var(--accent); 
+    color: white; 
+    padding: 4px 10px; 
+    border-radius: 20px; 
+    font-size: 12px; 
+    font-weight: bold; 
+    white-space: nowrap; 
+    cursor: pointer;
+}
+
+/* DOCK & FAB */
+.dock-wrapper { 
+    position: relative; 
+    width: 100%; 
+    max-width: 400px; 
+    align-self: center; 
+    pointer-events: auto; 
+}
+
+.dock {
+    background: var(--glass); 
+    backdrop-filter: var(--blur); 
+    border-radius: 35px; 
+    padding: 12px 30px;
+    display: flex; 
+    justify-content: space-between; 
+    box-shadow: var(--shadow);
+}
+
+.dock-icon { 
+    font-size: 24px; 
+    color: #999; 
+    padding: 10px; 
+    transition: 0.2s; 
+    position: relative; 
+    cursor: pointer;
+}
+
+.dock-icon.active { 
+    color: var(--accent); 
+    transform: translateY(-3px); 
+}
+
+.fab-compass {
+    position: absolute; 
+    left: 50%; 
+    top: -35px; 
+    transform: translateX(-50%);
+    width: 70px; 
+    height: 70px; 
+    border-radius: 50%;
+    background: var(--glass); 
+    backdrop-filter: var(--blur);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    font-size: 32px; 
+    color: var(--accent); 
+    cursor: pointer; 
+    border: 4px solid rgba(255,255,255,0.1);
+}
+
+.fab-compass:active { 
+    transform: translateX(-50%) scale(0.95); 
+}
+
+/* PANNEAUX */
+.panel {
+    position: absolute; 
+    top: 0; 
+    right: -100%; 
+    width: 100%; 
+    height: 100%; 
+    background: var(--glass);
+    backdrop-filter: blur(40px); 
+    z-index: 2000; 
+    transition: right 0.35s cubic-bezier(0.19, 1, 0.22, 1);
+    padding: 80px 20px 120px 20px; 
+    overflow-y: auto; 
+    pointer-events: auto;
+}
+
+.panel.open { 
+    right: 0; 
+}
+
+.panel-head { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 25px; 
+}
+
+.panel h2 { 
+    font-size: 28px; 
+    font-weight: 800; 
+    margin: 0; 
+}
+
+.close-btn { 
+    width: 36px; 
+    height: 36px; 
+    border-radius: 50%; 
+    border: none; 
+    background: rgba(128,128,128,0.15); 
+    color: var(--text); 
+    font-size: 18px; 
+    cursor: pointer; 
+}
+
+/* ITEMS */
+.shop-item {
+    background: rgba(128,128,128,0.08); 
+    padding: 16px; 
+    border-radius: 22px; 
+    margin-bottom: 12px;
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+}
+
+.shop-info { 
+    display: flex; 
+    align-items: center; 
+    gap: 15px; 
+}
+
+.shop-icon { 
+    width: 48px; 
+    height: 48px; 
+    border-radius: 14px; 
+    background: #eee; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 24px; 
+}
+
+.buy-btn {
+    background: var(--text); 
+    color: var(--glass); 
+    border: none; 
+    padding: 10px 18px; 
+    border-radius: 14px;
+    font-weight: 700; 
+    font-size: 14px; 
+    cursor: pointer;
+}
+
+/* TOGGLE SWITCH */
+.toggle-switch { 
+    position: relative; 
+    width: 50px; 
+    height: 30px; 
+    display: inline-block; 
+}
+
+.toggle-switch input { 
+    opacity: 0; 
+    width: 0; 
+    height: 0; 
+}
+
+.slider { 
+    position: absolute; 
+    cursor: pointer; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0; 
+    background-color: #ccc; 
+    transition: .3s; 
+    border-radius: 34px; 
+}
+
+.slider:before { 
+    position: absolute; 
+    content: ""; 
+    height: 26px; 
+    width: 26px; 
+    left: 2px; 
+    bottom: 2px; 
+    background-color: white; 
+    transition: .3s; 
+    border-radius: 50%; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+}
+
+input:checked + .slider { 
+    background-color: var(--success); 
+}
+
+input:checked + .slider:before { 
+    transform: translateX(20px); 
+}
+
+/* LOGIN */
+#loginScreen {
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    z-index: 9999;
+    background: rgba(0,0,0,0.7); 
+    backdrop-filter: blur(30px);
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center;
+}
+
+.login-box { 
+    background: var(--glass); 
+    padding: 35px; 
+    border-radius: 35px; 
+    width: 85%; 
+    max-width: 360px; 
+    text-align: center; 
+    box-shadow: var(--shadow); 
+}
+
+.inp { 
+    width: 100%; 
+    padding: 16px; 
+    margin-bottom: 12px; 
+    border-radius: 16px; 
+    border: 1px solid rgba(0,0,0,0.1); 
+    font-size: 16px; 
+    background: rgba(128,128,128,0.05); 
+    color: var(--text); 
+}
+
+.btn-main { 
+    width: 100%; 
+    padding: 16px; 
+    border-radius: 16px; 
+    border: none; 
+    background: var(--accent); 
+    color: white; 
+    font-weight: 700; 
+    font-size: 16px; 
+    margin-top: 10px; 
+    cursor: pointer; 
+}
+
+/* BOUSSOLE OVERLAY */
+#compassOverlay {
+    position: fixed; 
+    top:0; 
+    left:0; 
+    width:100%; 
+    height:100%; 
+    background: var(--glass); 
+    z-index: 3000;
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center;
+    opacity: 0; 
+    pointer-events: none; 
+    transition: 0.3s;
+}
+
+#compassOverlay.active { 
+    opacity: 1; 
+    pointer-events: auto; 
+}
+
+#compassRing {
+    width: 280px; 
+    height: 280px; 
+    border: 8px solid var(--text); 
+    border-radius: 50%;
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    transition: transform 0.05s linear;
+    margin-bottom: 30px; 
+    position: relative;
+}
+
+.setting-row { 
+    padding: 18px 0; 
+    border-bottom: 1px solid rgba(128,128,128,0.1); 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    font-size: 16px; 
+    cursor: pointer; 
+}
