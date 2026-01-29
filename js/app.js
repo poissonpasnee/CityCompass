@@ -12,28 +12,28 @@ const App = {
         document.getElementById('profileEmail').innerText = user.email;
         UI.show('viewDiscover');
         
-        // Load Profile
+        // Charger Profil
         let { data } = await AppState.supabase.from('profiles').select('*').eq('id', user.id).single();
-        
         if(!data) {
             await AppState.supabase.from('profiles').insert({ id: user.id, points: 500 });
-            data = { points: 500, items: [], favorites: [] };
+            data = { points: 500, favorites: [], is_admin: false };
         }
         AppState.profile = data;
         
-        // Admin Check
+        // Admin
         if(AppState.profile.is_admin) document.getElementById('btnAdmin').style.display = 'block';
         
         document.getElementById('displayPoints').innerText = data.points + " XP";
         
-        MapManager.init();
-        Shop.renderWidgets();
-        Favorites.render(); // Charge la liste des favoris
-
         // Restaurer thème
         const theme = localStorage.getItem('cc_theme');
-        if(theme) document.body.setAttribute('data-theme', theme);
+        if(theme) {
+            document.body.setAttribute('data-theme', theme);
+            document.getElementById('themeSwitch').checked = (theme === 'dark');
+        }
+
+        MapManager.init();
+        Favorites.render();
     }
 };
-
 window.onload = App.init;
