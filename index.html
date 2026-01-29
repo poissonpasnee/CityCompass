@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <title>CityCompass V80</title>
+    <title>CityCompass V81</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -20,13 +20,17 @@
         /* VIEWS */
         .view { display: none; position: absolute; top:0; left:0; right:0; bottom:var(--nav-height); overflow-y:auto; padding:20px; z-index: 10; background: var(--bg-body); }
         .view.active { display: block; }
-        #viewDiscover { padding:0; overflow:hidden; }
         
+        /* FIX CARTE : Le conteneur doit prendre toute la place */
+        #viewDiscover { padding:0; overflow:hidden; display:none; height: 100%; width: 100%; }
+        #viewDiscover.active { display: block; }
+        #map { width: 100%; height: 100%; z-index: 1; }
+
         /* --- LOGIN PAGE --- */
-        #viewLogin { background: radial-gradient(circle at top left, #007AFF, #005ec4, #000); color: white; padding: 0; bottom: 0 !important; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #viewLogin { background: radial-gradient(circle at top left, #007AFF, #005ec4, #000); color: white; padding: 0; bottom: 0 !important; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
         .login-content { width: 100%; max-width: 320px; display: flex; flex-direction: column; align-items: center; z-index: 2; }
         .compass-decor { position: relative; width: 140px; height: 140px; margin-bottom: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); box-shadow: 0 0 40px rgba(0,122,255,0.3); animation: float 6s ease-in-out infinite; }
-        .needle { width: 60px; height: 60px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpolygon points='12 2 19 22 12 18 5 22 12 2' /%3E%3C/svg%3E") no-repeat center center; background-size: contain; animation: spin 15s linear infinite; filter: drop-shadow(0 0 5px #007AFF); }
+        .needle { width: 60px; height: 60px; background: url("image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpolygon points='12 2 19 22 12 18 5 22 12 2' /%3E%3C/svg%3E") no-repeat center center; background-size: contain; animation: spin 15s linear infinite; filter: drop-shadow(0 0 5px #007AFF); }
         .pulse { position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); animation: pulse 3s infinite ease-out; }
         .input-group { width: 100%; background: rgba(255, 255, 255, 0.15); border-radius: 12px; margin-bottom: 12px; display: flex; align-items: center; padding: 2px 15px; border: 1px solid rgba(255,255,255,0.1); }
         .clean-input { width: 100%; padding: 12px 10px; background: transparent; border: none; color: white; font-size: 15px; outline: none; }
@@ -37,7 +41,7 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
-        /* --- STANDARD APP --- */
+        /* --- UI ELEMENTS --- */
         .btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-weight: 700; font-size: 16px; background: var(--accent); color: white; margin-top: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .top-bar-container { position: absolute; top: 20px; left: 20px; right: 20px; z-index: 1000; display: flex; gap: 10px; pointer-events: none; }
         .input-box { flex: 1; background: var(--bg-card); padding: 0 15px; height: 50px; border-radius: 25px; display: flex; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: auto; }
@@ -51,36 +55,23 @@
         .fab-container { position: absolute; bottom: 30px; right: 20px; z-index: 900; pointer-events: auto; }
         .fab { width: 50px; height: 50px; background: var(--bg-card); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; color: var(--accent); font-size: 20px; }
 
-        /* POPUP & BOUSSOLE */
-        .custom-popup .leaflet-popup-content-wrapper { border-radius: 16px; padding: 0; overflow: hidden; }
-        .custom-popup .leaflet-popup-content { margin: 0; width: 260px !important; }
-        .popup-header { background: var(--accent); color: white; padding: 15px; font-weight: bold; font-size: 16px; }
-        .popup-body { padding: 15px; background: var(--bg-card); }
-        
-        .compass-container { position: relative; width: 260px; height: 260px; margin: 20px auto; display: flex; align-items: center; justify-content: center; }
-        .progress-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
-        .compass-arrow { font-size: 80px; color: var(--accent); transition: transform 0.1s linear; z-index: 2; }
-
-        /* WIDGETS & GRID */
+        /* WIDGETS */
         .widget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; transition: max-height 0.3s ease-out; overflow: hidden; }
-        .widget-grid.collapsed { max-height: 250px; } /* Hauteur pour 2 lignes (4 widgets) */
+        .widget-grid.collapsed { max-height: 250px; }
         .widget-grid.expanded { max-height: 2000px; }
-        
         .widget { background: var(--bg-card); padding: 15px; border-radius: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 110px; position:relative; }
         .widget-val { font-size: 22px; font-weight: 800; color: var(--accent); margin: 5px 0; }
         .widget-lbl { font-size: 11px; opacity: 0.6; font-weight: 600; text-transform: uppercase; }
-        
-        /* MINI WIDGETS FOR COMPASS VIEW */
+
+        /* POPUP, NAV & SETTINGS */
+        .custom-popup .leaflet-popup-content-wrapper { border-radius: 16px; }
+        .compass-container { position: relative; width: 260px; height: 260px; margin: 20px auto; display: flex; align-items: center; justify-content: center; }
+        .progress-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+        .compass-arrow { font-size: 80px; color: var(--accent); transition: transform 0.1s linear; z-index: 2; }
         .compass-stats { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; margin-top: 20px; }
         .mini-stat { background: var(--bg-card); padding: 10px 5px; border-radius: 10px; text-align: center; }
         .mini-val { font-weight: bold; font-size: 14px; color: var(--accent); }
         .mini-lbl { font-size: 9px; opacity: 0.6; }
-
-        /* ADMIN */
-        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #333; }
-        .user-actions button { padding: 5px 10px; font-size: 10px; margin-left: 5px; }
-
-        .show-more-btn { width: 100%; padding: 10px; text-align: center; color: var(--accent); background: transparent; border: 1px solid var(--accent); border-radius: 10px; margin-bottom: 20px; cursor: pointer; display: none; }
 
         .setting-row { padding: 15px; border-bottom: 1px solid rgba(128,128,128,0.1); display: flex; justify-content: space-between; align-items: center; background:var(--bg-card); }
         .switch { position: relative; width: 50px; height: 30px; }
@@ -90,12 +81,14 @@
         input:checked + .slider { background-color: var(--success); }
         input:checked + .slider:before { transform: translateX(20px); }
 
+        .fav-item { background: var(--bg-card); padding: 15px; border-radius: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #333; }
+        .show-more-btn { width: 100%; padding: 10px; text-align: center; color: var(--accent); background: transparent; border: 1px solid var(--accent); border-radius: 10px; margin-bottom: 20px; cursor: pointer; display: none; }
+
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: var(--bg-card); display: flex; justify-content: space-around; padding-bottom: 20px; z-index: 3000; border-top: 1px solid rgba(128,128,128,0.2); }
         .nav-tab { background: none; border: none; color: gray; font-size: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; }
         .nav-tab.active { color: var(--accent); }
         .nav-icon { font-size: 24px; margin-bottom: 4px; }
-        
-        #map { width: 100%; height: 100%; }
     </style>
 </head>
 <body data-theme="light">
@@ -107,7 +100,7 @@
             <div class="compass-decor"><div class="pulse"></div><div class="needle"></div></div>
             <div class="login-content">
                 <h2 id="authTitle" style="margin-bottom:20px; font-weight:600;">Bienvenue</h2>
-                <div class="input-group"><i class="fa-solid fa-envelope" style="opacity:0.7;"></i><input id="emailInput" class="clean-input" placeholder="Email" type="email"></div>
+                <div class="input-group"><i class="fa-solid fa-envelope" style="opacity:0.7;"></i><input id="emailInput" class="clean-input" placeholder="Email" type="email" inputmode="email"></div>
                 <div class="input-group"><i class="fa-solid fa-lock" style="opacity:0.7;"></i><input id="pwdInput" class="clean-input" placeholder="Mot de passe" type="password"></div>
                 <button class="auth-btn" onclick="Auth.submit()" id="authBtn">CONNEXION</button>
                 <div class="switch-link" onclick="Auth.toggleMode()"><span id="switchText">Créer un compte</span></div>
@@ -138,7 +131,6 @@
         <div class="view" id="viewNav">
             <h2 style="text-align:center; margin-bottom:5px;" id="navTitle">Aucune cible</h2>
             <p style="text-align:center; opacity:0.6; font-size:24px; font-weight:bold; margin-top:0;" id="navDist">-- m</p>
-            
             <div class="compass-container">
                 <svg class="progress-ring" width="280" height="280">
                    <circle stroke="rgba(128,128,128,0.2)" stroke-width="10" fill="transparent" r="120" cx="140" cy="140"/>
@@ -147,15 +139,12 @@
                 <div class="compass-arrow" id="compassArrow">➤</div>
                 <div style="position:absolute; top:20px; font-weight:bold; color:gray;">NORD</div>
             </div>
-            
-            <!-- WIDGETS INTEGRES BOUSSOLE -->
             <div class="compass-stats">
                 <div class="mini-stat"><div class="mini-val" id="navSpeed">0</div><div class="mini-lbl">km/h</div></div>
                 <div class="mini-stat"><div class="mini-val" id="navHead">0°</div><div class="mini-lbl">Cap</div></div>
                 <div class="mini-stat"><div class="mini-val" id="navAlt">0</div><div class="mini-lbl">Alt (m)</div></div>
                 <div class="mini-stat"><div class="mini-val" id="navTemp">--</div><div class="mini-lbl">Météo</div></div>
             </div>
-
             <button class="btn" style="background:red; width:auto; margin:20px auto; display:block;" onclick="Compass.calibrate()" id="btnCalib">📡 Calibrer</button>
             <button class="btn" style="background:gray; margin-top:10px;" onclick="Compass.stop()">Arrêter</button>
         </div>
@@ -175,9 +164,7 @@
             </div>
 
             <h3>Widgets</h3>
-            <div class="widget-grid collapsed" id="profileWidgets">
-                <!-- Widgets injectés par JS -->
-            </div>
+            <div class="widget-grid collapsed" id="profileWidgets"></div>
             <button class="show-more-btn" id="btnShowMore" onclick="Shop.toggleMore()">Afficher plus ▼</button>
 
             <h3>Paramètres</h3>
@@ -190,16 +177,14 @@
             <button class="btn" style="background:var(--danger); margin-top:20px;" onclick="Auth.logout()">Déconnexion</button>
         </div>
 
-        <!-- ADMIN COMPLET -->
+        <!-- ADMIN -->
         <div class="view" id="viewAdmin" style="background:#111; color:white; z-index:5000;">
             <div style="display:flex; justify-content:space-between; align-items:center;"><h2>Super Admin</h2><button onclick="UI.show('viewAccount')" style="background:none; border:none; color:white;">Fermer</button></div>
-            
             <div style="background:#222; padding:15px; border-radius:10px; margin-bottom:10px;">
                 <h3>Actions Globales</h3>
                 <button class="btn" onclick="Admin.broadcast()">📢 Message à tous</button>
                 <button class="btn" onclick="Admin.addReco()">⭐ Créer Recommandation</button>
             </div>
-
             <h3>Utilisateurs (<span id="userCount">0</span>)</h3>
             <input placeholder="Rechercher ID/Email..." onkeyup="Admin.filterUsers(this.value)" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px; border:none;">
             <div id="userList" style="max-height:400px; overflow-y:auto;">Chargement...</div>
