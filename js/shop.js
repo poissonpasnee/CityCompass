@@ -1,50 +1,58 @@
 const Shop = {
+    // Liste statique des 10 widgets disponibles par défaut
+    widgetsList: [
+        { id: 'w_speed', icon: 'gauge-high', name: 'Vitesse', color:'orange' },
+        { id: 'w_alt', icon: 'mountain', name: 'Altitude', color:'gray' },
+        { id: 'w_temp', icon: 'cloud', name: 'Météo', color:'#007AFF' },
+        { id: 'w_head', icon: 'compass', name: 'Cap', color:'purple' },
+        { id: 'w_crono', icon: 'stopwatch', name: 'Chrono', color:'red' },
+        { id: 'w_step', icon: 'shoe-prints', name: 'Podomètre', color:'green' },
+        { id: 'w_coord', icon: 'map-pin', name: 'Coords', color:'brown' },
+        { id: 'w_acc', icon: 'crosshairs', name: 'Précision', color:'teal' },
+        { id: 'w_batt', icon: 'battery-full', name: 'Batterie', color:'limegreen' },
+        { id: 'w_sun', icon: 'sun', name: 'UV Index', color:'gold' }
+    ],
+
     renderWidgets: () => {
-        const grid = document.getElementById('widgetGrid');
+        const grid = document.getElementById('profileWidgets');
         grid.innerHTML = '';
         
-        // Récupérer les items possédés qui sont de type 'widget' ou 'tool'
-        const widgets = Config.items.filter(i => 
-            (i.type === 'widget' || i.type === 'tool') && 
-            (AppState.profile.items || []).includes(i.id)
-        );
-
-        if(widgets.length === 0) {
-            grid.innerHTML = '<p style="grid-column:span 2; opacity:0.5;">Aucun widget actif</p>';
-            return;
-        }
-
-        widgets.forEach(w => {
+        Shop.widgetsList.forEach((w, idx) => {
             const div = document.createElement('div');
             div.className = 'widget';
-            div.innerHTML = `<div class="widget-icon">${w.icon}</div><div>${w.name}</div>`;
+            // ID unique pour mise à jour JS (ex: widSpeed, widAlt...)
+            let valId = 'wid' + w.name; 
+            if(w.id === 'w_speed') valId = 'widSpeed';
+            if(w.id === 'w_alt') valId = 'widAlt';
+            if(w.id === 'w_head') valId = 'widHead';
+
+            div.innerHTML = `
+                <i class="fa-solid fa-${w.icon}" style="font-size:24px; color:${w.color};"></i>
+                <div class="widget-val" id="${valId}">${idx > 3 ? '--' : '0'}</div>
+                <div class="widget-lbl">${w.name}</div>
+            `;
             grid.appendChild(div);
         });
 
-        // Gestion du bouton "Afficher plus"
+        // Gestion bouton "Voir plus"
         const btn = document.getElementById('btnShowMore');
-        if(widgets.length > 4) {
+        if(Shop.widgetsList.length > 4) {
             btn.style.display = 'block';
-            btn.innerText = 'Afficher plus ▼';
-            grid.classList.remove('expanded');
-        } else {
-            btn.style.display = 'none';
         }
     },
 
     toggleMore: () => {
-        const grid = document.getElementById('widgetGrid');
+        const grid = document.getElementById('profileWidgets');
         const btn = document.getElementById('btnShowMore');
         
-        if(grid.classList.contains('expanded')) {
-            grid.classList.remove('expanded');
-            btn.innerText = 'Afficher plus ▼';
-        } else {
+        if(grid.classList.contains('collapsed')) {
+            grid.classList.remove('collapsed');
             grid.classList.add('expanded');
             btn.innerText = 'Réduire ▲';
+        } else {
+            grid.classList.remove('expanded');
+            grid.classList.add('collapsed');
+            btn.innerText = 'Afficher plus ▼';
         }
-    },
-
-    // (Garde la fonction render() et buy() existantes pour la boutique)
-    render: () => { /* ... code existant ... */ }
+    }
 };
