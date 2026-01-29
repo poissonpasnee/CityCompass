@@ -2,359 +2,137 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#000000">
-    <title>CityCompass Navigator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CityCompass Debug</title>
+    
+    <!-- Styles simplifiés pour être sûr que rien ne cache les boutons -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <style>
+        body { font-family: sans-serif; background: #222; color: white; margin: 0; }
+        #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: #333; padding: 30px; border-radius: 20px; width: 90%; max-width: 350px; text-align: center; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: none; }
+        button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
+        .btn-primary { background: #007AFF; color: white; }
+        .btn-sec { background: transparent; border: 1px solid #777; color: #ccc; }
+        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+    </style>
 
     <!-- Libs -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <style>
-        /* CSS INTÉGRÉ */
-        :root { --glass: rgba(255, 255, 255, 0.88); --blur: blur(25px); --shadow: 0 12px 40px rgba(0,0,0,0.18); --accent: #007AFF; --danger: #FF3B30; --success: #34C759; --text: #000; }
-        body[data-theme="dark"] { --glass: rgba(32, 32, 35, 0.88); --text: #FFF; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, sans-serif; touch-action: manipulation; }
-        body { margin: 0; height: 100vh; overflow: hidden; background: #000; color: var(--text); user-select: none; }
-        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: #ddd; }
-        .leaflet-zoom-anim .leaflet-zoom-animated { transition: transform 0.2s cubic-bezier(0,0,0.2,1) !important; }
-        .hud-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; display: flex; flex-direction: column; justify-content: space-between; padding: env(safe-area-inset-top) 15px calc(env(safe-area-inset-bottom) + 20px) 15px; }
-        .search-container { margin-top: 15px; pointer-events: auto; position: relative; width: 100%; max-width: 450px; align-self: center; }
-        .search-bar { background: var(--glass); backdrop-filter: var(--blur); border-radius: 24px; padding: 14px 20px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; }
-        .search-inp { border: none; background: transparent; font-size: 16px; width: 100%; outline: none; color: var(--text); font-weight: 500; }
-        .search-results { position: absolute; top: 65px; left: 0; width: 100%; background: var(--glass); backdrop-filter: var(--blur); border-radius: 20px; max-height: 300px; overflow-y: auto; display: none; padding: 10px; box-shadow: var(--shadow); z-index: 100; }
-        .result-item { padding: 14px; border-bottom: 1px solid rgba(128,128,128,0.1); cursor: pointer; font-size: 15px; }
-        .xp-badge { background: var(--accent); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; white-space: nowrap; cursor: pointer; }
-        .dock-wrapper { position: relative; width: 100%; max-width: 400px; align-self: center; pointer-events: auto; }
-        .dock { background: var(--glass); backdrop-filter: var(--blur); border-radius: 35px; padding: 12px 30px; display: flex; justify-content: space-between; box-shadow: var(--shadow); }
-        .dock-icon { font-size: 24px; color: #999; padding: 10px; transition: 0.2s; position: relative; cursor: pointer; }
-        .dock-icon.active { color: var(--accent); transform: translateY(-3px); }
-        .fab-compass { position: absolute; left: 50%; top: -35px; transform: translateX(-50%); width: 70px; height: 70px; border-radius: 50%; background: var(--glass); backdrop-filter: var(--blur); box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; font-size: 32px; color: var(--accent); cursor: pointer; border: 4px solid rgba(255,255,255,0.1); }
-        .fab-compass:active { transform: translateX(-50%) scale(0.95); }
-        .panel { position: absolute; top: 0; right: -100%; width: 100%; height: 100%; background: var(--glass); backdrop-filter: blur(40px); z-index: 2000; transition: right 0.35s cubic-bezier(0.19, 1, 0.22, 1); padding: 80px 20px 120px 20px; overflow-y: auto; pointer-events: auto; }
-        .panel.open { right: 0; }
-        .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .panel h2 { font-size: 28px; font-weight: 800; margin: 0; }
-        .close-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(128,128,128,0.15); color: var(--text); font-size: 18px; cursor: pointer; }
-        .shop-item { background: rgba(128,128,128,0.08); padding: 16px; border-radius: 22px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .shop-info { display: flex; align-items: center; gap: 15px; }
-        .shop-icon { width: 48px; height: 48px; border-radius: 14px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-        .buy-btn { background: var(--text); color: var(--glass); border: none; padding: 10px 18px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer; }
-        .toggle-switch { position: relative; width: 50px; height: 30px; display: inline-block; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        input:checked + .slider { background-color: var(--success); }
-        input:checked + .slider:before { transform: translateX(20px); }
-        #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: rgba(0,0,0,0.7); backdrop-filter: blur(30px); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .login-box { background: var(--glass); padding: 35px; border-radius: 35px; width: 85%; max-width: 360px; text-align: center; box-shadow: var(--shadow); }
-        .inp { width: 100%; padding: 16px; margin-bottom: 12px; border-radius: 16px; border: 1px solid rgba(0,0,0,0.1); font-size: 16px; background: rgba(128,128,128,0.05); color: var(--text); }
-        .btn-main { width: 100%; padding: 16px; border-radius: 16px; border: none; background: var(--accent); color: white; font-weight: 700; font-size: 16px; margin-top: 10px; cursor: pointer; }
-        #compassOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--glass); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; }
-        #compassOverlay.active { opacity: 1; pointer-events: auto; }
-        #compassRing { width: 280px; height: 280px; border: 8px solid var(--text); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform 0.05s linear; margin-bottom: 30px; position: relative; }
-        .setting-row { padding: 18px 0; border-bottom: 1px solid rgba(128,128,128,0.1); display: flex; justify-content: space-between; align-items: center; font-size: 16px; cursor: pointer; }
-    </style>
 </head>
-<body data-theme="light">
-    <!-- LOGIN -->
+<body>
+
+    <!-- ÉCRAN DE CONNEXION -->
     <div id="loginScreen">
         <div class="login-box">
-            <h1 style="margin:0 0 25px 0;">CityCompass</h1>
-            <input type="email" id="email" class="inp" placeholder="Email">
-            <input type="password" id="password" class="inp" placeholder="Mot de passe">
-            <button class="btn-main" onclick="Auth.login()">Connexion</button>
-            <button class="btn-main" style="background:transparent; color:var(--text); border:1px solid rgba(128,128,128,0.3);" onclick="Auth.signup()">Créer un compte</button>
-            <p id="msg" style="color:var(--danger); font-size:13px; margin-top:15px; min-height:15px;"></p>
+            <h1>CityCompass</h1>
+            <p id="statusMsg" style="color: #FF3B30;"></p>
+            
+            <input type="email" id="emailInput" placeholder="Email" value="test@test.com"> <!-- Valeur par défaut pour tester vite -->
+            <input type="password" id="pwdInput" placeholder="Mot de passe">
+            
+            <button id="btnLogin" class="btn-primary">CONNEXION</button>
+            <button id="btnSignup" class="btn-sec">CRÉER COMPTE</button>
         </div>
     </div>
-    <!-- CARTE -->
+
+    <!-- CARTE (cachée au début) -->
     <div id="map"></div>
-    <!-- HUD -->
-    <div class="hud-layer" id="hud" style="display:none;">
-        <div class="search-container">
-            <div class="search-bar">
-                <i class="fa-solid fa-magnifying-glass" style="opacity:0.5; font-size:18px;"></i>
-                <input type="text" class="search-inp" id="searchInp" placeholder="Où aller ?" onkeyup="MapManager.search(this.value)">
-                <div class="xp-badge" onclick="UI.open('panelProfile')"><span id="hudPoints">0</span> XP</div>
-            </div>
-            <div class="search-results" id="searchResults"></div>
-        </div>
-        <div class="dock-wrapper">
-            <div class="fab-compass" onclick="Compass.open()"><i class="fa-regular fa-compass"></i></div>
-            <div class="dock">
-                <div class="dock-icon" onclick="UI.open('panelShop')"><i class="fa-solid fa-store"></i></div>
-                <div class="dock-icon" onclick="UI.open('panelTools')"><i class="fa-solid fa-layer-group"></i></div>
-                <div class="dock-icon active" onclick="MapManager.locate()"><i class="fa-solid fa-location-arrow"></i></div>
-                <div class="dock-icon" onclick="UI.open('panelProfile')"><i class="fa-solid fa-user"></i></div>
-            </div>
-        </div>
-    </div>
-    <!-- PANNEAUX -->
-    <div id="panelShop" class="panel">
-        <div class="panel-head"><h2>Boutique</h2><button class="close-btn" onclick="UI.close()">&times;</button></div>
-        <div style="background:var(--accent); color:white; padding:25px; border-radius:25px; margin-bottom:25px; text-align:center; box-shadow: 0 10px 30px -10px var(--accent);"><div style="font-size:36px; font-weight:800;" id="shopPoints">0</div><div style="opacity:0.9; font-weight:600;">Points Disponibles</div></div>
-        <div id="shopList"></div>
-    </div>
-    <div id="panelTools" class="panel">
-        <div class="panel-head"><h2>Outils</h2><button class="close-btn" onclick="UI.close()">&times;</button></div>
-        <h3 style="opacity:0.6; font-size:14px; text-transform:uppercase; margin-bottom:10px;">Mes Favoris</h3>
-        <div id="favList" style="margin-bottom:30px; color:gray;">Aucun favori</div>
-        <h3 style="opacity:0.6; font-size:14px; text-transform:uppercase; margin-bottom:10px;">Carte</h3>
-        <div class="shop-item" onclick="MapManager.setLayer('standard')"><div class="shop-info"><div class="shop-icon">🗺️</div><b>Standard</b></div></div>
-        <div class="shop-item" onclick="MapManager.setLayer('sat')"><div class="shop-info"><div class="shop-icon">🛰️</div><b>Satellite</b></div></div>
-        <div class="shop-item" onclick="MapManager.setLayer('dark')"><div class="shop-info"><div class="shop-icon">🌑</div><b>Mode Nuit</b></div></div>
-    </div>
-    <div id="panelProfile" class="panel">
-        <div class="panel-head"><h2>Mon Compte</h2><button class="close-btn" onclick="UI.close()">&times;</button></div>
-        <div style="text-align:center; margin-bottom:40px;"><div style="width:90px; height:90px; background:var(--accent); color:white; border-radius:50%; margin:0 auto 15px auto; display:flex; align-items:center; justify-content:center; font-size:36px; box-shadow: 0 10px 30px -5px var(--accent);">👤</div><h3 id="profileEmail" style="margin:0;">...</h3></div>
-        <div class="setting-row" onclick="Settings.updateEmail()"><span>Changer Email</span> <i class="fa-solid fa-chevron-right" style="opacity:0.3;"></i></div>
-        <div class="setting-row" onclick="Settings.updatePwd()"><span>Changer Mot de passe</span> <i class="fa-solid fa-chevron-right" style="opacity:0.3;"></i></div>
-        <div class="setting-row" onclick="Settings.toggleTheme()"><span>Mode Sombre / Clair</span> <div class="shop-icon" style="width:30px; height:30px; font-size:14px;"><i class="fa-solid fa-adjust"></i></div></div>
-        <div class="setting-row" style="color:var(--danger); font-weight:bold;" onclick="Auth.logout()"><span>Se déconnecter</span> <i class="fa-solid fa-power-off"></i></div>
-        <div id="adminPanel" style="display:none; margin-top:40px; border-top:2px solid rgba(128,128,128,0.2); padding-top:20px;"><h3 style="color:var(--danger);">⚡ Admin Control</h3><div class="shop-item"><b>Points (Test)</b><button class="buy-btn" onclick="Admin.modPoints(500)">+500 XP</button></div><button class="btn-main" onclick="Admin.addPublicPlace()">Ajouter Lieu Public ici</button></div>
-    </div>
-    <!-- BOUSSOLE -->
-    <div id="compassOverlay">
-        <button class="close-btn" style="position:absolute; top:40px; right:20px;" onclick="Compass.close()">&times;</button>
-        <div id="compassRing"><div style="position:absolute; top:-40px; font-weight:bold; font-size:18px; letter-spacing:2px;">NORD</div><i class="fa-solid fa-location-arrow" style="font-size:100px; color:var(--danger);"></i></div>
-        <h1 id="compassDeg" style="font-variant-numeric: tabular-nums;">0°</h1>
-        <button class="btn-main" style="width:auto; padding:10px 30px; background:rgba(128,128,128,0.2); color:var(--text);" onclick="Compass.requestPerm()">Calibrer / Autoriser</button>
-        <div id="navInfoBox" style="display:none; width:90%; max-width:360px; margin-top:30px;">
-            <div class="shop-item" style="background:var(--accent); color:white;"><div class="shop-info"><div class="shop-icon" style="background:rgba(255,255,255,0.2); color:white;">🏁</div><div><b id="navTargetName">Destination</b><br><span style="font-size:13px; opacity:0.8;">Distance: <span id="navDist">--</span> • Cap: <span id="navBearing">--</span></span></div></div><button class="buy-btn" style="background:rgba(0,0,0,0.3);" onclick="Compass.stopNav()">Stop</button></div>
-            <div class="shop-item"><div class="shop-info"><div class="shop-icon" style="background:#FF9500; color:white;">🏎️</div><div><b>Vitesse</b><br><span id="navSpeed" style="opacity:0.6;">0 km/h</span></div></div></div>
-        </div>
-    </div>
 
-    <!-- JS GLOBAL -->
     <script>
-        const Config = {
-            supabase: {
-                url: 'https://scbihxaceelyygrlacvm.supabase.co',
-                key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjYmloeGFjZWVseXlncmxhY3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1NjU3MTcsImV4cCI6MjA4NTE0MTcxN30.rgUH-kltyNX99-HTDmGEyzGyu8qFXR9LF1QxsjY0W44'
-            },
-            items: [
-                { id: 'color_purple', name: 'Thème Violet', price: 200, icon: '🎨', type: 'theme', val: '#AF52DE' },
-                { id: 'color_orange', name: 'Thème Orange', price: 200, icon: '🎨', type: 'theme', val: '#FF9500' },
-                { id: 'color_teal', name: 'Thème Turquoise', price: 200, icon: '🎨', type: 'theme', val: '#30B0C7' },
-                { id: 'w_traffic', name: 'Info Trafic', price: 100, icon: '🚦', type: 'widget' },
-                { id: 'w_transit', name: 'Transports', price: 150, icon: '🚇', type: 'widget' },
-                { id: 'w_bike', name: 'Pistes Cyclables', price: 150, icon: '🚲', type: 'widget' },
-                { id: 'w_ghost', name: 'Mode Fantôme', price: 500, icon: '👻', type: 'widget' },
-                { id: 'w_speed', name: 'Speedomètre', price: 300, icon: '🏎️', type: 'widget' },
-                { id: 'w_3d', name: 'Bâtiments 3D', price: 400, icon: '🏢', type: 'widget' },
-                { id: 'w_weather', name: 'Météo', price: 250, icon: '☁️', type: 'widget' }
-            ],
-            mapLayers: {
-                standard: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-                dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-                sat: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-            },
-            defaultLocation: [43.6, 1.4], defaultZoom: 13
-        };
-        window.AppState = { supabase: null, map: null, userMarker: null, currentUser: null, userProfile: null, theme: 'light', lastLocation: null, navTarget: null, searchTimer: null };
+        // --- 1. CONFIGURATION ---
+        const SB_URL = 'https://scbihxaceelyygrlacvm.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjYmloeGFjZWVseXlncmxhY3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1NjU3MTcsImV4cCI6MjA4NTE0MTcxN30.rgUH-kltyNX99-HTDmGEyzGyu8qFXR9LF1QxsjY0W44';
+        
+        let supabase;
 
-        const UI = {
-            showMessage: (t) => document.getElementById('msg').innerText = t,
-            open: (id) => { document.querySelectorAll('.panel').forEach(p => p.classList.remove('open')); document.getElementById(id).classList.add('open'); setTimeout(() => AppState.map.invalidateSize(), 300); },
-            close: () => document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'))
-        };
+        // --- 2. FONCTIONS ---
+        function log(msg) {
+            document.getElementById('statusMsg').innerText = msg;
+            console.log(msg);
+        }
 
-        const Auth = {
-            login: async () => {
-                const email = document.getElementById('email').value.trim();
-                const password = document.getElementById('password').value;
-                if (!email || !password) return UI.showMessage("Remplissez tout.");
-                UI.showMessage("Connexion...");
-                const { data, error } = await AppState.supabase.auth.signInWithPassword({ email, password });
-                if(error) UI.showMessage(error.message); else App.start(data.user);
-            },
-            signup: async () => {
-                const email = document.getElementById('email').value.trim();
-                const password = document.getElementById('password').value;
-                if (!email || !password) return UI.showMessage("Remplissez tout.");
-                UI.showMessage("Création...");
-                const { data, error } = await AppState.supabase.auth.signUp({ email, password });
-                if(error) UI.showMessage(error.message); else if(data.session) App.start(data.user); else UI.showMessage("Compte créé !");
-            },
-            logout: async () => { await AppState.supabase.auth.signOut(); location.reload(); }
-        };
-
-        const MapManager = {
-            init: () => {
-                if (AppState.map) return;
-                AppState.map = L.map('map', { zoomControl: false, zoomSnap: 0.5, wheelDebounceTime: 100 }).setView(Config.defaultLocation, Config.defaultZoom);
-                MapManager.setLayer(AppState.theme === 'dark' ? 'dark' : 'standard');
-                AppState.map.on('click', (e) => { L.popup().setLatLng(e.latlng).setContent(`<div style="text-align:center; padding:5px;"><b>Lieu sélectionné</b><br><br><button class="buy-btn" onclick="MapManager.addFavorite(${e.latlng.lat}, ${e.latlng.lng})">⭐ Favori</button><button class="buy-btn" style="background:var(--accent); margin-top:5px;" onclick="MapManager.startNav(${e.latlng.lat}, ${e.latlng.lng}, 'Point Repère')">🧭 Aller</button></div>`).openOn(AppState.map); });
-                MapManager.locate();
-            },
-            locate: () => {
-                AppState.map.locate({setView: true, watch: true, enableHighAccuracy: true});
-                AppState.map.on('locationfound', e => {
-                    AppState.lastLocation = e.latlng;
-                    if(!AppState.userMarker) AppState.userMarker = L.circleMarker(e.latlng, { radius: 9, color: 'white', weight:3, fillColor: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), fillOpacity:1 }).addTo(AppState.map);
-                    else AppState.userMarker.setLatLng(e.latlng);
-                    document.getElementById('navSpeed').innerText = (e.speed ? Math.round(e.speed * 3.6) : 0) + ' km/h';
-                    if(AppState.navTarget) {
-                        const dist = AppState.map.distance(e.latlng, AppState.navTarget.loc);
-                        document.getElementById('navDist').innerText = dist > 1000 ? (dist/1000).toFixed(1)+'km' : Math.round(dist)+'m';
-                    }
-                });
-            },
-            search: (q) => {
-                clearTimeout(AppState.searchTimer);
-                AppState.searchTimer = setTimeout(async () => {
-                    if(q.length < 3) return document.getElementById('searchResults').style.display = 'none';
-                    const c = AppState.map.getCenter();
-                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&viewbox=${c.lng-0.5},${c.lat+0.5},${c.lng+0.5},${c.lat-0.5}&bounded=0&limit=5`);
-                    const data = await res.json();
-                    const list = document.getElementById('searchResults');
-                    list.innerHTML = ''; list.style.display = 'block';
-                    data.forEach(p => {
-                        const d = document.createElement('div'); d.className = 'result-item';
-                        const n = p.address?.road || p.display_name.split(',')[0];
-                        d.innerHTML = `<b>${n}</b><br><span style="font-size:12px; opacity:0.6;">${p.display_name}</span>`;
-                        d.onclick = () => { MapManager.startNav(p.lat, p.lon, n); list.style.display = 'none'; document.getElementById('searchInp').value = ''; };
-                        list.appendChild(d);
-                    });
-                }, 300);
-            },
-            startNav: (lat, lng, name) => {
-                AppState.navTarget = { loc: L.latLng(lat, lng), name: name };
-                document.getElementById('navTargetName').innerText = name;
-                document.getElementById('navInfoBox').style.display = 'block';
-                AppState.map.setView([lat, lng], 16); UI.close(); Compass.open();
-            },
-            addFavorite: async (lat, lng) => {
-                const name = prompt("Nom ?"); if(!name) return;
-                const favs = [...(AppState.userProfile.favorites || []), { name, lat, lng }];
-                await AppState.supabase.from('profiles').update({ favorites: favs }).eq('id', AppState.currentUser.id);
-                AppState.userProfile.favorites = favs; MapManager.renderFavs(); AppState.map.closePopup();
-            },
-            renderFavs: () => {
-                const c = document.getElementById('favList'); c.innerHTML = '';
-                (AppState.userProfile.favorites || []).forEach(f => {
-                    const d = document.createElement('div'); d.className = 'shop-item';
-                    d.innerHTML = `<span>⭐ ${f.name}</span> <button class="buy-btn" onclick="MapManager.startNav(${f.lat}, ${f.lng}, '${f.name}')">Aller</button>`;
-                    c.appendChild(d);
-                });
-            },
-            setLayer: (t) => {
-                AppState.map.eachLayer(l => { if(l._url) AppState.map.removeLayer(l); });
-                L.tileLayer(Config.mapLayers[t], { maxZoom: 19 }).addTo(AppState.map);
-            },
-            toggleOverlay: (id, on) => { if(on) console.log("Widget active:", id); }
-        };
-
-        const Compass = {
-            open: () => document.getElementById('compassOverlay').classList.add('active'),
-            close: () => document.getElementById('compassOverlay').classList.remove('active'),
-            stopNav: () => { AppState.navTarget = null; document.getElementById('navInfoBox').style.display = 'none'; document.getElementById('navDist').innerText = '--'; },
-            requestPerm: async () => {
-                if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                    const r = await DeviceOrientationEvent.requestPermission();
-                    if (r === 'granted') window.addEventListener('deviceorientation', Compass.handle);
-                } else window.addEventListener('deviceorientation', Compass.handle);
-            },
-            handle: (e) => {
-                const alpha = e.webkitCompassHeading || Math.abs(e.alpha - 360);
-                document.getElementById('compassRing').style.transform = `rotate(${-alpha}deg)`;
-                document.getElementById('compassDeg').innerText = Math.round(alpha) + "°";
-            }
-        };
-
-        const Shop = {
-            render: () => {
-                const c = document.getElementById('shopList'); c.innerHTML = '';
-                Config.items.forEach(i => {
-                    const owned = (AppState.userProfile.items || []).includes(i.id);
-                    const active = (AppState.userProfile.active_items || []).includes(i.id);
-                    let btn = `<button class="buy-btn" onclick="Shop.buy('${i.id}')">${i.price} XP</button>`;
-                    if(owned) btn = `<label class="toggle-switch"><input type="checkbox" ${active?'checked':''} onchange="Shop.toggle('${i.id}', this.checked)"><span class="slider"></span></label>`;
-                    const d = document.createElement('div'); d.className = 'shop-item';
-                    d.innerHTML = `<div class="shop-info"><div class="shop-icon" style="background:${i.val||'#eee'}">${i.icon}</div><div><b>${i.name}</b><br><span style="font-size:12px;">${i.type}</span></div></div>${btn}`;
-                    c.appendChild(d);
-                });
-            },
-            buy: async (id) => {
-                const i = Config.items.find(x => x.id === id);
-                if(AppState.userProfile.points < i.price) return alert("Pas assez de points !");
-                if(confirm(`Acheter ${i.name}?`)) {
-                    AppState.userProfile.points -= i.price;
-                    AppState.userProfile.items = [...(AppState.userProfile.items || []), id];
-                    await AppState.supabase.from('profiles').update({ points: AppState.userProfile.points, items: AppState.userProfile.items }).eq('id', AppState.currentUser.id);
-                    App.applySettings(); Shop.render();
+        async function initApp() {
+            try {
+                log("Initialisation...");
+                supabase = window.supabase.createClient(SB_URL, SB_KEY);
+                
+                // Vérifier session
+                const { data } = await supabase.auth.getSession();
+                if (data.session) {
+                    launchMap();
+                } else {
+                    log("Veuillez vous connecter.");
                 }
-            },
-            toggle: async (id, on) => {
-                let acts = AppState.userProfile.active_items || [];
-                if(on) acts.push(id); else acts = acts.filter(x => x !== id);
-                AppState.userProfile.active_items = acts;
-                await AppState.supabase.from('profiles').update({ active_items: acts }).eq('id', AppState.currentUser.id);
-                const item = Config.items.find(i => i.id === id);
-                if(item.type === 'theme' && on) { document.documentElement.style.setProperty('--accent', item.val); AppState.userProfile.color = item.val; await AppState.supabase.from('profiles').update({color: item.val}).eq('id', AppState.currentUser.id); }
+            } catch (e) {
+                log("Erreur Init: " + e.message);
+                alert("Erreur Init: " + e.message);
             }
-        };
+        }
 
-        const Settings = {
-            updateEmail: async () => { const m = prompt("Nouvel email"); if(m) AppState.supabase.auth.updateUser({ email: m }); },
-            updatePwd: async () => { const p = prompt("Nouveau pass"); if(p) AppState.supabase.auth.updateUser({ password: p }); },
-            toggleTheme: () => {
-                AppState.theme = AppState.theme === 'light' ? 'dark' : 'light';
-                document.body.setAttribute('data-theme', AppState.theme);
-                localStorage.setItem('cc_theme', AppState.theme);
-                MapManager.setLayer(AppState.theme === 'dark' ? 'dark' : 'standard');
+        async function handleLogin() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('pwdInput').value;
+            
+            if(!email || !password) return log("Remplissez les champs !");
+            
+            log("Connexion en cours...");
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) {
+                    log("Erreur: " + error.message);
+                    alert("Erreur: " + error.message);
+                } else {
+                    log("Succès !");
+                    launchMap();
+                }
+            } catch (e) {
+                log("Crash Login: " + e);
+                alert("Crash Login: " + e);
             }
-        };
+        }
 
-        const Admin = {
-            modPoints: async (am) => {
-                AppState.userProfile.points += am;
-                await AppState.supabase.from('profiles').update({ points: AppState.userProfile.points }).eq('id', AppState.currentUser.id);
-                App.applySettings(); alert("Points mis à jour");
-            },
-            addPublicPlace: async () => {
-                const n = prompt("Nom ?");
-                if(n && AppState.lastLocation) await AppState.supabase.from('places').insert({ name: n, lat: AppState.lastLocation.lat, lng: AppState.lastLocation.lng, type: 'admin_pick' });
+        async function handleSignup() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('pwdInput').value;
+            
+            log("Création compte...");
+            try {
+                const { data, error } = await supabase.auth.signUp({ email, password });
+                if (error) {
+                    log("Erreur: " + error.message);
+                } else {
+                    log("Compte créé ! Vérifiez vos emails ou connectez-vous.");
+                }
+            } catch (e) {
+                log("Crash Signup: " + e);
             }
-        };
+        }
 
-        const App = {
-            init: async () => {
-                AppState.supabase = supabase.createClient(Config.supabase.url, Config.supabase.key);
-                AppState.theme = localStorage.getItem('cc_theme') || 'light';
-                document.body.setAttribute('data-theme', AppState.theme);
-                const {  { session } } = await AppState.supabase.auth.getSession();
-                if(session) App.start(session.user); else document.getElementById('loginScreen').style.display = 'flex';
-            },
-            start: async (user) => {
-                AppState.currentUser = user;
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('hud').style.display = 'flex';
-                document.getElementById('profileEmail').innerText = user.email;
-                MapManager.init();
-                await App.loadData();
-            },
-            loadData: async () => {
-                let { data, error } = await AppState.supabase.from('profiles').select('*').eq('id', AppState.currentUser.id).single();
-                if(error && error.code === 'PGRST116') { await App.createProfile(); return; }
-                if(data) { AppState.userProfile = data; App.applySettings(); Shop.render(); MapManager.renderFavs(); if(data.is_admin) document.getElementById('adminPanel').style.display = 'block'; }
-            },
-            createProfile: async () => {
-                await AppState.supabase.from('profiles').insert({ id: AppState.currentUser.id }); await App.loadData();
-            },
-            applySettings: () => {
-                document.getElementById('hudPoints').innerText = AppState.userProfile.points || 0;
-                document.getElementById('shopPoints').innerText = AppState.userProfile.points || 0;
-                if(AppState.userProfile.color) document.documentElement.style.setProperty('--accent', AppState.userProfile.color);
-                (AppState.userProfile.active_items || []).forEach(id => { if(id.startsWith('w_')) MapManager.toggleOverlay(id, true); });
-            }
+        function launchMap() {
+            document.getElementById('loginScreen').style.display = 'none';
+            // Initialiser carte
+            var map = L.map('map').setView([43.6, 1.4], 13);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+            
+            // Géoloc
+            map.locate({setView: true, maxZoom: 16});
+            map.on('locationfound', function(e) {
+                L.circleMarker(e.latlng, {color: 'blue'}).addTo(map);
+            });
+            
+            alert("Bienvenue dans CityCompass !");
+        }
+
+        // --- 3. ÉCOUTEURS D'ÉVÉNEMENTS (Plus fiable que onclick HTML) ---
+        window.onload = function() {
+            initApp();
+            
+            document.getElementById('btnLogin').addEventListener('click', handleLogin);
+            document.getElementById('btnSignup').addEventListener('click', handleSignup);
         };
-        window.onload = App.init;
     </script>
 </body>
 </html>
