@@ -1,32 +1,49 @@
 const Shop = {
     render: () => {
-        const c = document.getElementById('shopList'); c.innerHTML = '';
-        Config.items.forEach(i => {
-            const owned = (AppState.userProfile.items || []).includes(i.id);
-            const active = (AppState.userProfile.active_items || []).includes(i.id);
-            let btn = `<button class="buy-btn" onclick="Shop.buy('${i.id}')">${i.price} XP</button>`;
-            if(owned) btn = `<label class="toggle-switch"><input type="checkbox" ${active?'checked':''} onchange="Shop.toggle('${i.id}', this.checked)"><span class="slider"></span></label>`;
-            const d = document.createElement('div'); d.className = 'shop-item';
-            d.innerHTML = `<div class="shop-info"><div class="shop-icon" style="background:${i.val||'#eee'}">${i.icon}</div><div><b>${i.name}</b><br><span style="font-size:12px;">${i.type}</span></div></div>${btn}`;
-            c.appendChild(d);
+        const grid = document.getElementById('shopGrid');
+        grid.innerHTML = '';
+        
+        Config.items.forEach(item => {
+            const owned = (AppState.profile.items || []).includes(item.id);
+            const active = AppState.activeFeatures[item.id];
+            
+            const card = document.createElement('div');
+            card.className = `shop-card ${active ? 'active-item' : ''}`;
+            card.innerHTML = `
+                <div style="font-size:32px;">${item.icon}</div>
+                <div style="font-size:12px; font-weight:700;">${item.name}</div>
+                <div style="color:${owned ? 'green' : 'var(--accent)'}; font-size:10px;">
+                    ${owned ? (active ? 'ACTIVÉ' : 'ACQUIS') : item.cost + ' XP'}
+                </div>
+            `;
+            card.onclick = () => Shop.handle(item.id);
+            grid.appendChild(card);
         });
     },
-    buy: async (id) => {
-        const i = Config.items.find(x => x.id === id);
-        if(AppState.userProfile.points < i.price) return alert("Pas assez de points !");
-        if(confirm(`Acheter ${i.name}?`)) {
-            AppState.userProfile.points -= i.price;
-            AppState.userProfile.items = [...(AppState.userProfile.items || []), id];
-            await AppState.supabase.from('profiles').update({ points: AppState.userProfile.points, items: AppState.userProfile.items }).eq('id', AppState.currentUser.id);
-            App.applySettings(); Shop.render();
-        }
-    },
-    toggle: async (id, on) => {
-        let acts = AppState.userProfile.active_items || [];
-        if(on) acts.push(id); else acts = acts.filter(x => x !== id);
-        AppState.userProfile.active_items = acts;
-        await AppState.supabase.from('profiles').update({ active_items: acts }).eq('id', AppState.currentUser.id);
+    handle: async (id) => {
         const item = Config.items.find(i => i.id === id);
-        if(item.type === 'theme' && on) { document.documentElement.style.setProperty('--accent', item.val); AppState.userProfile.color = item.val; await AppState.supabase.from('profiles').update({color: item.val}).eq('id', AppState.currentUser.id); }
+        const owned = (AppState.profile.items || []).includes(id);
+        
+        if(!owned) {
+            if(AppState.profile.points < item.cost) return alert("Pas assez de XP !");
+            if(!confirm(`Acheter ${item.name} ?`)) return;
+            
+            AppState.profile.points -= item.cost;
+            AppState.profile.items = [...(AppState.profile.items || []), id];
+            
+            await AppState.supabase.from('profiles').update({
+                points: AppState.profile.points,
+                items: AppState.profile.items
+            }).eq('id', AppState.user.id);
+        } else {
+            // Toggle
+            if(AppState.activeFeatures[id]) delete AppState.activeFeatures[id];
+            else AppState.activeFeatures[id] = true;
+            
+            if(item.type === 'map') MapManager.setLayer(id.replace('map_', ''));
+        }
+        
+        Shop.render();
+        document.getElementById('displayPoints').innerText = AppState.profile.points;
     }
 };
